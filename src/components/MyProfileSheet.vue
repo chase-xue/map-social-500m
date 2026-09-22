@@ -1,9 +1,9 @@
 <template>
-  <view v-if="myProfileVisible" class="modal-mask" @tap="closeMyProfileSheet">
+  <view v-if="myProfileVisible" class="modal-mask" @tap.self="closeMyProfileSheet(false)">
     <view class="profile-sheet" @tap.stop>
       <view class="publish-header">
         <text class="publish-title">我的个人资料</text>
-        <view class="close-btn" @tap="closeMyProfileSheet">✕</view>
+        <view class="close-btn" @tap="closeMyProfileSheet(true)">✕</view>
       </view>
       <view class="profile-avatar-row">
         <view class="profile-avatar-box" @tap="chooseNewAvatar">
@@ -61,7 +61,7 @@
             :key="item.id"
             class="record-item"
             :class="{ 'record-emergency': item.isEmergency && !item.helpResolved, 'record-resolved': item.helpResolved }"
-            @tap="closeMyProfileSheet(); openDetailSheet(item)"
+            @tap="closeMyProfileSheet(true); openDetailSheet(item)"
           >
             <view class="record-top">
               <text class="record-badge">{{ item.helpResolved ? '✅ 已关闭/解决' : item.isEmergency ? '🚨 救命呼救进行中' : '🆘 急事求助进行中' }}</text>

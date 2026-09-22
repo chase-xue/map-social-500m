@@ -71,7 +71,7 @@
             </view>
             <view class="moment-distance-tag"><text>📍 {{ item.distance }}米</text></view>
           </view>
-          <view class="moment-content-text"><text>{{ item.content }}</text></view>
+          <view class="moment-content-text" @tap="openDetailSheet(item)" hover-class="content-hover"><text>{{ item.content }}</text></view>
           <view v-if="item.images && item.images.length > 0" class="moment-media-grid" :class="item.images.length === 1 ? 'single-image' : item.images.length === 4 ? 'grid-4' : 'grid-multi'">
             <image v-for="(img, idx) in item.images" :key="idx" class="moment-grid-img" :src="img" mode="aspectFill" @tap="previewImage(img, item.images)" />
           </view>
@@ -92,7 +92,7 @@
               </view>
             </view>
           </view>
-          <view v-if="((item.likes && item.likes.length > 0) || (item.comments && item.comments.length > 0))" class="moment-interactions-box">
+          <view v-if="((item.likes && item.likes.length > 0) || (item.comments && item.comments.length > 0))" class="moment-interactions-box" @tap="openDetailSheet(item)">
             <view class="bubble-arrow" />
             <view v-if="item.likes && item.likes.length > 0" class="moment-likes-list">
               <text class="heart-icon">❤️</text>

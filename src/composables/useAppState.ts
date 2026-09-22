@@ -333,15 +333,35 @@ function simulateUserMove() {
   uni.showToast({ title: `走动模拟：当前可见 ${visibleStatuses.value.length} 条`, icon: "none" });
 }
 
-// ============ Marker 点击 ============
+// 记录弹窗打开时间戳，用于防御移动端 300ms 合成点击产生的点透穿透 (Ghost Click / 闪屏关闭)
+let lastModalOpenTime = 0;
+
+// ============ Marker & Callout 点击 ============
 function onMarkerTap(e: any) {
-  const markerId = e.detail.markerId;
+  const markerId = Number(e?.detail?.markerId ?? e?.markerId);
+  if (isNaN(markerId) || markerId === 0) return;
+
   if (markerId === 999999) {
-    openUserProfileCard(myProfile.value, 0);
+    // 点击本人位置标记 (999999)：
+    // 优先检查我是否发布过状态，如果是，直接打开我最新的状态详情进行查看与互动
+    const myLatestStatus = allStatuses.value.find((s) => s.userId === myProfile.value.id);
+    if (myLatestStatus) {
+      openDetailSheet(myLatestStatus);
+    } else {
+      openUserProfileCard(myProfile.value, 0);
+    }
     return;
   }
+
   const cluster = locationClusters.value[markerId - 1];
-  if (!cluster) return;
+  if (!cluster) {
+    const fallback = visibleStatuses.value.find((s, idx) => idx + 1 === markerId);
+    if (fallback) {
+      openDetailSheet(fallback);
+    }
+    return;
+  }
+
   if (cluster.count > 1) {
     openClusterSheet(cluster);
   } else {
@@ -349,32 +369,40 @@ function onMarkerTap(e: any) {
   }
 }
 
+function onCalloutTap(e: any) {
+  onMarkerTap(e);
+}
+
 // ============ 聚合抽屉 ============
 function openClusterSheet(cluster: LocationCluster) {
+  lastModalOpenTime = Date.now();
   activeCluster.value = cluster;
   clusterVisible.value = true;
 }
 
-function closeClusterSheet() {
+function closeClusterSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   clusterVisible.value = false;
   activeCluster.value = null;
 }
 
 function jumpToMomentsFromCluster() {
-  closeClusterSheet();
+  closeClusterSheet(true);
   activeTab.value = "moments";
   uni.showToast({ title: `已跳转朋友圈，浏览共 ${visibleStatuses.value.length} 条动态`, icon: "none" });
 }
 
 // ============ 详情抽屉 ============
 function openDetailSheet(item: StatusItem) {
+  lastModalOpenTime = Date.now();
   activeStatus.value = item;
   detailVisible.value = true;
   newCommentText.value = "";
   pickedCommentImage.value = "";
 }
 
-function closeDetailSheet() {
+function closeDetailSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   detailVisible.value = false;
   activeStatus.value = null;
   pickedCommentImage.value = "";
@@ -424,11 +452,13 @@ function handleSendComment() {
 
 // ============ 我的资料 ============
 function openMyProfileSheet() {
+  lastModalOpenTime = Date.now();
   editingProfile.value = { ...myProfile.value };
   myProfileVisible.value = true;
 }
 
-function closeMyProfileSheet() {
+function closeMyProfileSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   myProfileVisible.value = false;
 }
 
@@ -454,7 +484,7 @@ function saveMyProfile() {
   }
   saveUserProfile(editingProfile.value);
   myProfile.value = { ...editingProfile.value };
-  closeMyProfileSheet();
+  closeMyProfileSheet(true);
   uni.showToast({ title: "资料保存成功！", icon: "success" });
 }
 
@@ -481,12 +511,14 @@ function viewCommenterProfile(cmt: CommentItem) {
 }
 
 function openUserProfileCard(profile: UserProfile, distance?: number) {
+  lastModalOpenTime = Date.now();
   viewingProfile.value = profile;
   viewingDistance.value = distance;
   userCardVisible.value = true;
 }
 
-function closeUserCard() {
+function closeUserCard(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   userCardVisible.value = false;
   viewingProfile.value = null;
 }
@@ -505,11 +537,13 @@ function toggleLikeStatus(item: StatusItem) {
 
 // ============ 好友 ============
 function openFriendsSheet() {
+  lastModalOpenTime = Date.now();
   friendsList.value = getFriendsList();
   friendsSheetVisible.value = true;
 }
 
-function closeFriendsSheet() {
+function closeFriendsSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   friendsSheetVisible.value = false;
 }
 
@@ -546,7 +580,7 @@ function startChatFromCard(target: UserProfile | null) {
   if (!target) return;
   const f = friendsList.value.find((item) => item.userId === target.id);
   if (f) {
-    closeUserCard();
+    closeUserCard(true);
     openChatSheet(f);
   }
 }
@@ -556,20 +590,22 @@ function acceptFriendFromCard(userId?: string) {
   handleAcceptFriend(userId);
   const f = friendsList.value.find((item) => item.userId === userId);
   if (f) {
-    closeUserCard();
+    closeUserCard(true);
     openChatSheet(f);
   }
 }
 
 // ============ 私聊 ============
 function openChatSheet(friend: FriendItem) {
+  lastModalOpenTime = Date.now();
   currentChatFriend.value = friend;
   currentChatMessages.value = getChatMessages(friend.userId);
   chatSheetVisible.value = true;
   chatScrollTop.value = 999999;
 }
 
-function closeChatSheet() {
+function closeChatSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   chatSheetVisible.value = false;
   currentChatFriend.value = null;
 }
@@ -596,12 +632,14 @@ function sendCurrentChatMessage() {
 
 // ============ 发布 ============
 function openPublishSheet() {
+  lastModalOpenTime = Date.now();
   publishVisible.value = true;
   newPostContent.value = "";
   pickedImages.value = [];
 }
 
-function closePublishSheet() {
+function closePublishSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   publishVisible.value = false;
 }
 
@@ -673,6 +711,7 @@ function formatTime(timestamp: number) {
 
 // ============ HELP 求助操作 ============
 function openHelpSheet(emergency = false) {
+  lastModalOpenTime = Date.now();
   isEmergencyHelp.value = emergency;
   newHelpContent.value = "";
   helpContactPhone.value = myProfile.value.phone || "";
@@ -680,7 +719,8 @@ function openHelpSheet(emergency = false) {
   helpSheetVisible.value = true;
 }
 
-function closeHelpSheet() {
+function closeHelpSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
   helpSheetVisible.value = false;
 }
 
@@ -731,7 +771,7 @@ async function submitHelpPost() {
       helpContactPhone: helpContactPhone.value.trim() || myProfile.value.phone || "",
     });
     allStatuses.value = readLocalData();
-    closeHelpSheet();
+    closeHelpSheet(true);
     uni.showToast({
       title: isEmergencyHelp.value ? "🚨 救命呼救已发出！全网标红播报" : "🆘 求助已发布！",
       icon: "none",
@@ -792,7 +832,7 @@ export function useAppState() {
     // 状态
     allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses,
     // 地图
-    mapCircles, mapMarkers, onMarkerTap, onCalloutTap: onMarkerTap, onRegionChange: () => {},
+    mapCircles, mapMarkers, onMarkerTap, onCalloutTap, onRegionChange: () => {},
     recenterToUser, refreshNearbyStatuses, simulateUserMove,
     // 聚合
     clusterVisible, activeCluster, openClusterSheet, closeClusterSheet, jumpToMomentsFromCluster,

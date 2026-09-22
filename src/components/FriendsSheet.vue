@@ -1,12 +1,12 @@
 <template>
-  <view v-if="friendsSheetVisible" class="modal-mask" @tap="closeFriendsSheet">
+  <view v-if="friendsSheetVisible" class="modal-mask" @tap.self="closeFriendsSheet(false)">
     <view class="friends-sheet" @tap.stop>
-      <view class="sheet-handle-bar" @tap="closeFriendsSheet">
+      <view class="sheet-handle-bar" @tap="closeFriendsSheet(true)">
         <view class="sheet-handle" />
       </view>
       <view class="publish-header">
         <text class="publish-title">我的好友与私聊 ({{ friendsList.length }})</text>
-        <view class="close-btn" @tap="closeFriendsSheet">✕</view>
+        <view class="close-btn" @tap="closeFriendsSheet(true)">✕</view>
       </view>
       <view class="friends-tip-bar">
         <text>💡 双方绑定手机号后可通过好友，通过后可在此随时发起私聊</text>

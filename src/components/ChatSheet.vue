@@ -1,5 +1,5 @@
 <template>
-  <view v-if="chatSheetVisible" class="modal-mask" @tap="closeChatSheet">
+  <view v-if="chatSheetVisible" class="modal-mask" @tap.self="closeChatSheet(false)">
     <view class="chat-sheet" @tap.stop>
       <view class="chat-header">
         <view class="chat-user-info" @tap="openUserProfileCard(currentChatFriend, undefined)">
@@ -12,7 +12,7 @@
             <text class="chat-header-phone" v-if="currentChatFriend?.phone">📱 {{ currentChatFriend.phone }}</text>
           </view>
         </view>
-        <view class="close-btn" @tap="closeChatSheet">✕</view>
+        <view class="close-btn" @tap="closeChatSheet(true)">✕</view>
       </view>
       <scroll-view scroll-y class="chat-messages-box" :scroll-top="chatScrollTop">
         <view class="chat-security-tip">

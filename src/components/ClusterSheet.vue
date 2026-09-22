@@ -1,7 +1,7 @@
 <template>
-  <view v-if="clusterVisible" class="modal-mask" @tap="closeClusterSheet">
+  <view v-if="clusterVisible" class="modal-mask" @tap.self="closeClusterSheet(false)">
     <view class="cluster-sheet" @tap.stop>
-      <view class="sheet-handle-bar" @tap="closeClusterSheet">
+      <view class="sheet-handle-bar" @tap="closeClusterSheet(true)">
         <view class="sheet-handle" />
       </view>
       <view class="cluster-header">
@@ -9,7 +9,7 @@
           <text class="cluster-title">📍 同地点聚合：共 {{ activeCluster?.count }} 条动态</text>
           <text class="cluster-tag">展示首发人照片 · 多动态聚合</text>
         </view>
-        <view class="close-btn" @tap="closeClusterSheet">✕</view>
+        <view class="close-btn" @tap="closeClusterSheet(true)">✕</view>
       </view>
       <view v-if="activeCluster?.firstStatus.images && activeCluster.firstStatus.images.length > 0" class="cluster-cover-card">
         <image
@@ -38,7 +38,7 @@
           v-for="(st, sIdx) in activeCluster?.statuses"
           :key="st.id"
           class="cluster-item-card"
-          @tap="openDetailSheet(st); closeClusterSheet()"
+          @tap="closeClusterSheet(true); openDetailSheet(st)"
         >
           <view class="cluster-item-top">
             <view class="flex-row">

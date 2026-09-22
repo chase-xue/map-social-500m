@@ -1,5 +1,5 @@
 <template>
-  <view v-if="helpSheetVisible" class="modal-mask" @tap="closeHelpSheet">
+  <view v-if="helpSheetVisible" class="modal-mask" @tap.self="closeHelpSheet(false)">
     <view class="help-sheet" @tap.stop>
       <!-- 头部 -->
       <view class="help-header" :class="{ 'emergency-header': isEmergencyHelp }">
@@ -7,11 +7,11 @@
           <text class="header-icon">{{ isEmergencyHelp ? '🚨' : '🆘' }}</text>
           <text class="help-title">{{ isEmergencyHelp ? '救命紧急呼救 (EMERGENCY)' : '急事求助 (HELP)' }}</text>
         </view>
-        <view class="close-btn" @tap="closeHelpSheet">✕</view>
+        <view class="close-btn" @tap="closeHelpSheet(true)">✕</view>
       </view>
 
       <!-- 当前进行中的求助快捷直达卡片 (方便自己查看，无需去地图找) -->
-      <view v-if="myActiveHelp" class="my-ongoing-prompt-card" @tap="closeHelpSheet(); openDetailSheet(myActiveHelp)">
+      <view v-if="myActiveHelp" class="my-ongoing-prompt-card" @tap="closeHelpSheet(true); openDetailSheet(myActiveHelp)">
         <view class="prompt-icon-col">📢</view>
         <view class="prompt-text-col">
           <text class="prompt-title">您当前有一条正在进行中的求助：</text>

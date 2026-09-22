@@ -1,7 +1,7 @@
 <template>
-  <view v-if="userCardVisible" class="modal-mask" @tap="closeUserCard">
+  <view v-if="userCardVisible" class="modal-mask" @tap.self="closeUserCard(false)">
     <view class="user-card-modal" @tap.stop>
-      <view class="card-close" @tap="closeUserCard">✕</view>
+      <view class="card-close" @tap="closeUserCard(true)">✕</view>
       <view class="card-avatar-box">
         <image class="card-avatar" :src="viewingProfile?.avatar" mode="aspectFill" />
         <view class="card-gender-badge" :class="viewingProfile?.gender === '女' ? 'female' : 'male'">

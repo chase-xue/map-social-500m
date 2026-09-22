@@ -1,7 +1,7 @@
 <template>
-  <view v-if="detailVisible" class="modal-mask" @tap="closeDetailSheet">
+  <view v-if="detailVisible" class="modal-mask" @tap.self="closeDetailSheet(false)">
     <view class="detail-sheet" @tap.stop>
-      <view class="sheet-handle-bar" @tap="closeDetailSheet">
+      <view class="sheet-handle-bar" @tap="closeDetailSheet(true)">
         <view class="sheet-handle" />
       </view>
       <scroll-view scroll-y class="detail-scroll-content">
@@ -24,7 +24,7 @@
               <text class="meta-distance">📍 距离你 {{ activeStatus?.distance }} 米</text>
             </view>
           </view>
-          <view class="close-btn" @tap="closeDetailSheet">✕</view>
+          <view class="close-btn" @tap="closeDetailSheet(true)">✕</view>
         </view>
 
         <!-- 求助帖专属状态卡片 (解决2小时后自动消失) -->
