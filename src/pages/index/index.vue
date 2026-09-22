@@ -1,22 +1,25 @@
 <template>
-  <view class="container">
-    <!-- 顶部导航 -->
-    <TopNav />
+  <view class="app-layout">
+    <view class="container">
+      <!-- 顶部导航 -->
+      <TopNav />
 
-    <!-- 地图模式 -->
-    <MapView v-if="activeTab === 'map'" />
+      <!-- 地图模式 -->
+      <MapView v-if="activeTab === 'map'" />
 
-    <!-- 朋友圈模式 -->
-    <MomentsView v-if="activeTab === 'moments'" />
+      <!-- 朋友圈模式 -->
+      <MomentsView v-if="activeTab === 'moments'" />
 
-    <!-- 弹窗层 (z-index 分层管理) -->
-    <DetailSheet />
-    <PublishSheet />
-    <MyProfileSheet />
-    <FriendsSheet />
-    <ClusterSheet />
-    <ChatSheet />
-    <UserCardModal />
+      <!-- 弹窗层 (z-index 分层管理) -->
+      <DetailSheet />
+      <PublishSheet />
+      <MyProfileSheet />
+      <FriendsSheet />
+      <ClusterSheet />
+      <ChatSheet />
+      <UserCardModal />
+      <HelpSheet />
+    </view>
   </view>
 </template>
 
@@ -28,6 +31,7 @@ import MapView from "../../components/MapView.vue";
 import MomentsView from "../../components/MomentsView.vue";
 import DetailSheet from "../../components/DetailSheet.vue";
 import PublishSheet from "../../components/PublishSheet.vue";
+import HelpSheet from "../../components/HelpSheet.vue";
 import MyProfileSheet from "../../components/MyProfileSheet.vue";
 import FriendsSheet from "../../components/FriendsSheet.vue";
 import ChatSheet from "../../components/ChatSheet.vue";
@@ -42,11 +46,28 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.container {
+.app-layout {
   width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  overflow: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 480px;
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background-color: #eef2f6;
+  background-color: #f8fafc;
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.4);
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    box-shadow: none;
+  }
 }
 </style>

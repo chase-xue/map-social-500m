@@ -27,6 +27,22 @@
       </button>
     </view>
 
+    <!-- 全局活跃求助/救命广播置顶卡片 -->
+    <view
+      v-if="topEmergencyHelp"
+      class="moments-emergency-banner"
+      :class="{ 'life-saving-banner': topEmergencyHelp.isEmergency }"
+      @tap="openDetailSheet(topEmergencyHelp)"
+    >
+      <view class="banner-badge">
+        <text class="badge-icon">{{ topEmergencyHelp.isEmergency ? '🚨 救命呼救' : '🆘 急事求助' }}</text>
+      </view>
+      <text class="banner-text">{{ topEmergencyHelp.userName }}: {{ topEmergencyHelp.content }}</text>
+      <view class="banner-action">
+        <text>前往救援 ›</text>
+      </view>
+    </view>
+
     <view v-if="sortedMomentsStatuses.length === 0" class="moments-empty-card">
       <text class="empty-icon">🍃</text>
       <text class="empty-title">周边 500 米内暂无动态</text>
@@ -35,7 +51,7 @@
     </view>
 
     <view class="moments-feed-list">
-      <view v-for="item in sortedMomentsStatuses" :key="item.id" class="moment-card">
+      <view v-for="item in sortedMomentsStatuses" :key="item.id" class="moment-card" :class="{ 'moment-emergency-card': item.isHelp && item.isEmergency && !item.helpResolved }">
         <view class="moment-avatar-col" @tap="viewAuthorProfile(item)">
           <image class="moment-author-avatar" :src="item.userAvatar" mode="aspectFill" />
         </view>
@@ -43,6 +59,10 @@
           <view class="moment-author-header">
             <view class="author-name-row" @tap="viewAuthorProfile(item)">
               <text class="moment-author-name">{{ item.userName }}</text>
+              <!-- 求助帖高亮徽章 -->
+              <text v-if="item.isHelp" class="moment-help-badge" :class="{ 'is-emergency': item.isEmergency, 'is-resolved': item.helpResolved }">
+                {{ item.helpResolved ? '✅ 已解决' : item.isEmergency ? '🚨 救命呼救' : '🆘 急事求助' }}
+              </text>
               <text v-if="item.userId === myProfile.id" class="moment-my-tag">我发的</text>
               <text v-if="item.authorProfile?.gender" class="moment-gender-tag" :class="item.authorProfile.gender === '女' ? 'female' : 'male'">
                 {{ item.authorProfile.gender === '女' ? '♀' : '♂' }} {{ item.authorProfile.age }}岁
@@ -100,10 +120,109 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useAppState } from "../composables/useAppState";
 const {
-  statusBarHeight, myProfile, sortedMomentsStatuses,
+  statusBarHeight, myProfile, sortedMomentsStatuses, activeHelpStatuses,
   openMyProfileSheet, openPublishSheet, viewAuthorProfile, viewCommenterProfile,
   previewImage, toggleLikeStatus, openDetailSheet, formatTime,
 } = useAppState();
+
+const topEmergencyHelp = computed(() => {
+  if (!activeHelpStatuses.value.length) return null;
+  const emergency = activeHelpStatuses.value.find((s) => s.isEmergency);
+  return emergency || activeHelpStatuses.value[0];
+});
 </script>
+
+<style lang="scss" scoped>
+.moments-emergency-banner {
+  margin: 16rpx 24rpx;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2rpx solid #f59e0b;
+  border-radius: 20rpx;
+  padding: 14rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.2);
+  cursor: pointer;
+
+  &.life-saving-banner {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    border-color: #f87171;
+    box-shadow: 0 6rpx 24rpx rgba(220, 38, 38, 0.4);
+    animation: emergency-glow 1.5s infinite alternate ease-in-out;
+
+    .banner-badge {
+      background-color: #ffffff;
+      .badge-icon { color: #dc2626; font-weight: 800; }
+    }
+    .banner-text { color: #ffffff; font-weight: 700; }
+    .banner-action text { color: #fee2e2; font-weight: 700; }
+  }
+
+  .banner-badge {
+    padding: 4rpx 12rpx;
+    background-color: #f59e0b;
+    border-radius: 12rpx;
+    flex-shrink: 0;
+
+    .badge-icon { font-size: 20rpx; color: #ffffff; font-weight: 700; }
+  }
+
+  .banner-text {
+    flex: 1;
+    font-size: 22rpx;
+    color: #92400e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .banner-action {
+    flex-shrink: 0;
+    font-size: 20rpx;
+    color: #b45309;
+    font-weight: 700;
+  }
+}
+
+@keyframes emergency-glow {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.01); }
+}
+
+.moment-card.moment-emergency-card {
+  border: 2rpx solid #fca5a5;
+  background-color: #fffbfb;
+  box-shadow: 0 6rpx 20rpx rgba(239, 68, 68, 0.12);
+}
+
+.moment-help-badge {
+  font-size: 18rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 12rpx;
+  font-weight: 700;
+  margin-left: 8rpx;
+  background-color: #fef3c7;
+  color: #b45309;
+
+  &.is-emergency {
+    background-color: #fee2e2;
+    color: #dc2626;
+    font-size: 20rpx;
+    animation: badge-blink 1.5s infinite ease-in-out;
+  }
+
+  &.is-resolved {
+    background-color: #ecfdf5;
+    color: #059669;
+  }
+}
+
+@keyframes badge-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+</style>

@@ -26,6 +26,33 @@
           </view>
           <view class="close-btn" @tap="closeDetailSheet">✕</view>
         </view>
+
+        <!-- 求助帖专属状态卡片 -->
+        <view v-if="activeStatus?.isHelp" class="help-status-card" :class="{ 'is-emergency-card': activeStatus.isEmergency, 'is-resolved-card': activeStatus.helpResolved }">
+          <view class="help-status-top">
+            <view class="status-indicator">
+              <text class="status-badge-icon">{{ activeStatus.helpResolved ? '✅' : activeStatus.isEmergency ? '🚨' : '🆘' }}</text>
+              <text class="status-badge-text">
+                {{ activeStatus.helpResolved ? '求助已圆满解决 (发起人已关闭)' : activeStatus.isEmergency ? '救命紧急呼救进行中！' : '邻里急事求助中' }}
+              </text>
+            </view>
+            <!-- 仅发起人可见的解决关闭按钮 -->
+            <button
+              v-if="activeStatus.userId === myProfile.id && !activeStatus.helpResolved"
+              class="close-help-btn"
+              @tap="handleCloseHelp(activeStatus.id)"
+              hover-class="btn-hover"
+            >
+              ✅ 问题已解决，关闭求助
+            </button>
+          </view>
+          <view v-if="activeStatus.helpContactPhone" class="help-phone-line" @tap="makePhoneCall(activeStatus.helpContactPhone)">
+            <text class="phone-label">📞 紧急联系电话：</text>
+            <text class="phone-num">{{ activeStatus.helpContactPhone }}</text>
+            <text class="phone-dial-tag">立即拨打 ›</text>
+          </view>
+        </view>
+
         <view class="status-content">
           <text class="status-text">{{ activeStatus?.content }}</text>
         </view>
@@ -35,12 +62,9 @@
         <view class="comments-section">
           <view class="comments-header">
             <text class="comments-title">留言互动 ({{ activeStatus?.comments?.length || 0 }})</text>
-            <view class="mock-comment-btn" @tap="triggerMockStrangerComment">
-              <text>🤖 模拟路人评价</text>
-            </view>
           </view>
           <view v-if="!activeStatus?.comments || activeStatus.comments.length === 0" class="empty-comments">
-            <text>暂无留言，可在下方输入评价或点击"模拟路人评价"测试互动~</text>
+            <text>暂无留言，在下方写下第一条真实评价吧~</text>
           </view>
           <view v-else class="comments-list">
             <view v-for="cmt in activeStatus.comments" :key="cmt.id" class="comment-card" :class="{ 'my-comment-card': cmt.userId === myProfile.id }">
@@ -50,6 +74,7 @@
               <view class="comment-body">
                 <view class="comment-top">
                   <text class="comment-user">{{ cmt.userName }}</text>
+                  <text v-if="cmt.userId === myProfile.id" class="my-comment-tag">我</text>
                   <text class="comment-time">{{ formatTime(cmt.createdAt) }}</text>
                 </view>
                 <text class="comment-text">{{ cmt.content }}</text>
@@ -67,22 +92,16 @@
           <image class="comment-preview-img" :src="pickedCommentImage" mode="aspectFill" @tap="previewImage(pickedCommentImage, [pickedCommentImage])" />
           <view class="comment-img-del" @tap="removeCommentImage">✕</view>
         </view>
-        <text class="comment-img-tip">已添加评论配图 (点击可查看大图 / ✕ 删除)</text>
+        <text class="comment-img-tip">已添加评论配图 (点击查看大图 / ✕ 删除)</text>
       </view>
       <view class="comment-input-bar">
-        <picker :range="commentRoleOptions" :value="selectedRoleIndex" @change="onRoleChange" class="role-picker">
-          <view class="role-badge">
-            <text>{{ commentRoleOptions[selectedRoleIndex] }}</text>
-            <text class="arrow-down">▾</text>
-          </view>
-        </picker>
-        <input class="comment-input" v-model="newCommentText" placeholder="写下留言评价..." placeholder-class="input-placeholder" confirm-type="send" @confirm="handleSendComment" />
+        <view class="current-user-avatar-tag" title="当前发表身份">
+          <image class="comment-my-avatar" :src="myProfile.avatar" mode="aspectFill" />
+        </view>
+        <input class="comment-input" v-model="newCommentText" placeholder="写下你的真实评价..." placeholder-class="input-placeholder" confirm-type="send" @confirm="handleSendComment" />
         <view class="comment-media-btns">
           <view class="comment-cam-btn" @tap="chooseCommentImage" title="从相册上传照片">
             <text>📷</text>
-          </view>
-          <view v-if="!pickedCommentImage" class="comment-preset-btn" @tap="usePresetCommentImage" title="示例配图">
-            <text>🌄</text>
           </view>
         </view>
         <button class="comment-send-btn" :disabled="!newCommentText.trim() && !pickedCommentImage" @tap="handleSendComment" hover-class="btn-hover">
@@ -97,9 +116,78 @@
 import { useAppState } from "../composables/useAppState";
 const {
   detailVisible, activeStatus, myProfile,
-  pickedCommentImage, commentRoleOptions, selectedRoleIndex,
+  pickedCommentImage,
   closeDetailSheet, viewAuthorProfile, viewCommenterProfile, previewImage,
-  formatTime, triggerMockStrangerComment, removeCommentImage,
-  onRoleChange, chooseCommentImage, usePresetCommentImage, handleSendComment,
+  formatTime, removeCommentImage,
+  chooseCommentImage, handleSendComment, handleCloseHelp, makePhoneCall,
 } = useAppState();
 </script>
+
+<style lang="scss" scoped>
+.help-status-card {
+  margin: 16rpx 0;
+  padding: 18rpx 20rpx;
+  border-radius: 20rpx;
+  background-color: #fffbeb;
+  border: 2rpx solid #f59e0b;
+
+  &.is-emergency-card {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-color: #ef4444;
+    box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.2);
+
+    .status-badge-text { color: #b91c1c; font-weight: 800; }
+  }
+
+  &.is-resolved-card {
+    background-color: #ecfdf5;
+    border-color: #10b981;
+
+    .status-badge-text { color: #047857; }
+  }
+
+  .help-status-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
+
+      .status-badge-icon { font-size: 28rpx; }
+      .status-badge-text { font-size: 24rpx; font-weight: 700; color: #b45309; }
+    }
+
+    .close-help-btn {
+      margin: 0;
+      padding: 0 20rpx;
+      height: 56rpx;
+      line-height: 56rpx;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      font-size: 20rpx;
+      font-weight: 700;
+      border-radius: 28rpx;
+      box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.35);
+      flex-shrink: 0;
+    }
+  }
+
+  .help-phone-line {
+    margin-top: 14rpx;
+    padding-top: 12rpx;
+    border-top: 1rpx dashed rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+
+    .phone-label { font-size: 22rpx; color: #475569; font-weight: 600; }
+    .phone-num { font-size: 24rpx; color: #2563eb; font-weight: 700; }
+    .phone-dial-tag { font-size: 20rpx; color: #2563eb; font-weight: 600; }
+  }
+}
+</style>

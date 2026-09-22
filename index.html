@@ -8,9 +8,13 @@
     </script>
     <title>500米地图生活圈</title>
     <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        document.documentElement.style.fontSize = document.documentElement.clientWidth / 10 + 'px'
-      })
+      function setResponsiveFontSize() {
+        var clientWidth = document.documentElement.clientWidth || window.innerWidth || 375
+        var responsiveWidth = Math.min(clientWidth, 480)
+        document.documentElement.style.fontSize = (responsiveWidth / 10) + 'px'
+      }
+      document.addEventListener('DOMContentLoaded', setResponsiveFontSize)
+      window.addEventListener('resize', setResponsiveFontSize)
     </script>
     <!-- 高德地图 JS API 2.0 SDK -->
     <script type="text/javascript">

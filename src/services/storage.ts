@@ -529,3 +529,17 @@ export function toggleStatusLike(statusId: string, userName: string): boolean {
   return isLiked;
 }
 
+/**
+ * 由发起人关闭求助 (问题已解决)
+ */
+export function resolveHelpStatus(statusId: string, currentUserId: string): boolean {
+  const all = readLocalData();
+  const target = all.find((item) => item.id === statusId);
+  if (!target) return false;
+  if (target.userId !== currentUserId) {
+    return false;
+  }
+  target.helpResolved = true;
+  writeLocalData(all);
+  return true;
+}

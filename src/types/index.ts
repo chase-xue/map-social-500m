@@ -74,6 +74,10 @@ export interface StatusItem {
   comments: CommentItem[];
   authorProfile?: UserProfile;
   likes?: string[]; // 点赞用户昵称列表，用于朋友圈互动展示
+  isHelp?: boolean;                  // 是否为求助帖 (普通help或救命help)
+  isEmergency?: boolean;             // 是否为救命HELP (标红标大)
+  helpResolved?: boolean;            // 问题是否已解决 (由发起人关闭)
+  helpContactPhone?: string;         // 紧急求助联系电话
 }
 
 export interface MapMarker {

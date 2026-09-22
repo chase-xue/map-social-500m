@@ -32,6 +32,7 @@ import {
   getChatMessages,
   sendChatMessage,
   toggleStatusLike,
+  resolveHelpStatus,
 } from "../services/storage";
 
 // ============ Z-Index 分层常量 ============
@@ -92,15 +93,27 @@ const activeStatus = ref<StatusItem | null>(null);
 const newCommentText = ref("");
 const pickedCommentImage = ref("");
 
-// 评论角色
-const commentRoleOptions = ["👤 我自己", "🙋 附近路人 (小林)", "☕ 咖啡店老板", "🏃 晨跑团友"];
-const selectedRoleIndex = ref(0);
-
 // ============ 发布抽屉 ============
 const publishVisible = ref(false);
 const newPostContent = ref("");
 const pickedImages = ref<string[]>([]);
 const isPublishing = ref(false);
+
+// ============ HELP 求助 ============
+const helpSheetVisible = ref(false);
+const isEmergencyHelp = ref(false); // false: 普通急事help, true: 救命help (标红标大)
+const newHelpContent = ref("");
+const helpContactPhone = ref("");
+const pickedHelpImages = ref<string[]>([]);
+const isHelpSubmitting = ref(false);
+
+// 全局活跃求助
+const activeHelpStatuses = computed(() =>
+  visibleStatuses.value.filter((s) => s.isHelp && !s.helpResolved)
+);
+const hasActiveEmergency = computed(() =>
+  activeHelpStatuses.value.some((s) => s.isEmergency)
+);
 
 // ============ 好友与私聊 ============
 const friendsSheetVisible = ref(false);
@@ -114,17 +127,35 @@ const newChatMessageText = ref("");
 const chatSheetVisible = ref(false);
 const chatScrollTop = ref(0);
 
-// ============ 500m 覆盖圈 ============
-const mapCircles = computed<MapCircle[]>(() => [
-  {
-    latitude: userLocation.value.latitude,
-    longitude: userLocation.value.longitude,
-    radius: 500,
-    color: "#6366F1AA",
-    fillColor: "#6366F120",
-    strokeWidth: 2,
-  },
-]);
+// ============ 500m 覆盖圈与紧急警报圈 ============
+const mapCircles = computed<MapCircle[]>(() => {
+  const circles: MapCircle[] = [
+    {
+      latitude: userLocation.value.latitude,
+      longitude: userLocation.value.longitude,
+      radius: 500,
+      color: "#6366F1",
+      fillColor: "#6366F115",
+      strokeWidth: 2,
+    },
+  ];
+
+  // 为每个未解决的救命求助点添加红色紧急光圈
+  activeHelpStatuses.value.forEach((h) => {
+    if (h.isEmergency) {
+      circles.push({
+        latitude: h.latitude,
+        longitude: h.longitude,
+        radius: 90,
+        color: "#EF4444",
+        fillColor: "#EF444430",
+        strokeWidth: 3,
+      });
+    }
+  });
+
+  return circles;
+});
 
 // ============ 地图 Markers ============
 const mapMarkers = computed<MapMarker[]>(() => {
@@ -155,16 +186,49 @@ const mapMarkers = computed<MapMarker[]>(() => {
     const firstItem = cluster.firstStatus;
     const isCluster = cluster.count > 1;
     const isMyStatus = firstItem.userId === myProfile.value.id;
+    const isUnresolvedHelp = firstItem.isHelp && !firstItem.helpResolved;
+    const isEmergency = isUnresolvedHelp && firstItem.isEmergency;
+    const isNormalHelp = isUnresolvedHelp && !firstItem.isEmergency;
+    const isResolvedHelp = firstItem.isHelp && firstItem.helpResolved;
+
     const hasImg = firstItem.images?.length ? " 📷" : "";
-    const brief = firstItem.content.length > 10
-      ? firstItem.content.slice(0, 10) + "..."
+    const brief = firstItem.content.length > 12
+      ? firstItem.content.slice(0, 12) + "..."
       : firstItem.content;
 
     let calloutContent = "";
-    if (isCluster) {
+    let calloutBg = "#FFFFFFEE";
+    let calloutColor = "#1E293B";
+    let calloutFontSize = 11;
+    let markerWidth = isCluster ? 36 : isMyStatus ? 32 : 28;
+
+    if (isEmergency) {
+      // 救命 HELP：标红标大
+      markerWidth = 48;
+      calloutBg = "#EF4444";
+      calloutColor = "#FFFFFF";
+      calloutFontSize = 13;
+      calloutContent = `🚨 救命HELP (${firstItem.distance}m) 🚨\n${firstItem.userName}: ${brief}\n[紧急呼救·点击施救]`;
+    } else if (isNormalHelp) {
+      // 普通 HELP：橙色醒目标记
+      markerWidth = 38;
+      calloutBg = "#F59E0B";
+      calloutColor = "#FFFFFF";
+      calloutFontSize = 12;
+      calloutContent = `🆘 急事求助 (${firstItem.distance}m)\n${firstItem.userName}: ${brief}\n[点击查看求助]`;
+    } else if (isResolvedHelp) {
+      // 已解决求助
+      calloutContent = `✅ [求助已解决] ${firstItem.userName} (${firstItem.distance}m)\n${brief}`;
+      calloutColor = "#059669";
+      calloutBg = "#ECFDF5EE";
+    } else if (isCluster) {
+      calloutBg = "#EEF2FFEE";
+      calloutColor = "#4338CA";
       calloutContent = `🔥 [首图] ${firstItem.userName}等 · 共${cluster.count}条状态\n📍 ${brief} (点击查看)`;
     } else {
       const cmtCount = firstItem.comments?.length ? ` [💬${firstItem.comments.length}]` : "";
+      calloutBg = isMyStatus ? "#FFFBEBEE" : "#FFFFFFEE";
+      calloutColor = isMyStatus ? "#9A3412" : "#1E293B";
       calloutContent = isMyStatus
         ? `⭐我发的 (${firstItem.distance}m)${hasImg}${cmtCount}\n${brief}`
         : `${firstItem.userName} (${firstItem.distance}m)${hasImg}${cmtCount}\n${brief}`;
@@ -175,15 +239,15 @@ const mapMarkers = computed<MapMarker[]>(() => {
       latitude: cluster.latitude,
       longitude: cluster.longitude,
       iconPath: "/static/icons/pin.png",
-      width: isCluster ? 36 : isMyStatus ? 32 : 28,
-      height: isCluster ? 36 : isMyStatus ? 32 : 28,
+      width: markerWidth,
+      height: markerWidth,
       callout: {
         content: calloutContent,
-        color: isCluster ? "#4338CA" : isMyStatus ? "#9A3412" : "#1E293B",
-        fontSize: 11,
-        borderRadius: 10,
-        bgColor: isCluster ? "#EEF2FFEE" : isMyStatus ? "#FFFBEBEE" : "#FFFFFFEE",
-        padding: 6,
+        color: calloutColor,
+        fontSize: calloutFontSize,
+        borderRadius: isEmergency ? 14 : 10,
+        bgColor: calloutBg,
+        padding: isEmergency ? 8 : 6,
         display: "ALWAYS",
         textAlign: "center",
       },
@@ -308,40 +372,21 @@ function chooseCommentImage() {
   });
 }
 
-function usePresetCommentImage() {
-  pickedCommentImage.value = "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80";
-  uni.showToast({ title: "已添加示例配图", icon: "none" });
-}
-
 function removeCommentImage() {
   pickedCommentImage.value = "";
-}
-
-function onRoleChange(e: any) {
-  selectedRoleIndex.value = e.detail.value;
 }
 
 function handleSendComment() {
   const content = newCommentText.value.trim();
   if ((!content && !pickedCommentImage.value) || !activeStatus.value) return;
 
-  const roleName = commentRoleOptions[selectedRoleIndex.value];
-  const isSelf = selectedRoleIndex.value === 0;
-
   const newComment = addCommentToStatus(activeStatus.value.id, {
-    userId: isSelf ? myProfile.value.id : "stranger_" + Date.now(),
-    userName: isSelf ? myProfile.value.name : roleName,
-    userAvatar: isSelf ? myProfile.value.avatar : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+    userId: myProfile.value.id,
+    userName: myProfile.value.name,
+    userAvatar: myProfile.value.avatar,
     content: content || "分享了配图",
     images: pickedCommentImage.value ? [pickedCommentImage.value] : [],
-    authorProfile: isSelf ? myProfile.value : {
-      id: "stranger_" + Date.now(),
-      name: roleName,
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
-      gender: "男",
-      age: 26,
-      bio: "附近500米热心邻友",
-    },
+    authorProfile: { ...myProfile.value },
   });
 
   if (newComment) {
@@ -349,30 +394,8 @@ function handleSendComment() {
     activeStatus.value = allStatuses.value.find((s) => s.id === activeStatus.value?.id) || null;
     newCommentText.value = "";
     pickedCommentImage.value = "";
-    uni.showToast({ title: "评价已发布！", icon: "success" });
+    uni.showToast({ title: "评论成功！", icon: "success" });
   }
-}
-
-function triggerMockStrangerComment() {
-  if (!activeStatus.value) return;
-  const mockQuotes = [
-    { text: "拍得真好看！我也在附近～", user: "附近邻友小晴", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80", gender: "女" as const, age: 23, bio: "热爱生活，发现身边的美好🌸" },
-    { text: "环境太赞了，改天去逛逛！", user: "骑行阿健", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80", gender: "男" as const, age: 27, bio: "周末常在附近河堤骑行🚲" },
-    { text: "阳光真好，分享得很及时！", user: "街角大叔", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80", gender: "男" as const, age: 38, bio: "散步摄影随拍📷" },
-  ];
-  const pick = mockQuotes[Math.floor(Math.random() * mockQuotes.length)];
-
-  addCommentToStatus(activeStatus.value.id, {
-    userId: "stranger_" + Date.now(),
-    userName: pick.user,
-    userAvatar: pick.avatar,
-    content: pick.text,
-    authorProfile: { id: "stranger_" + Date.now(), name: pick.user, avatar: pick.avatar, gender: pick.gender, age: pick.age, bio: pick.bio },
-  });
-
-  allStatuses.value = readLocalData();
-  activeStatus.value = allStatuses.value.find((s) => s.id === activeStatus.value?.id) || null;
-  uni.showToast({ title: "收到一条路人新评价！", icon: "success" });
 }
 
 // ============ 我的资料 ============
@@ -573,11 +596,6 @@ function chooseImages() {
   });
 }
 
-function usePresetImage() {
-  pickedImages.value = ["https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=80"];
-  uni.showToast({ title: "已添加示例美图", icon: "none" });
-}
-
 function removePickedImage(idx: number) {
   pickedImages.value.splice(idx, 1);
 }
@@ -629,6 +647,107 @@ function formatTime(timestamp: number) {
   return formatRelativeTime(timestamp);
 }
 
+// ============ HELP 求助操作 ============
+function openHelpSheet(emergency = false) {
+  isEmergencyHelp.value = emergency;
+  newHelpContent.value = "";
+  helpContactPhone.value = myProfile.value.phone || "";
+  pickedHelpImages.value = [];
+  helpSheetVisible.value = true;
+}
+
+function closeHelpSheet() {
+  helpSheetVisible.value = false;
+}
+
+function chooseHelpImages() {
+  const count = 3 - pickedHelpImages.value.length;
+  if (count <= 0) return;
+  uni.chooseImage({
+    count,
+    sizeType: ["compressed"],
+    sourceType: ["album", "camera"],
+    success: (res) => {
+      if (res.tempFilePaths?.length) {
+        pickedHelpImages.value = [...pickedHelpImages.value, ...res.tempFilePaths];
+      }
+    },
+  });
+}
+
+function removePickedHelpImage(idx: number) {
+  pickedHelpImages.value.splice(idx, 1);
+}
+
+async function submitHelpPost() {
+  const content = newHelpContent.value.trim();
+  if (!content) {
+    uni.showToast({ title: "请简要描述求助情况", icon: "none" });
+    return;
+  }
+  isHelpSubmitting.value = true;
+  try {
+    const savedPaths: string[] = [];
+    for (const p of pickedHelpImages.value) {
+      savedPaths.push(await saveLocalImageFile(p));
+    }
+    const offsetPos = createOffsetCoordinates(userLocation.value, 10, Math.random() * 360);
+    const created = addNewStatus({
+      userId: myProfile.value.id,
+      userName: myProfile.value.name,
+      userAvatar: myProfile.value.avatar,
+      latitude: offsetPos.latitude,
+      longitude: offsetPos.longitude,
+      content: (isEmergencyHelp.value ? "【🚨救命紧急呼救】" : "【🆘急事求助】") + content,
+      images: savedPaths,
+      authorProfile: { ...myProfile.value },
+      isHelp: true,
+      isEmergency: isEmergencyHelp.value,
+      helpResolved: false,
+      helpContactPhone: helpContactPhone.value.trim() || myProfile.value.phone || "",
+    });
+    allStatuses.value = readLocalData();
+    closeHelpSheet();
+    uni.showToast({
+      title: isEmergencyHelp.value ? "🚨 救命呼救已发出！全网标红播报" : "🆘 求助已发布！",
+      icon: "none",
+      duration: 2500,
+    });
+    setTimeout(() => {
+      const latest = visibleStatuses.value.find((s) => s.id === created.id);
+      if (latest) openDetailSheet(latest);
+    }, 400);
+  } catch (err) {
+    console.error("求助发布失败:", err);
+    uni.showToast({ title: "发布异常，请重试", icon: "none" });
+  } finally {
+    isHelpSubmitting.value = false;
+  }
+}
+
+function handleCloseHelp(statusId: string) {
+  uni.showModal({
+    title: "确认关闭求助？",
+    content: "确认此问题已得到解决？关闭后将解除全网求助标记与警报。",
+    confirmText: "确认解决",
+    confirmColor: "#10B981",
+    success: (res) => {
+      if (res.confirm) {
+        const ok = resolveHelpStatus(statusId, myProfile.value.id);
+        if (ok) {
+          allStatuses.value = readLocalData();
+          if (activeStatus.value && activeStatus.value.id === statusId) {
+            activeStatus.value = allStatuses.value.find((s) => s.id === statusId) || null;
+          }
+          uni.showToast({ title: "✅ 求助已关闭，祝一切安好！", icon: "success" });
+        } else {
+          uni.showToast({ title: "仅发起人有权关闭该求助", icon: "none" });
+        }
+      }
+    },
+  });
+}
+
 // ============ 导出 ============
 export function useAppState() {
   return {
@@ -656,12 +775,14 @@ export function useAppState() {
     // 详情
     detailVisible, activeStatus, newCommentText, pickedCommentImage,
     openDetailSheet, closeDetailSheet,
-    commentRoleOptions, selectedRoleIndex, onRoleChange,
-    chooseCommentImage, usePresetCommentImage, removeCommentImage,
-    handleSendComment, triggerMockStrangerComment,
+    chooseCommentImage, removeCommentImage, handleSendComment,
     // 发布
     publishVisible, newPostContent, pickedImages, isPublishing,
-    openPublishSheet, closePublishSheet, chooseImages, usePresetImage, removePickedImage, submitNewPost,
+    openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost,
+    // HELP 求助
+    helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,
+    activeHelpStatuses, hasActiveEmergency,
+    openHelpSheet, closeHelpSheet, chooseHelpImages, removePickedHelpImage, submitHelpPost, handleCloseHelp,
     // 好友
     friendsSheetVisible, friendsList, pendingFriendsCount,
     openFriendsSheet, closeFriendsSheet, isFriend, isFriendPending,
