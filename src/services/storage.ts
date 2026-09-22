@@ -540,6 +540,7 @@ export function resolveHelpStatus(statusId: string, currentUserId: string): bool
     return false;
   }
   target.helpResolved = true;
+  target.helpResolvedTime = Date.now();
   writeLocalData(all);
   return true;
 }

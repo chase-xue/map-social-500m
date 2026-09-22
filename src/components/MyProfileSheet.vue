@@ -49,6 +49,33 @@
         <input class="form-input" type="number" v-model="editingProfile.phone" placeholder="输入绑定手机号（如：13800138000）..." maxlength="11" />
         <text class="form-hint">{{ editingProfile.showPhone ? '附近500米邻友点击你的头像可直接看到手机号并联系你' : '已设为隐藏保密：对外隐藏手机号，仅自己可见' }}</text>
       </view>
+      <!-- 我的求助记录 (随时查看管理，无需在地图搜寻) -->
+      <view v-if="myHelpHistory && myHelpHistory.length > 0" class="my-help-records-section">
+        <view class="records-header">
+          <text class="records-title">🆘 我的求助记录 ({{ myHelpHistory.length }})</text>
+          <text class="records-sub">点击卡片直达详情与关闭求助</text>
+        </view>
+        <view class="records-list">
+          <view
+            v-for="item in myHelpHistory"
+            :key="item.id"
+            class="record-item"
+            :class="{ 'record-emergency': item.isEmergency && !item.helpResolved, 'record-resolved': item.helpResolved }"
+            @tap="closeMyProfileSheet(); openDetailSheet(item)"
+          >
+            <view class="record-top">
+              <text class="record-badge">{{ item.helpResolved ? '✅ 已关闭/解决' : item.isEmergency ? '🚨 救命呼救进行中' : '🆘 急事求助进行中' }}</text>
+              <text class="record-time">{{ formatTime(item.createdAt) }}</text>
+            </view>
+            <text class="record-content">{{ item.content }}</text>
+            <view class="record-foot">
+              <text class="record-comment-count">💬 {{ item.comments?.length || 0 }} 条响应</text>
+              <text class="record-action">{{ item.helpResolved ? '查看记录 ›' : '查看 / 关闭求助 ›' }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <button class="save-profile-btn" @tap="saveMyProfile">保存资料</button>
     </view>
   </view>
@@ -60,7 +87,8 @@ import { useAppState } from "../composables/useAppState";
 const genderOptions = ["男", "女", "保密"] as const;
 
 const {
-  myProfileVisible, editingProfile,
+  myProfileVisible, editingProfile, myHelpHistory,
   closeMyProfileSheet, chooseNewAvatar, saveMyProfile, onPhonePrivacyChange,
+  openDetailSheet, formatTime,
 } = useAppState();
 </script>

@@ -27,13 +27,17 @@
           <view class="close-btn" @tap="closeDetailSheet">✕</view>
         </view>
 
-        <!-- 求助帖专属状态卡片 -->
-        <view v-if="activeStatus?.isHelp" class="help-status-card" :class="{ 'is-emergency-card': activeStatus.isEmergency, 'is-resolved-card': activeStatus.helpResolved }">
+        <!-- 求助帖专属状态卡片 (解决2小时后自动消失) -->
+        <view
+          v-if="activeStatus?.isHelp && isHelpResolvedPromptVisible(activeStatus)"
+          class="help-status-card"
+          :class="{ 'is-emergency-card': activeStatus.isEmergency && !activeStatus.helpResolved, 'is-resolved-card': activeStatus.helpResolved }"
+        >
           <view class="help-status-top">
             <view class="status-indicator">
               <text class="status-badge-icon">{{ activeStatus.helpResolved ? '✅' : activeStatus.isEmergency ? '🚨' : '🆘' }}</text>
               <text class="status-badge-text">
-                {{ activeStatus.helpResolved ? '求助已圆满解决 (发起人已关闭)' : activeStatus.isEmergency ? '救命紧急呼救进行中！' : '邻里急事求助中' }}
+                {{ activeStatus.helpResolved ? '求助已圆满解决 · 发起人已关闭 (提示将于2小时后隐去)' : activeStatus.isEmergency ? '救命紧急呼救进行中！' : '邻里急事求助中' }}
               </text>
             </view>
             <!-- 仅发起人可见的解决关闭按钮 -->
@@ -46,7 +50,7 @@
               ✅ 问题已解决，关闭求助
             </button>
           </view>
-          <view v-if="activeStatus.helpContactPhone" class="help-phone-line" @tap="makePhoneCall(activeStatus.helpContactPhone)">
+          <view v-if="activeStatus.helpContactPhone && !activeStatus.helpResolved" class="help-phone-line" @tap="makePhoneCall(activeStatus.helpContactPhone)">
             <text class="phone-label">📞 紧急联系电话：</text>
             <text class="phone-num">{{ activeStatus.helpContactPhone }}</text>
             <text class="phone-dial-tag">立即拨打 ›</text>
@@ -119,7 +123,7 @@ const {
   pickedCommentImage,
   closeDetailSheet, viewAuthorProfile, viewCommenterProfile, previewImage,
   formatTime, removeCommentImage,
-  chooseCommentImage, handleSendComment, handleCloseHelp, makePhoneCall,
+  chooseCommentImage, handleSendComment, handleCloseHelp, makePhoneCall, isHelpResolvedPromptVisible,
 } = useAppState();
 </script>
 

@@ -19,6 +19,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    max-width: 1080px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
 
     .nav-left {
       display: flex;
@@ -378,14 +382,17 @@
 
 .bottom-action-bar {
   position: absolute;
-  left: 24rpx;
-  right: 24rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48rpx);
+  max-width: 520px;
   bottom: calc(24rpx + env(safe-area-inset-bottom, 0px));
   z-index: 40;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   padding: 16rpx 24rpx;
   border-radius: 32rpx;
+  box-sizing: border-box;
   box-shadow: 0 12rpx 36rpx rgba(15, 23, 42, 0.15);
   border: 1rpx solid #e2e8f0;
   display: flex;
@@ -430,6 +437,10 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
+
+  @media (min-width: 768px) {
+    justify-content: center;
+  }
 }
 
 /* --- 通用抽屉头部 --- */
@@ -474,10 +485,18 @@
 .profile-sheet,
 .friends-sheet,
 .chat-sheet,
-.cluster-sheet {
+.cluster-sheet,
+.help-sheet {
   width: 100%;
-  max-width: 480px;
+  max-width: 100%;
   box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    max-width: 540px;
+    border-radius: 32rpx !important;
+    margin: auto;
+    box-shadow: 0 24rpx 60rpx rgba(0, 0, 0, 0.25);
+  }
 }
 
 /* --- 详情抽屉 --- */
@@ -1078,6 +1097,83 @@
       font-size: 24rpx;
       color: #0f172a;
       line-height: 1.5;
+    }
+  }
+
+  .my-help-records-section {
+    margin: 20rpx 0;
+    padding: 16rpx 20rpx;
+    background-color: #f8fafc;
+    border: 1rpx solid #e2e8f0;
+    border-radius: 20rpx;
+
+    .records-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 12rpx;
+
+      .records-title { font-size: 24rpx; font-weight: 700; color: #1e293b; }
+      .records-sub { font-size: 18rpx; color: #64748b; }
+    }
+
+    .records-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12rpx;
+      max-height: 280rpx;
+      overflow-y: auto;
+
+      .record-item {
+        background-color: #ffffff;
+        border: 1rpx solid #e2e8f0;
+        border-radius: 16rpx;
+        padding: 14rpx 16rpx;
+        display: flex;
+        flex-direction: column;
+        gap: 6rpx;
+        cursor: pointer;
+        transition: all 0.15s;
+
+        &:active { background-color: #f1f5f9; }
+
+        &.record-emergency {
+          border-color: #fca5a5;
+          background-color: #fffbfb;
+        }
+
+        &.record-resolved {
+          border-color: #a7f3d0;
+          background-color: #f0fdf4;
+        }
+
+        .record-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          .record-badge { font-size: 20rpx; font-weight: 700; color: #b45309; }
+          .record-time { font-size: 18rpx; color: #94a3b8; }
+        }
+
+        .record-content {
+          font-size: 22rpx;
+          color: #334155;
+          line-height: 1.4;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .record-foot {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          .record-comment-count { font-size: 18rpx; color: #64748b; }
+          .record-action { font-size: 18rpx; color: #4f46e5; font-weight: 600; }
+        }
+      }
     }
   }
 

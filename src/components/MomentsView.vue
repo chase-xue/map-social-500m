@@ -4,7 +4,8 @@
     class="moments-scroll-view"
     :style="{ paddingTop: (statusBarHeight + 58) + 'px' }"
   >
-    <view class="moments-cover-section">
+    <view class="moments-inner-feed">
+      <view class="moments-cover-section">
       <image class="moments-cover-img" src="https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1000&auto=format&fit=crop&q=80" mode="aspectFill" />
       <view class="moments-cover-overlay" />
       <view class="moments-user-badge" @tap="openMyProfileSheet">
@@ -59,8 +60,8 @@
           <view class="moment-author-header">
             <view class="author-name-row" @tap="viewAuthorProfile(item)">
               <text class="moment-author-name">{{ item.userName }}</text>
-              <!-- 求助帖高亮徽章 -->
-              <text v-if="item.isHelp" class="moment-help-badge" :class="{ 'is-emergency': item.isEmergency, 'is-resolved': item.helpResolved }">
+              <!-- 求助帖高亮徽章 (解决2小时后自动隐去) -->
+              <text v-if="item.isHelp && isHelpResolvedPromptVisible(item)" class="moment-help-badge" :class="{ 'is-emergency': item.isEmergency && !item.helpResolved, 'is-resolved': item.helpResolved }">
                 {{ item.helpResolved ? '✅ 已解决' : item.isEmergency ? '🚨 救命呼救' : '🆘 急事求助' }}
               </text>
               <text v-if="item.userId === myProfile.id" class="moment-my-tag">我发的</text>
@@ -116,6 +117,7 @@
       </view>
     </view>
     <view class="moments-bottom-padding" />
+    </view>
   </scroll-view>
 </template>
 
@@ -125,7 +127,7 @@ import { useAppState } from "../composables/useAppState";
 const {
   statusBarHeight, myProfile, sortedMomentsStatuses, activeHelpStatuses,
   openMyProfileSheet, openPublishSheet, viewAuthorProfile, viewCommenterProfile,
-  previewImage, toggleLikeStatus, openDetailSheet, formatTime,
+  previewImage, toggleLikeStatus, openDetailSheet, formatTime, isHelpResolvedPromptVisible,
 } = useAppState();
 
 const topEmergencyHelp = computed(() => {

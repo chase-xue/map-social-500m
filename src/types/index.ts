@@ -77,6 +77,7 @@ export interface StatusItem {
   isHelp?: boolean;                  // 是否为求助帖 (普通help或救命help)
   isEmergency?: boolean;             // 是否为救命HELP (标红标大)
   helpResolved?: boolean;            // 问题是否已解决 (由发起人关闭)
+  helpResolvedTime?: number;         // 解决关闭时间戳 (用于2小时后提示自动消失)
   helpContactPhone?: string;         // 紧急求助联系电话
 }
 

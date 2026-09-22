@@ -115,6 +115,25 @@ const hasActiveEmergency = computed(() =>
   activeHelpStatuses.value.some((s) => s.isEmergency)
 );
 
+// 我发起的活跃求助 (用于顶部快捷气泡/胶囊，点击一键直达，无需在地图盲目寻找)
+const myActiveHelp = computed(() =>
+  allStatuses.value.find((s) => s.isHelp && !s.helpResolved && s.userId === myProfile.value.id) || null
+);
+
+// 我发起的求助历史记录
+const myHelpHistory = computed(() =>
+  allStatuses.value.filter((s) => s.isHelp && s.userId === myProfile.value.id)
+);
+
+// 判断“已解决”状态卡片是否在2小时显示窗口内 (关闭后满2小时自动消失)
+function isHelpResolvedPromptVisible(status?: StatusItem | null): boolean {
+  if (!status || !status.isHelp) return false;
+  if (!status.helpResolved) return true; // 未解决时正常显示
+  const resolvedAt = status.helpResolvedTime || status.createdAt;
+  const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+  return Date.now() - resolvedAt <= TWO_HOURS_MS;
+}
+
 // ============ 好友与私聊 ============
 const friendsSheetVisible = ref(false);
 const friendsList = ref<FriendItem[]>([]);
@@ -786,7 +805,7 @@ export function useAppState() {
     openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost,
     // HELP 求助
     helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,
-    activeHelpStatuses, hasActiveEmergency,
+    activeHelpStatuses, hasActiveEmergency, myActiveHelp, myHelpHistory, isHelpResolvedPromptVisible,
     openHelpSheet, closeHelpSheet, chooseHelpImages, removePickedHelpImage, submitHelpPost, handleCloseHelp,
     // 好友
     friendsSheetVisible, friendsList, pendingFriendsCount,

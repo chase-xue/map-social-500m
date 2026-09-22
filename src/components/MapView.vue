@@ -1,8 +1,24 @@
 <template>
   <view class="map-wrapper">
-    <!-- 全局活跃求助/救命广播横幅 -->
+    <!-- 1. 我发起的活跃求助：置顶专属直达卡片 (无需在地图搜寻，随时一键查看与关闭) -->
     <view
-      v-if="topEmergencyHelp"
+      v-if="myActiveHelp"
+      class="my-active-help-banner"
+      :class="{ 'life-saving-banner': myActiveHelp.isEmergency }"
+      @tap="openDetailSheet(myActiveHelp)"
+    >
+      <view class="banner-badge">
+        <text class="badge-icon">{{ myActiveHelp.isEmergency ? '🚨 我的救命呼救' : '🆘 我的急事求助' }}</text>
+      </view>
+      <text class="banner-text">【我发起的求助·进行中】{{ myActiveHelp.content }}</text>
+      <view class="banner-action">
+        <text>查看/关闭 ›</text>
+      </view>
+    </view>
+
+    <!-- 2. 全局活跃求助/救命广播横幅 -->
+    <view
+      v-else-if="topEmergencyHelp"
       class="global-emergency-banner"
       :class="{ 'life-saving-banner': topEmergencyHelp.isEmergency }"
       @tap="openDetailSheet(topEmergencyHelp)"
@@ -78,7 +94,7 @@ const {
   onMarkerTap, onCalloutTap, onRegionChange,
   recenterToUser, refreshNearbyStatuses, simulateUserMove,
   visibleStatuses, openPublishSheet, openDetailSheet, locationClusters,
-  activeHelpStatuses, hasActiveEmergency, openHelpSheet,
+  activeHelpStatuses, hasActiveEmergency, openHelpSheet, myActiveHelp,
 } = useAppState();
 
 const topEmergencyHelp = computed(() => {
@@ -89,11 +105,14 @@ const topEmergencyHelp = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-.global-emergency-banner {
+.global-emergency-banner,
+.my-active-help-banner {
   position: absolute;
   top: 130rpx;
-  left: 24rpx;
-  right: 24rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48rpx);
+  max-width: 680px;
   z-index: 45;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   border: 2rpx solid #f59e0b;
@@ -104,6 +123,19 @@ const topEmergencyHelp = computed(() => {
   gap: 12rpx;
   box-shadow: 0 8rpx 24rpx rgba(245, 158, 11, 0.25);
   cursor: pointer;
+
+  &.my-active-help-banner {
+    border: 2rpx solid #6366f1;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    box-shadow: 0 8rpx 24rpx rgba(99, 102, 241, 0.25);
+
+    .banner-badge {
+      background-color: #4f46e5;
+      .badge-icon { color: #ffffff; }
+    }
+    .banner-text { color: #1e40af; font-weight: 700; }
+    .banner-action text { color: #4338ca; font-weight: 700; }
+  }
 
   &.life-saving-banner {
     background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);

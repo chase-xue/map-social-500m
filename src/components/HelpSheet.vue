@@ -10,7 +10,17 @@
         <view class="close-btn" @tap="closeHelpSheet">✕</view>
       </view>
 
-      <!-- 求助级别切换 -->
+      <!-- 当前进行中的求助快捷直达卡片 (方便自己查看，无需去地图找) -->
+      <view v-if="myActiveHelp" class="my-ongoing-prompt-card" @tap="closeHelpSheet(); openDetailSheet(myActiveHelp)">
+        <view class="prompt-icon-col">📢</view>
+        <view class="prompt-text-col">
+          <text class="prompt-title">您当前有一条正在进行中的求助：</text>
+          <text class="prompt-desc">{{ myActiveHelp.content }}</text>
+        </view>
+        <view class="prompt-action-btn">查看/关闭 ›</view>
+      </view>
+
+      <!-- 双档求助等级选择 -->
       <view class="level-switch-row">
         <view
           class="level-tab normal-tab"
@@ -100,6 +110,7 @@ import { useAppState } from "../composables/useAppState";
 const {
   helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,
   closeHelpSheet, chooseHelpImages, removePickedHelpImage, submitHelpPost, previewImage,
+  myActiveHelp, openDetailSheet,
 } = useAppState();
 </script>
 
@@ -113,8 +124,49 @@ const {
   box-shadow: 0 -12rpx 40rpx rgba(0, 0, 0, 0.2);
   padding: 32rpx 32rpx env(safe-area-inset-bottom);
   width: 100%;
-  max-width: 480px;
   box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    max-width: 540px;
+    border-radius: 32rpx !important;
+    margin: auto;
+    box-shadow: 0 24rpx 60rpx rgba(0, 0, 0, 0.25);
+  }
+
+  .my-ongoing-prompt-card {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 2rpx solid #93c5fd;
+    border-radius: 20rpx;
+    padding: 18rpx 20rpx;
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-bottom: 24rpx;
+    cursor: pointer;
+
+    .prompt-icon-col { font-size: 32rpx; }
+    .prompt-text-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4rpx;
+      overflow: hidden;
+
+      .prompt-title { font-size: 22rpx; font-weight: 700; color: #1e40af; }
+      .prompt-desc { font-size: 20rpx; color: #3b82f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
+
+    .prompt-action-btn {
+      font-size: 20rpx;
+      font-weight: 700;
+      color: #ffffff;
+      background-color: #2563eb;
+      padding: 8rpx 16rpx;
+      border-radius: 20rpx;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+  }
 
   .help-header {
     display: flex;
