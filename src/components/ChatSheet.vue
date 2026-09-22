@@ -1,5 +1,5 @@
 <template>
-  <view v-if="chatSheetVisible" class="modal-mask" @tap.self="closeChatSheet(false)">
+  <view v-if="chatSheetVisible" class="modal-mask" @tap="closeChatSheet(false)">
     <view class="chat-sheet" @tap.stop>
       <view class="chat-header">
         <view class="chat-user-info" @tap="openUserProfileCard(currentChatFriend, undefined)">
@@ -15,23 +15,25 @@
         <view class="close-btn" @tap="closeChatSheet(true)">✕</view>
       </view>
       <scroll-view scroll-y class="chat-messages-box" :scroll-top="chatScrollTop">
-        <view class="chat-security-tip">
-          <text>🔒 你们已通过好友验证，支持点对点加密私聊</text>
-        </view>
-        <view
-          v-for="msg in currentChatMessages"
-          :key="msg.id"
-          class="chat-bubble-row"
-          :class="msg.senderId === myProfile.id ? 'row-self' : 'row-other'"
-        >
-          <image
-            class="msg-avatar"
-            :src="msg.senderId === myProfile.id ? myProfile.avatar : currentChatFriend?.avatar"
-            mode="aspectFill"
-          />
-          <view class="msg-bubble-content">
-            <text class="msg-text">{{ msg.content }}</text>
-            <text class="msg-timestamp">{{ formatTime(msg.createdAt) }}</text>
+        <view class="chat-scroll-inner">
+          <view class="chat-security-tip">
+            <text>🔒 你们已通过好友验证，支持点对点加密私聊</text>
+          </view>
+          <view
+            v-for="msg in currentChatMessages"
+            :key="msg.id"
+            class="chat-bubble-row"
+            :class="msg.senderId === myProfile.id ? 'row-self' : 'row-other'"
+          >
+            <image
+              class="msg-avatar"
+              :src="msg.senderId === myProfile.id ? myProfile.avatar : currentChatFriend?.avatar"
+              mode="aspectFill"
+            />
+            <view class="msg-bubble-content">
+              <text class="msg-text">{{ msg.content }}</text>
+              <text class="msg-timestamp">{{ formatTime(msg.createdAt) }}</text>
+            </view>
           </view>
         </view>
       </scroll-view>

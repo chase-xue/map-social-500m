@@ -1,5 +1,5 @@
 <template>
-  <view v-if="myProfileVisible" class="modal-mask" @tap.self="closeMyProfileSheet(false)">
+  <view v-if="myProfileVisible" class="modal-mask" @tap="closeMyProfileSheet(false)">
     <view class="profile-sheet" @tap.stop>
       <view class="publish-header">
         <text class="publish-title">我的个人资料</text>

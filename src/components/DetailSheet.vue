@@ -1,90 +1,94 @@
 <template>
-  <view v-if="detailVisible" class="modal-mask" @tap.self="closeDetailSheet(false)">
+  <view v-if="detailVisible" class="modal-mask" @tap="closeDetailSheet(false)">
     <view class="detail-sheet" @tap.stop>
-      <view class="sheet-handle-bar" @tap="closeDetailSheet(true)">
-        <view class="sheet-handle" />
+      <!-- 固定顶部栏：拖动把手 + 明显的右上角关闭按钮 -->
+      <view class="detail-header-bar">
+        <view class="sheet-handle" @tap="closeDetailSheet(true)" />
+        <view class="detail-close-btn" @tap="closeDetailSheet(true)" hover-class="btn-hover" title="关闭详情">✕</view>
       </view>
+
       <scroll-view scroll-y class="detail-scroll-content">
-        <view class="author-row">
-          <view class="avatar-clickable-wrapper" @tap="viewAuthorProfile(activeStatus)">
-            <image class="author-avatar" :src="activeStatus?.userAvatar" mode="aspectFill" />
-            <text class="click-avatar-hint">查资料</text>
-          </view>
-          <view class="author-meta" @tap="viewAuthorProfile(activeStatus)">
-            <view class="name-box">
-              <text class="author-name">{{ activeStatus?.userName }}</text>
-              <text v-if="activeStatus?.userId === myProfile.id" class="my-badge">我发的</text>
-              <text v-if="activeStatus?.authorProfile?.gender" class="gender-badge" :class="activeStatus.authorProfile.gender === '女' ? 'gender-female' : 'gender-male'">
-                {{ activeStatus.authorProfile.gender === '女' ? '♀' : '♂' }} {{ activeStatus.authorProfile.age }}岁
-              </text>
+        <view class="detail-scroll-inner">
+          <view class="author-row">
+            <view class="avatar-clickable-wrapper" @tap="viewAuthorProfile(activeStatus)">
+              <image class="author-avatar" :src="activeStatus?.userAvatar" mode="aspectFill" />
+              <text class="click-avatar-hint">查资料</text>
             </view>
-            <view class="meta-sub">
-              <text class="meta-time">{{ activeStatus?.createdAt ? formatTime(activeStatus.createdAt) : '' }}</text>
-              <text class="meta-dot">•</text>
-              <text class="meta-distance">📍 距离你 {{ activeStatus?.distance }} 米</text>
-            </view>
-          </view>
-          <view class="close-btn" @tap="closeDetailSheet(true)">✕</view>
-        </view>
-
-        <!-- 求助帖专属状态卡片 (解决2小时后自动消失) -->
-        <view
-          v-if="activeStatus?.isHelp && isHelpResolvedPromptVisible(activeStatus)"
-          class="help-status-card"
-          :class="{ 'is-emergency-card': activeStatus.isEmergency && !activeStatus.helpResolved, 'is-resolved-card': activeStatus.helpResolved }"
-        >
-          <view class="help-status-top">
-            <view class="status-indicator">
-              <text class="status-badge-icon">{{ activeStatus.helpResolved ? '✅' : activeStatus.isEmergency ? '🚨' : '🆘' }}</text>
-              <text class="status-badge-text">
-                {{ activeStatus.helpResolved ? '求助已圆满解决 · 发起人已关闭 (提示将于2小时后隐去)' : activeStatus.isEmergency ? '救命紧急呼救进行中！' : '邻里急事求助中' }}
-              </text>
-            </view>
-            <!-- 仅发起人可见的解决关闭按钮 -->
-            <button
-              v-if="activeStatus.userId === myProfile.id && !activeStatus.helpResolved"
-              class="close-help-btn"
-              @tap="handleCloseHelp(activeStatus.id)"
-              hover-class="btn-hover"
-            >
-              ✅ 问题已解决，关闭求助
-            </button>
-          </view>
-          <view v-if="activeStatus.helpContactPhone && !activeStatus.helpResolved" class="help-phone-line" @tap="makePhoneCall(activeStatus.helpContactPhone)">
-            <text class="phone-label">📞 紧急联系电话：</text>
-            <text class="phone-num">{{ activeStatus.helpContactPhone }}</text>
-            <text class="phone-dial-tag">立即拨打 ›</text>
-          </view>
-        </view>
-
-        <view class="status-content">
-          <text class="status-text">{{ activeStatus?.content }}</text>
-        </view>
-        <view v-if="activeStatus?.images && activeStatus.images.length > 0" class="image-gallery">
-          <image v-for="(img, idx) in activeStatus.images" :key="idx" class="gallery-image" :src="img" mode="aspectFill" @tap="previewImage(img, activeStatus.images)" />
-        </view>
-        <view class="comments-section">
-          <view class="comments-header">
-            <text class="comments-title">留言互动 ({{ activeStatus?.comments?.length || 0 }})</text>
-          </view>
-          <view v-if="!activeStatus?.comments || activeStatus.comments.length === 0" class="empty-comments">
-            <text>暂无留言，在下方写下第一条真实评价吧~</text>
-          </view>
-          <view v-else class="comments-list">
-            <view v-for="cmt in activeStatus.comments" :key="cmt.id" class="comment-card" :class="{ 'my-comment-card': cmt.userId === myProfile.id }">
-              <view @tap="viewCommenterProfile(cmt)">
-                <image class="comment-avatar" :src="cmt.userAvatar" mode="aspectFill" />
+            <view class="author-meta" @tap="viewAuthorProfile(activeStatus)">
+              <view class="name-box">
+                <text class="author-name">{{ activeStatus?.userName }}</text>
+                <text v-if="activeStatus?.userId === myProfile.id" class="my-badge">我发的</text>
+                <text v-if="activeStatus?.authorProfile?.gender" class="gender-badge" :class="activeStatus.authorProfile.gender === '女' ? 'gender-female' : 'gender-male'">
+                  {{ activeStatus.authorProfile.gender === '女' ? '♀' : '♂' }} {{ activeStatus.authorProfile.age }}岁
+                </text>
               </view>
-              <view class="comment-body">
-                <view class="comment-top">
-                  <text class="comment-user">{{ cmt.userName }}</text>
-                  <text v-if="cmt.userId === myProfile.id" class="my-comment-tag">我</text>
-                  <text class="comment-time">{{ formatTime(cmt.createdAt) }}</text>
+              <view class="meta-sub">
+                <text class="meta-time">{{ activeStatus?.createdAt ? formatTime(activeStatus.createdAt) : '' }}</text>
+                <text class="meta-dot">•</text>
+                <text class="meta-distance">📍 距离你 {{ activeStatus?.distance }} 米</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 求助帖专属状态卡片 (解决2小时后自动消失) -->
+          <view
+            v-if="activeStatus?.isHelp && isHelpResolvedPromptVisible(activeStatus)"
+            class="help-status-card"
+            :class="{ 'is-emergency-card': activeStatus.isEmergency && !activeStatus.helpResolved, 'is-resolved-card': activeStatus.helpResolved }"
+          >
+            <view class="help-status-top">
+              <view class="status-indicator">
+                <text class="status-badge-icon">{{ activeStatus.helpResolved ? '✅' : activeStatus.isEmergency ? '🚨' : '🆘' }}</text>
+                <text class="status-badge-text">
+                  {{ activeStatus.helpResolved ? '求助已圆满解决 · 发起人已关闭 (提示将于2小时后隐去)' : activeStatus.isEmergency ? '救命紧急呼救进行中！' : '邻里急事求助中' }}
+                </text>
+              </view>
+              <!-- 仅发起人可见的解决关闭按钮 -->
+              <button
+                v-if="activeStatus.userId === myProfile.id && !activeStatus.helpResolved"
+                class="close-help-btn"
+                @tap="handleCloseHelp(activeStatus.id)"
+                hover-class="btn-hover"
+              >
+                ✅ 问题已解决，关闭求助
+              </button>
+            </view>
+            <view v-if="activeStatus.helpContactPhone && !activeStatus.helpResolved" class="help-phone-line" @tap="makePhoneCall(activeStatus.helpContactPhone)">
+              <text class="phone-label">📞 紧急联系电话：</text>
+              <text class="phone-num">{{ activeStatus.helpContactPhone }}</text>
+              <text class="phone-dial-tag">立即拨打 ›</text>
+            </view>
+          </view>
+
+          <view class="status-content">
+            <text class="status-text">{{ activeStatus?.content }}</text>
+          </view>
+          <view v-if="activeStatus?.images && activeStatus.images.length > 0" class="image-gallery">
+            <image v-for="(img, idx) in activeStatus.images" :key="idx" class="gallery-image" :src="img" mode="aspectFill" @tap="previewImage(img, activeStatus.images)" />
+          </view>
+          <view class="comments-section">
+            <view class="comments-header">
+              <text class="comments-title">留言互动 ({{ activeStatus?.comments?.length || 0 }})</text>
+            </view>
+            <view v-if="!activeStatus?.comments || activeStatus.comments.length === 0" class="empty-comments">
+              <text>暂无留言，在下方写下第一条真实评价吧~</text>
+            </view>
+            <view v-else class="comments-list">
+              <view v-for="cmt in activeStatus.comments" :key="cmt.id" class="comment-card" :class="{ 'my-comment-card': cmt.userId === myProfile.id }">
+                <view @tap="viewCommenterProfile(cmt)">
+                  <image class="comment-avatar" :src="cmt.userAvatar" mode="aspectFill" />
                 </view>
-                <text class="comment-text">{{ cmt.content }}</text>
-                <view v-if="cmt.images && cmt.images.length > 0" class="comment-photo-row">
-                  <image v-for="(cImg, ci) in cmt.images" :key="ci" class="comment-attached-photo" :src="cImg" mode="aspectFill" @tap.stop="previewImage(cImg, cmt.images)" />
-                  <text class="photo-zoom-tag" @tap.stop="previewImage(cmt.images[0], cmt.images)">🔍 点击放大</text>
+                <view class="comment-body">
+                  <view class="comment-top">
+                    <text class="comment-user">{{ cmt.userName }}</text>
+                    <text v-if="cmt.userId === myProfile.id" class="my-comment-tag">我</text>
+                    <text class="comment-time">{{ formatTime(cmt.createdAt) }}</text>
+                  </view>
+                  <text class="comment-text">{{ cmt.content }}</text>
+                  <view v-if="cmt.images && cmt.images.length > 0" class="comment-photo-row">
+                    <image v-for="(cImg, ci) in cmt.images" :key="ci" class="comment-attached-photo" :src="cImg" mode="aspectFill" @tap.stop="previewImage(cImg, cmt.images)" />
+                    <text class="photo-zoom-tag" @tap.stop="previewImage(cmt.images[0], cmt.images)">🔍 点击放大</text>
+                  </view>
                 </view>
               </view>
             </view>

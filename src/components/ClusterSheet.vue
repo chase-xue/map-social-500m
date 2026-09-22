@@ -1,5 +1,5 @@
 <template>
-  <view v-if="clusterVisible" class="modal-mask" @tap.self="closeClusterSheet(false)">
+  <view v-if="clusterVisible" class="modal-mask" @tap="closeClusterSheet(false)">
     <view class="cluster-sheet" @tap.stop>
       <view class="sheet-handle-bar" @tap="closeClusterSheet(true)">
         <view class="sheet-handle" />
@@ -34,35 +34,37 @@
         <text class="jump-arrow-btn">立即前往 ›</text>
       </view>
       <scroll-view scroll-y class="cluster-scroll-list">
-        <view
-          v-for="(st, sIdx) in activeCluster?.statuses"
-          :key="st.id"
-          class="cluster-item-card"
-          @tap="closeClusterSheet(true); openDetailSheet(st)"
-        >
-          <view class="cluster-item-top">
-            <view class="flex-row">
-              <image class="cluster-item-avatar" :src="st.userAvatar" mode="aspectFill" />
-              <view>
-                <view class="flex-row">
-                  <text class="cluster-item-name">{{ st.userName }}</text>
-                  <text v-if="sIdx === 0" class="first-tag">首发者</text>
+        <view class="cluster-scroll-inner">
+          <view
+            v-for="(st, sIdx) in activeCluster?.statuses"
+            :key="st.id"
+            class="cluster-item-card"
+            @tap="closeClusterSheet(true); openDetailSheet(st)"
+          >
+            <view class="cluster-item-top">
+              <view class="flex-row">
+                <image class="cluster-item-avatar" :src="st.userAvatar" mode="aspectFill" />
+                <view>
+                  <view class="flex-row">
+                    <text class="cluster-item-name">{{ st.userName }}</text>
+                    <text v-if="sIdx === 0" class="first-tag">首发者</text>
+                  </view>
+                  <text class="cluster-item-time">{{ formatTime(st.createdAt) }} · 距你 {{ st.distance }}m</text>
                 </view>
-                <text class="cluster-item-time">{{ formatTime(st.createdAt) }} · 距你 {{ st.distance }}m</text>
               </view>
+              <text class="cluster-arrow">查看详情 ›</text>
             </view>
-            <text class="cluster-arrow">查看详情 ›</text>
-          </view>
-          <text class="cluster-item-content">{{ st.content }}</text>
-          <view v-if="st.images && st.images.length > 0" class="cluster-imgs-row">
-            <image
-              v-for="(cImg, cIdx) in st.images"
-              :key="cIdx"
-              class="cluster-thumb-img"
-              :src="cImg"
-              mode="aspectFill"
-              @tap.stop="previewImage(cImg, st.images)"
-            />
+            <text class="cluster-item-content">{{ st.content }}</text>
+            <view v-if="st.images && st.images.length > 0" class="cluster-imgs-row">
+              <image
+                v-for="(cImg, cIdx) in st.images"
+                :key="cIdx"
+                class="cluster-thumb-img"
+                :src="cImg"
+                mode="aspectFill"
+                @tap.stop="previewImage(cImg, st.images)"
+              />
+            </view>
           </view>
         </view>
       </scroll-view>

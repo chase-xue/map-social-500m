@@ -1,5 +1,5 @@
 <template>
-  <view v-if="helpSheetVisible" class="modal-mask" @tap.self="closeHelpSheet(false)">
+  <view v-if="helpSheetVisible" class="modal-mask" @tap="closeHelpSheet(false)">
     <view class="help-sheet" @tap.stop>
       <!-- 头部 -->
       <view class="help-header" :class="{ 'emergency-header': isEmergencyHelp }">
@@ -125,12 +125,14 @@ const {
   padding: 32rpx 32rpx env(safe-area-inset-bottom);
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 
   @media (min-width: 768px) {
     max-width: 540px;
     border-radius: 32rpx !important;
     margin: auto;
     box-shadow: 0 24rpx 60rpx rgba(0, 0, 0, 0.25);
+    overflow: hidden;
   }
 
   .my-ongoing-prompt-card {

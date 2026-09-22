@@ -686,12 +686,8 @@ async function submitNewPost() {
       authorProfile: { ...myProfile.value },
     });
     allStatuses.value = readLocalData();
-    closePublishSheet();
+    closePublishSheet(true);
     uni.showToast({ title: "发布成功！已在地图打点", icon: "success" });
-    setTimeout(() => {
-      const latest = visibleStatuses.value.find((s) => s.id === created.id);
-      if (latest) openDetailSheet(latest);
-    }, 400);
   } catch (err) {
     console.error("发布失败:", err);
     uni.showToast({ title: "保存异常，请重试", icon: "none" });
@@ -777,10 +773,6 @@ async function submitHelpPost() {
       icon: "none",
       duration: 2500,
     });
-    setTimeout(() => {
-      const latest = visibleStatuses.value.find((s) => s.id === created.id);
-      if (latest) openDetailSheet(latest);
-    }, 400);
   } catch (err) {
     console.error("求助发布失败:", err);
     uni.showToast({ title: "发布异常，请重试", icon: "none" });

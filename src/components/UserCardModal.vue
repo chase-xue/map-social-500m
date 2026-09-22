@@ -1,5 +1,5 @@
 <template>
-  <view v-if="userCardVisible" class="modal-mask" @tap.self="closeUserCard(false)">
+  <view v-if="userCardVisible" class="modal-mask" @tap="closeUserCard(false)">
     <view class="user-card-modal" @tap.stop>
       <view class="card-close" @tap="closeUserCard(true)">✕</view>
       <view class="card-avatar-box">
@@ -35,7 +35,7 @@
         <text>✨ 身处周边500米物理空间，相遇即是有缘</text>
       </view>
       <view class="card-action-row">
-        <button v-if="viewingProfile?.id === myProfile.id" class="card-action-btn btn-self" @tap="closeUserCard(); openMyProfileSheet()">
+        <button v-if="viewingProfile?.id === myProfile.id" class="card-action-btn btn-self" @tap="closeUserCard(true); openMyProfileSheet()">
           编辑我的资料
         </button>
         <button v-else-if="isFriend(viewingProfile?.id)" class="card-action-btn btn-chat" @tap="startChatFromCard(viewingProfile)">

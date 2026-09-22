@@ -1,5 +1,5 @@
 <template>
-  <view v-if="publishVisible" class="modal-mask" @tap.self="closePublishSheet(false)">
+  <view v-if="publishVisible" class="modal-mask" @tap="closePublishSheet(false)">
     <view class="publish-sheet" @tap.stop>
       <view class="publish-header">
         <text class="publish-title">在当前位置发布状态</text>
