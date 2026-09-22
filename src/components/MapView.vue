@@ -1,48 +1,5 @@
 <template>
   <view class="map-wrapper">
-    <!-- #ifdef H5 -->
-    <!-- H5 模式：地图占位视图（需要配置高德 Web JS API Key 才能显示真实地图） -->
-    <view class="map-h5-fallback">
-      <view class="map-h5-grid">
-        <view class="map-h5-road map-h5-road-h1" />
-        <view class="map-h5-road map-h5-road-h2" />
-        <view class="map-h5-road map-h5-road-v1" />
-        <view class="map-h5-road map-h5-road-v2" />
-        <view class="map-h5-block block-1" />
-        <view class="map-h5-block block-2" />
-        <view class="map-h5-block block-3" />
-        <view class="map-h5-block block-4" />
-        <view class="map-h5-block block-5" />
-        <view class="map-h5-block block-6" />
-      </view>
-      <!-- 500m 覆盖圈 -->
-      <view class="map-h5-circle" />
-      <!-- 用户位置标记 -->
-      <view class="map-h5-user-marker">
-        <view class="user-marker-dot" />
-        <view class="user-marker-pulse" />
-      </view>
-      <!-- 状态打点标记 -->
-      <view
-        v-for="(marker, idx) in statusMarkers"
-        :key="idx"
-        class="map-h5-status-marker"
-        :style="marker.style"
-        @tap="onMarkerTap({ detail: { markerId: marker.id } })"
-      >
-        <view class="status-pin">
-          <text class="pin-emoji">📍</text>
-        </view>
-        <view class="status-callout">
-          <text class="callout-text">{{ marker.label }}</text>
-        </view>
-      </view>
-      <view class="map-h5-watermark">
-        <text>H5 预览模式 · 小程序/App 中显示真实地图</text>
-      </view>
-    </view>
-    <!-- #endif -->
-    <!-- #ifndef H5 -->
     <map
       id="mainMap"
       class="map-view"
@@ -56,7 +13,6 @@
       @callouttap="onCalloutTap"
       @regionchange="onRegionChange"
     />
-    <!-- #endif -->
     <view class="right-controls">
       <view class="control-btn" @tap="recenterToUser" hover-class="btn-hover" title="我的位置">
         <text class="btn-icon">🎯</text>
