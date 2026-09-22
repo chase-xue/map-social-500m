@@ -17,9 +17,10 @@ onHide(() => {
 
 <style>
 /* 全局重置与基础样式 */
-page {
+html, body, #app, uni-app, uni-page, uni-page-wrapper, uni-page-body, page {
   width: 100%;
   height: 100%;
+  height: 100dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;

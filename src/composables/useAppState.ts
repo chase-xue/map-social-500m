@@ -47,7 +47,7 @@ export const Z_INDEX = {
 } as const;
 
 // ============ 系统状态 ============
-const statusBarHeight = ref(44);
+const statusBarHeight = ref(0);
 const mapScale = ref(16);
 
 // ============ 位置与地图 ============
@@ -268,9 +268,14 @@ function initApp() {
 function getSystemInfo() {
   try {
     const info = uni.getSystemInfoSync();
-    if (info.statusBarHeight) statusBarHeight.value = info.statusBarHeight;
+    // #ifdef H5
+    statusBarHeight.value = 0;
+    // #endif
+    // #ifndef H5
+    statusBarHeight.value = info.statusBarHeight || 0;
+    // #endif
   } catch (e) {
-    console.warn("获取系统信息失败", e);
+    statusBarHeight.value = 0;
   }
 }
 

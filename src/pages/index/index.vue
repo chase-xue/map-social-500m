@@ -47,8 +47,10 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .app-layout {
+  width: 100%;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -59,7 +61,8 @@ onMounted(() => {
 .container {
   width: 100%;
   max-width: 480px;
-  height: 100vh;
+  height: 100%;
+  height: 100dvh;
   position: relative;
   overflow: hidden;
   background-color: #f8fafc;

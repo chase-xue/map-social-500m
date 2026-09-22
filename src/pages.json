@@ -15,6 +15,9 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "500米地图生活圈",
     "navigationBarBackgroundColor": "#FFFFFF",
-    "backgroundColor": "#EEF2F6"
+    "backgroundColor": "#EEF2F6",
+    "rpxCalcMaxDeviceWidth": 480,
+    "rpxCalcBaseDeviceWidth": 375,
+    "maxWidth": 480
   }
 }
