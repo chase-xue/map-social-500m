@@ -1,0 +1,87 @@
+{
+  "name": "500米地图生活圈",
+  "appid": "__UNI__MAP_500M",
+  "description": "500米超近距离地图动态社交应用",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueStyleCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {
+      "Maps": {
+        "amap": {
+          "appkey_ios": "",
+          "appkey_android": ""
+        }
+      }
+    },
+    "distribute": {
+      "android": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+          "<uses-permission android:name=\"android.permission.CAMERA\"/>",
+          "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>",
+          "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
+        ]
+      },
+      "ios": {
+        "privacyDescription": {
+          "NSLocationWhenInUseUsageDescription": "需要获取您的位置以展示您周边500米范围内的动态",
+          "NSPhotoLibraryUsageDescription": "需要访问您的相册以发布带图片的状态",
+          "NSCameraUsageDescription": "需要访问您的相机以拍摄并发布即时状态"
+        }
+      }
+    }
+  },
+  "quickapp": {},
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于展示周边500米范围内的生活动态与状态打点"
+      }
+    },
+    "requiredPrivateInfos": [
+      "getLocation",
+      "chooseLocation"
+    ]
+  },
+  "mp-toutiao": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于展示周边500米范围内的生活动态与状态打点"
+      }
+    },
+    "requiredPrivateInfos": [
+      "getLocation"
+    ]
+  },
+  "h5": {
+    "title": "500米地图生活圈",
+    "router": {
+      "mode": "hash",
+      "base": "./"
+    }
+  }
+}

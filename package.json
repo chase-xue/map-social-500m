@@ -1,0 +1,32 @@
+{
+  "name": "map-social-500m",
+  "version": "1.0.0",
+  "description": "500米地图精准定位生活圈 - 兼容微信小程序、抖音小程序、手机App与H5",
+  "scripts": {
+    "dev:h5": "uni",
+    "build:h5": "uni build",
+    "dev:mp-weixin": "uni -p mp-weixin",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "dev:mp-toutiao": "uni -p mp-toutiao",
+    "build:mp-toutiao": "uni build -p mp-toutiao",
+    "dev:app": "uni -p app",
+    "build:app": "uni build -p app"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-5020620260917001",
+    "@dcloudio/uni-app-plus": "3.0.0-5020620260917001",
+    "@dcloudio/uni-components": "3.0.0-5020620260917001",
+    "@dcloudio/uni-h5": "3.0.0-5020620260917001",
+    "@dcloudio/uni-mp-toutiao": "3.0.0-5020620260917001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-5020620260917001",
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-cli-shared": "3.0.0-5020620260917001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-5020620260917001",
+    "sass": "^1.71.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4"
+  }
+}

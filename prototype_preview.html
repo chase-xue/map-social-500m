@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500米地图状态圈 - App/小程序交互预览</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.6); opacity: 0.9; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .pulse-animation {
+      animation: pulse-ring 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes new-pin-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); }
+    }
+    .new-pin-animation {
+      animation: new-pin-glow 2s infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    input, textarea, select {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: text !important;
+      pointer-events: auto !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 antialiased">
+
+  <!-- 顶部说明条 -->
+  <div class="max-w-4xl w-full mb-4 flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-800/80 backdrop-blur border border-slate-700 p-4 rounded-2xl shadow-xl">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+        <h1 class="text-lg font-bold text-white tracking-wide">500米地图社交 · 新增「我的」个人资料与名片</h1>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">支持自定义头像、性别、年龄、个性签名 · 点击任意头像即可查看对方基本资料卡</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="simulateMove()" class="text-xs font-medium px-3 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-lg transition shadow">
+        📍 模拟移动位置
+      </button>
+      <button onclick="toggleOutsideFilter()" id="filter-btn" class="text-xs font-medium px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition border border-slate-600">
+        👁️ 仅看500m内 (已开启)
+      </button>
+    </div>
+  </div>
+
+  <!-- 主交互区域：左侧手机模拟器，右侧设计与流程说明 -->
+  <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- 手机屏幕容器 (居中模拟) -->
+    <div class="lg:col-span-6 flex justify-center">
+      <div class="relative w-[375px] h-[730px] bg-slate-950 rounded-[44px] shadow-2xl border-[8px] border-slate-800 overflow-hidden flex flex-col ring-1 ring-white/10">
+        
+        <!-- 顶部灵动岛与状态栏 -->
+        <div class="h-10 bg-transparent absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-6 text-xs text-slate-800 font-semibold pointer-events-none">
+          <span>14:16</span>
+          <div class="w-20 h-4 bg-slate-900 rounded-full flex items-center justify-center">
+            <div class="w-2 h-2 rounded-full bg-emerald-500/80 mr-1"></div>
+          </div>
+          <div class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.32 19.58 10.61 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+            <span>5G</span>
+          </div>
+        </div>
+
+        <!-- 小程序/App 顶部导航条 (包含我的模块入口) -->
+        <div class="absolute top-10 left-0 right-0 z-30 px-3 py-2 flex items-center justify-between bg-white/90 backdrop-blur-md border-b border-slate-200/80 text-slate-900 shadow-sm">
+          <div class="flex items-center gap-1.5">
+            <div class="w-2.5 h-2.5 rounded-full bg-indigo-600"></div>
+            <span class="font-bold text-sm tracking-tight">周边500米</span>
+            <span class="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.2 rounded-full font-bold border border-indigo-200">圈</span>
+          </div>
+          
+          <!-- “我的资料” 入口胶囊 -->
+          <div onclick="openMyProfileSheet()" class="flex items-center gap-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 px-2 py-1 rounded-full cursor-pointer shadow-xs active:scale-95 transition">
+            <img id="nav-my-avatar" class="w-5 h-5 rounded-full object-cover border border-indigo-500" src="" alt="我的头像">
+            <span id="nav-my-name" class="text-xs font-bold text-slate-800 max-w-[60px] truncate">探索者小晨</span>
+            <span class="text-[10px] text-indigo-600 font-semibold">资料›</span>
+          </div>
+        </div>
+
+        <!-- 模拟地图图层主体 -->
+        <div id="map-viewport" class="relative flex-1 w-full bg-[#eef3f7] overflow-hidden cursor-grab active:cursor-grabbing">
+          <svg class="absolute inset-0 w-full h-full opacity-35" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#cbd5e1" stroke-width="0.8"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            <path d="M -20 200 Q 180 320 400 240" fill="none" stroke="#fed7aa" stroke-width="16" />
+            <path d="M 120 -20 L 220 750" fill="none" stroke="#e2e8f0" stroke-width="20" />
+            <path d="M -20 520 L 400 460" fill="none" stroke="#fed7aa" stroke-width="12" />
+            <path d="M 40 80 Q 90 60 130 110 T 100 190 T 20 150 Z" fill="#dcfce7" opacity="0.8" />
+            <path d="M 260 480 Q 320 450 350 510 T 300 580 T 240 540 Z" fill="#bae6fd" opacity="0.8" />
+          </svg>
+
+          <!-- 500米半透明地理范围圈 (围绕用户) -->
+          <div id="range-circle" class="absolute w-[300px] h-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none transition-all duration-700 ease-out flex items-center justify-center"
+               style="top: 360px; left: 187px; background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.22) 100%); border: 1.5px dashed rgba(99, 102, 241, 0.65);">
+            <div class="absolute bottom-2 text-[10px] font-bold text-indigo-700 bg-white/90 backdrop-blur px-2 py-0.5 rounded-full shadow-xs border border-indigo-200">
+              500m 可视视界
+            </div>
+          </div>
+
+          <!-- 用户本人的当前 GPS 定位锚点 (点击看自己资料) -->
+          <div id="user-marker" onclick="openAuthorCard(myProfile, 0)" class="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-out z-20 cursor-pointer" style="top: 360px; left: 187px;">
+            <div class="absolute inset-0 w-10 h-10 -top-2 -left-2 rounded-full bg-indigo-500/40 pulse-animation pointer-events-none"></div>
+            <div class="relative w-7 h-7 rounded-full bg-indigo-600 border-2 border-white shadow-lg flex items-center justify-center overflow-hidden">
+              <img id="center-user-avatar" class="w-full h-full object-cover" src="">
+            </div>
+            <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-indigo-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+              我在此 (点我看资料)
+            </div>
+          </div>
+
+          <!-- 动态状态标记点列表 (通过 JS 渲染) -->
+          <div id="markers-container" class="absolute inset-0 z-25"></div>
+        </div>
+
+        <!-- 快捷消息 Toast 提示条 -->
+        <div id="app-toast" class="absolute top-20 left-6 right-6 z-50 transform -translate-y-12 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900/90 text-white text-xs px-3 py-2 rounded-xl text-center shadow-xl border border-white/10 flex items-center justify-center gap-1.5 font-medium">
+          <span id="toast-text">提示信息</span>
+        </div>
+
+        <!-- 地图浮动工具栏 (右侧) -->
+        <div class="absolute right-4 bottom-24 z-30 flex flex-col gap-2">
+          <!-- 回到我的位置 -->
+          <button onclick="resetToUserLocation()" title="复位到我的位置" class="w-10 h-10 bg-white hover:bg-slate-50 text-slate-700 rounded-full shadow-lg border border-slate-200 flex items-center justify-center active:scale-90 transition">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+          </button>
+          <!-- 刷新附近状态 -->
+          <button onclick="refreshNearby()" title="刷新周边" class="w-10 h-10 bg-white hover:bg-slate-50 text-slate-700 rounded-full shadow-lg border border-slate-200 flex items-center justify-center active:scale-90 transition">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+
+        <!-- 底部主操作悬浮条 -->
+        <div class="absolute bottom-4 left-4 right-4 z-30 flex items-center justify-between bg-white/95 backdrop-blur-md p-2 pl-4 rounded-2xl shadow-xl border border-slate-200">
+          <div class="flex flex-col">
+            <span class="text-xs font-bold text-slate-800" id="nearby-count-text">附近 3 条动态</span>
+            <span class="text-[10px] text-slate-400">已按 500m 范围严格过滤</span>
+          </div>
+          <button onclick="openPublishModal()" class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl shadow-md font-medium text-xs active:scale-95 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>在此发状态</span>
+          </button>
+        </div>
+
+        <!-- 底部弹出抽屉 1: 查看状态详情与留言 (点击头像查看名片) -->
+        <div id="detail-sheet" class="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl border-t border-slate-200 transform translate-y-full transition-transform duration-300 ease-out flex flex-col max-h-[88%]">
+          <div class="w-full flex items-center justify-center pt-3 pb-1 cursor-pointer" onclick="closeDetailSheet()">
+            <div class="w-10 h-1 rounded-full bg-slate-300"></div>
+          </div>
+          
+          <div class="p-4 overflow-y-auto no-scrollbar space-y-3">
+            <div class="flex items-center justify-between">
+              <!-- 点击头像进入对方个人资料 -->
+              <div class="flex items-center gap-2 cursor-pointer group" onclick="clickActiveAuthorAvatar()">
+                <div class="relative">
+                  <img id="detail-avatar" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-500 shadow-xs group-hover:scale-105 transition" src="" alt="">
+                  <div class="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[8px] px-1 rounded-full">看资料</div>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <span id="detail-author">小鹿</span>
+                    <span id="detail-gender-tag" class="text-[9px] px-1 rounded font-bold"></span>
+                    <span id="detail-is-me-badge" class="hidden text-[9px] bg-orange-100 text-orange-600 font-medium px-1.5 py-0.2 rounded-full border border-orange-200">我发的</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                    <span id="detail-time">5分钟前</span>
+                    <span>•</span>
+                    <span id="detail-distance" class="text-indigo-600 font-medium">85米处</span>
+                    <span class="text-slate-300">| 点击头像看资料</span>
+                  </div>
+                </div>
+              </div>
+              <button onclick="closeDetailSheet()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 active:scale-90">✕</button>
+            </div>
+
+            <!-- 状态配图展示 -->
+            <div id="detail-image-box" class="w-full rounded-xl overflow-hidden shadow-sm max-h-52 bg-slate-100 border border-slate-100">
+              <img id="detail-image" class="w-full h-full object-cover cursor-pointer" src="" alt="状态图片" onclick="previewFullImg(this.src)">
+            </div>
+
+            <!-- 文字内容 -->
+            <p id="detail-text" class="text-xs leading-relaxed text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 select-text">
+              这里是状态文本内容...
+            </p>
+
+            <!-- 留言区域 -->
+            <div class="border-t border-slate-100 pt-3">
+              <div class="text-xs font-bold text-slate-800 mb-2 flex items-center justify-between">
+                <span class="flex items-center gap-1">
+                  <span>留言互动 (<span id="detail-comment-count" class="text-indigo-600">0</span>)</span>
+                </span>
+                <button onclick="mockOthersComment()" class="text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-full font-medium active:scale-95 transition flex items-center gap-1">
+                  <span>🤖 模拟路人评价</span>
+                </button>
+              </div>
+              
+              <!-- 评论列表 (点击留言者头像也可看资料) -->
+              <div id="comments-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto pr-1"></div>
+              
+              <!-- 发表留言输入栏 -->
+              <div class="space-y-1.5 pt-1 border-t border-slate-100">
+                <div class="flex items-center justify-between text-[10px] text-slate-400">
+                  <span class="flex items-center gap-1">
+                    <span>发评身份:</span>
+                    <select id="comment-identity" class="bg-slate-100 text-slate-700 border border-slate-200 rounded px-1 py-0.5 font-medium outline-none">
+                      <option value="me">👤 我自己 (使用我的资料)</option>
+                      <option value="stranger1">🙋 附近路人 (小林)</option>
+                      <option value="runner">🏃 周边跑友</option>
+                      <option value="coffee">☕ 咖啡店老板</option>
+                    </select>
+                  </span>
+                  <span class="text-emerald-600 font-medium">✓ 自动存入本地</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input id="comment-input" type="text" placeholder="写下你的留言评价..." class="flex-1 text-xs bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500" onkeydown="if(event.key==='Enter') submitComment()">
+                  <button onclick="submitComment()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-2 rounded-xl active:scale-95 transition shadow-sm">
+                    发表
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部弹出抽屉 2: 发状态窗口 (自动绑定我的头像资料) -->
+        <div id="publish-sheet" class="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl border-t border-slate-200 transform translate-y-full transition-transform duration-300 ease-out flex flex-col p-4 max-h-[90%] overflow-y-auto no-scrollbar">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div class="text-sm font-bold text-slate-900">在当前位置发布状态</div>
+            <button onclick="closePublishModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">✕</button>
+          </div>
+
+          <div class="mt-2.5 space-y-2.5">
+            <!-- 当前发布人资料栏 (点击可编辑) -->
+            <div onclick="openMyProfileSheet()" class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-indigo-50/50 transition">
+              <img id="publish-my-avatar" class="w-8 h-8 rounded-full object-cover border border-indigo-500" src="">
+              <div class="flex-1">
+                <div class="text-xs font-bold text-slate-900 flex items-center gap-1">
+                  <span id="publish-my-name">探索者小晨</span>
+                  <span id="publish-my-tags" class="text-[9px] bg-slate-200 text-slate-700 px-1 rounded">男 • 24岁</span>
+                </div>
+                <div id="publish-my-bio" class="text-[10px] text-slate-500 truncate max-w-[210px]">在周边500米里记录烟火气✨</div>
+              </div>
+              <span class="text-[10px] text-indigo-600 font-bold shrink-0">修改资料 ›</span>
+            </div>
+
+            <!-- 文字输入框 -->
+            <textarea id="publish-input" rows="3" placeholder="这一刻你在想什么？写下留在地图上的话..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-normal"></textarea>
+
+            <!-- 快捷灵感词条 -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <span class="text-[9px] text-slate-400 shrink-0">快捷填入:</span>
+              <button type="button" onclick="fillPublishText('巷口拐角的手冲咖啡今天新到了埃塞豆，柑橘香气超浓☕')" class="text-[9px] bg-slate-100 hover:bg-indigo-50 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200 shrink-0 active:scale-95 transition">☕ 咖啡飘香</button>
+              <button type="button" onclick="fillPublishText('沿河公园步道的桂花全开了🌸散步好舒服')" class="text-[9px] bg-slate-100 hover:bg-indigo-50 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200 shrink-0 active:scale-95 transition">🌸 桂花真香</button>
+              <button type="button" onclick="fillPublishText('今天在草坪偶遇一只超级活泼的小柴犬🐾')" class="text-[9px] bg-slate-100 hover:bg-indigo-50 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200 shrink-0 active:scale-95 transition">🐾 偶遇小狗</button>
+            </div>
+            
+            <input type="file" id="real-file-input" accept="image/*" class="hidden" onchange="handleRealFileChosen(event)">
+
+            <!-- 图片上传/预览框 -->
+            <div class="space-y-1">
+              <div class="text-[10px] font-bold text-slate-600 flex items-center justify-between">
+                <span>添加配图</span>
+                <span class="text-slate-400 font-normal">支持本地选图 / 快捷示例</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div onclick="triggerRealFileInput()" class="w-14 h-14 border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/40 rounded-xl flex flex-col items-center justify-center text-indigo-600 cursor-pointer active:scale-95 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                  <span class="text-[8px] mt-0.5 font-bold">本地选图</span>
+                </div>
+                <div onclick="usePresetSampleImage()" class="w-14 h-14 border border-slate-200 hover:border-slate-300 bg-slate-50 rounded-xl flex flex-col items-center justify-center text-slate-500 cursor-pointer active:scale-95 transition">
+                  <span class="text-sm">🌄</span>
+                  <span class="text-[8px] mt-0.5">示例美图</span>
+                </div>
+                <div id="publish-preview-box" class="relative hidden w-14 h-14 rounded-xl overflow-hidden border-2 border-indigo-500 shadow-sm">
+                  <img id="publish-preview-img" class="w-full h-full object-cover" src="" alt="预览图">
+                  <span onclick="removePickImage(event)" class="absolute top-0.5 right-0.5 bg-black/70 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center cursor-pointer">✕</span>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="submitNewStatus()" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs rounded-xl shadow-md active:scale-95 transition">
+              立即发布并在地图打点
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部弹出抽屉 3: “我的” 个人资料设置模块 -->
+        <div id="my-profile-sheet" class="absolute inset-x-0 bottom-0 z-60 bg-white rounded-t-3xl shadow-2xl border-t border-slate-200 transform translate-y-full transition-transform duration-300 ease-out flex flex-col p-4 max-h-[92%] overflow-y-auto no-scrollbar">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <span>👤 我的个人资料设置</span>
+            </div>
+            <button onclick="closeMyProfileSheet()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">✕</button>
+          </div>
+
+          <div class="mt-3 space-y-3">
+            <!-- 更换头像 -->
+            <div class="flex flex-col items-center justify-center">
+              <input type="file" id="avatar-file-input" accept="image/*" class="hidden" onchange="handleAvatarFileChosen(event)">
+              <div onclick="document.getElementById('avatar-file-input').click()" class="relative w-18 h-18 rounded-full overflow-hidden border-4 border-indigo-500 shadow-md cursor-pointer group">
+                <img id="edit-avatar-img" class="w-full h-full object-cover" src="">
+                <div class="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[8px] py-0.5 text-center">更换头像</div>
+              </div>
+              <span class="text-[10px] text-slate-400 mt-1">点击圆形头像可上传真实照片作为头像</span>
+            </div>
+
+            <!-- 昵称 -->
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">昵称</label>
+              <input id="edit-name" type="text" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-1 focus:ring-indigo-500 outline-none">
+            </div>
+
+            <!-- 性别单选 -->
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">性别</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="setEditGender('男')" id="gender-btn-男" class="py-1.5 rounded-xl border text-xs font-bold transition">♂ 男生</button>
+                <button type="button" onclick="setEditGender('女')" id="gender-btn-女" class="py-1.5 rounded-xl border text-xs font-bold transition">♀ 女生</button>
+                <button type="button" onclick="setEditGender('保密')" id="gender-btn-保密" class="py-1.5 rounded-xl border text-xs font-bold transition">🔒 保密</button>
+              </div>
+            </div>
+
+            <!-- 年龄 -->
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">年龄 (岁)</label>
+              <input id="edit-age" type="number" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:ring-1 focus:ring-indigo-500 outline-none">
+            </div>
+
+            <!-- 个性签名 -->
+            <div>
+              <label class="text-[11px] font-bold text-slate-700 block mb-1">个性签名</label>
+              <textarea id="edit-bio" rows="2" placeholder="写一句介绍自己的话，别人点击你头像就能看到..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800 focus:ring-1 focus:ring-indigo-500 outline-none resize-none"></textarea>
+            </div>
+
+            <button onclick="saveMyProfileData()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md active:scale-95 transition">
+              保存资料并更新
+            </button>
+          </div>
+        </div>
+
+        <!-- 弹窗 4: 查看用户基本信息名片 (点击任意头像弹出) -->
+        <div id="user-card-modal" class="hidden absolute inset-0 z-70 bg-black/60 backdrop-blur-xs flex items-center justify-center p-6">
+          <div class="relative bg-white rounded-3xl p-5 w-full max-w-[290px] shadow-2xl flex flex-col items-center text-center animate-fade-in border border-slate-100">
+            <button onclick="closeUserCard()" class="absolute top-3 right-3 w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs flex items-center justify-center">✕</button>
+            
+            <div class="relative mt-2">
+              <img id="card-avatar" class="w-18 h-18 rounded-full object-cover border-4 border-indigo-500 shadow-md" src="">
+              <div id="card-gender-icon" class="absolute bottom-0 right-0 w-5 h-5 rounded-full text-white text-[10px] flex items-center justify-center border-2 border-white font-bold bg-blue-500">♂</div>
+            </div>
+
+            <h3 id="card-name" class="font-extrabold text-sm text-slate-900 mt-2">用户昵称</h3>
+            
+            <div class="flex items-center gap-1.5 mt-1">
+              <span id="card-age" class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">24岁</span>
+              <span id="card-gender-text" class="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-medium">男</span>
+              <span id="card-distance" class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-bold">📍 85米处</span>
+            </div>
+
+            <div class="w-full bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-3 text-left">
+              <span class="text-[9px] font-bold text-slate-400 block mb-0.5">个性签名</span>
+              <p id="card-bio" class="text-xs text-slate-700 leading-snug">这个人很低调，还没有写签名哦~</p>
+            </div>
+
+            <div class="mt-3 text-[9px] text-slate-400 flex items-center gap-1">
+              <span>✨ 身处周边500米圈，点击状态或留言可随时交流</span>
+            </div>
+
+            <button onclick="closeUserCard()" class="w-full mt-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl active:scale-95 transition">
+              知道了
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 右侧：设计架构与交互逻辑演示说明 -->
+    <div class="lg:col-span-6 space-y-4">
+      
+      <!-- 针对需求 1: 我的模块与个人资料 -->
+      <div class="bg-slate-800/90 border border-indigo-500/40 p-4 rounded-2xl shadow-sm">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-2">
+          <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">👤</span>
+          「我的」个人资料模块 (已增加)
+        </h2>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          • 模拟器顶部导航条右上角常驻<b>【我的资料 ›】</b>入口；
+          <br>• 支持自定义<b>上传更换头像</b>、修改<b>昵称</b>、选择<b>性别（男/女/保密）</b>、修改<b>年龄</b>以及输入<b>个性签名</b>；
+          <br>• 保存后自动持久化到本地文件，发状态时自动带有您的专属名片！
+        </p>
+      </div>
+
+      <!-- 针对需求 2: 点击头像查看基本资料卡 -->
+      <div class="bg-slate-800/90 border border-emerald-500/40 p-4 rounded-2xl shadow-sm">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2 mb-2">
+          <span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">🪪</span>
+          点击头像查看基本信息名片 (已实现)
+        </h2>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          • <b>在状态详情页</b>：点击作者的头像或名字，立即弹出该用户的<b>【个人基础资料卡】</b>；
+          <br>• 资料卡呈现：<b>大头像、姓名、性别徽标、年龄、个性签名与距你当前位置的具体米数</b>；
+          <br>• <b>在评论列表中</b>：点击任何留言者的头像，也能查看该留言者的个人名片！
+        </p>
+      </div>
+
+      <!-- 快捷操作提示 -->
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+        <span>💡 试玩指引：点击顶部【我的资料›】修改信息，或点击地图气泡后点击作者头像！</span>
+        <button onclick="openMyProfileSheet()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold active:scale-95 transition">
+          ✏️ 立即去编辑我的资料
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // 当前用户的个人资料 (本地持久化初始值)
+    let myProfile = {
+      id: "my_user_id",
+      name: "探索者小晨",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80",
+      gender: "男",
+      age: 24,
+      bio: "在周边500米里记录最真实的烟火气与风景✨"
+    };
+
+    let editGender = "男";
+
+    // 模拟数据源 (已附带每个人的个人资料)
+    let userPos = { x: 187, y: 360, lat: 39.9042, lng: 116.4074 };
+    let filterOnlyWithin500 = true;
+    let selectedStatusId = null;
+
+    let statuses = [
+      {
+        id: "post_1",
+        isMe: false,
+        author: "小夏 (咖啡师)",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60",
+        x: 130,
+        y: 300,
+        distance: 85,
+        text: "巷子里的手冲咖啡今天开了新豆子，埃塞俄比亚水洗，柑橘花香好浓！☕",
+        image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500&auto=format&fit=crop&q=80",
+        time: "10分钟前",
+        authorProfile: {
+          id: "post_1_author",
+          name: "小夏",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+          gender: "女",
+          age: 25,
+          bio: "独立咖啡馆主理人，热爱手冲与烘豆，记录街角的香气☕"
+        },
+        comments: [
+          { 
+            author: "阿泽", 
+            avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80", 
+            text: "等我半小时，马上过去尝尝！", 
+            time: "8分钟前",
+            authorProfile: { name: "阿泽", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80", gender: "男", age: 26, bio: "设计师，咖啡重度爱好者" }
+          },
+          { 
+            author: "路人甲", 
+            avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80", 
+            text: "店里现在人多吗？", 
+            time: "3分钟前",
+            authorProfile: { name: "路人甲", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80", gender: "男", age: 30, bio: "下班路过的随性路人" }
+          }
+        ]
+      },
+      {
+        id: "post_2",
+        isMe: false,
+        author: "书店老刘",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60",
+        x: 245,
+        y: 285,
+        distance: 230,
+        text: "新到了一批精装建筑摄影集，靠窗的座位阳光正好，欢迎大家来翻翻📖",
+        image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=500&auto=format&fit=crop&q=80",
+        time: "32分钟前",
+        authorProfile: {
+          id: "post_2_author",
+          name: "书店老刘",
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80",
+          gender: "男",
+          age: 42,
+          bio: "经营社区二手书店第十年，以书会友，欢迎来坐坐📖"
+        },
+        comments: []
+      },
+      {
+        id: "post_3",
+        isMe: false,
+        author: "夜跑阿健",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60",
+        x: 110,
+        y: 440,
+        distance: 380,
+        text: "沿河公园步道的桂花开了，散步特别香！🌸",
+        image: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=500&auto=format&fit=crop&q=80",
+        time: "1小时前",
+        authorProfile: {
+          id: "post_3_author",
+          name: "夜跑阿健",
+          avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
+          gender: "男",
+          age: 28,
+          bio: "跑龄5年，目标今年全马破三！周边跑友一起约跑🏃"
+        },
+        comments: []
+      }
+    ];
+
+    let currentPickedImage = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('app-toast');
+      const text = document.getElementById('toast-text');
+      text.innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-12');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-12');
+      }, 2500);
+    }
+
+    // 渲染用户个人资料到各导航与面板
+    function updateMyProfileUI() {
+      document.getElementById('nav-my-avatar').src = myProfile.avatar;
+      document.getElementById('nav-my-name').innerText = myProfile.name;
+      document.getElementById('center-user-avatar').src = myProfile.avatar;
+
+      document.getElementById('publish-my-avatar').src = myProfile.avatar;
+      document.getElementById('publish-my-name').innerText = myProfile.name;
+      document.getElementById('publish-my-tags').innerText = `${myProfile.gender} • ${myProfile.age}岁`;
+      document.getElementById('publish-my-bio').innerText = myProfile.bio;
+
+      // 编辑面板表单同步
+      document.getElementById('edit-avatar-img').src = myProfile.avatar;
+      document.getElementById('edit-name').value = myProfile.name;
+      document.getElementById('edit-age').value = myProfile.age;
+      document.getElementById('edit-bio').value = myProfile.bio;
+      setEditGender(myProfile.gender);
+    }
+
+    // 打开编辑“我的资料”抽屉
+    function openMyProfileSheet() {
+      closeDetailSheet();
+      closePublishModal();
+      updateMyProfileUI();
+      const sheet = document.getElementById('my-profile-sheet');
+      sheet.classList.remove('translate-y-full');
+      sheet.classList.add('translate-y-0');
+    }
+
+    function closeMyProfileSheet() {
+      const sheet = document.getElementById('my-profile-sheet');
+      sheet.classList.remove('translate-y-0');
+      sheet.classList.add('translate-y-full');
+    }
+
+    function setEditGender(g) {
+      editGender = g;
+      ['男', '女', '保密'].forEach(val => {
+        const btn = document.getElementById(`gender-btn-${val}`);
+        if (val === g) {
+          btn.className = "py-1.5 rounded-xl border text-xs font-bold bg-indigo-50 border-indigo-600 text-indigo-600 shadow-xs";
+        } else {
+          btn.className = "py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 bg-slate-50";
+        }
+      });
+    }
+
+    function handleAvatarFileChosen(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('edit-avatar-img').src = evt.target.result;
+        showToast("✓ 头像预览就绪，点击下方保存生效");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveMyProfileData() {
+      const name = document.getElementById('edit-name').value.trim();
+      const age = parseInt(document.getElementById('edit-age').value) || 24;
+      const bio = document.getElementById('edit-bio').value.trim() || "热爱生活的小伙伴";
+      const avatar = document.getElementById('edit-avatar-img').src;
+
+      if (!name) {
+        alert("请填写昵称");
+        return;
+      }
+
+      myProfile = {
+        id: "my_user_id",
+        name: name,
+        avatar: avatar,
+        gender: editGender,
+        age: age,
+        bio: bio
+      };
+
+      updateMyProfileUI();
+      closeMyProfileSheet();
+      renderMarkers();
+      showToast("🎉 个人资料已保存！发状态将附带你的名片");
+    }
+
+    // 打开用户资料卡片
+    function openAuthorCard(profile, distance) {
+      document.getElementById('card-avatar').src = profile.avatar;
+      document.getElementById('card-name').innerText = profile.name;
+      document.getElementById('card-age').innerText = (profile.age || 24) + '岁';
+      document.getElementById('card-gender-text').innerText = profile.gender || '保密';
+      document.getElementById('card-bio').innerText = profile.bio || '这个人很低调，还没有写签名哦~';
+      document.getElementById('card-distance').innerText = (distance !== undefined) ? `📍 ${distance}米处` : '📍 周边500米圈';
+
+      const genderIcon = document.getElementById('card-gender-icon');
+      if (profile.gender === '女') {
+        genderIcon.innerText = '♀';
+        genderIcon.className = 'absolute bottom-0 right-0 w-5 h-5 rounded-full text-white text-[10px] flex items-center justify-center border-2 border-white font-bold bg-pink-500';
+      } else {
+        genderIcon.innerText = '♂';
+        genderIcon.className = 'absolute bottom-0 right-0 w-5 h-5 rounded-full text-white text-[10px] flex items-center justify-center border-2 border-white font-bold bg-blue-500';
+      }
+
+      document.getElementById('user-card-modal').classList.remove('hidden');
+    }
+
+    function closeUserCard() {
+      document.getElementById('user-card-modal').classList.add('hidden');
+    }
+
+    function clickActiveAuthorAvatar() {
+      if (!selectedStatusId) return;
+      const item = statuses.find(s => s.id === selectedStatusId);
+      if (!item) return;
+
+      const profile = item.authorProfile || {
+        name: item.author,
+        avatar: item.avatar,
+        gender: "保密",
+        age: 24,
+        bio: "周边500米圈邻友"
+      };
+      openAuthorCard(profile, item.distance);
+    }
+
+    // 渲染地图打点
+    function renderMarkers() {
+      const container = document.getElementById('markers-container');
+      container.innerHTML = '';
+
+      let visibleCount = 0;
+
+      statuses.forEach((item) => {
+        const dx = item.x - userPos.x;
+        const dy = item.y - userPos.y;
+        const pixelDist = Math.sqrt(dx * dx + dy * dy);
+        const calculatedDistance = Math.round((pixelDist / 150) * 500);
+        item.distance = calculatedDistance;
+
+        const isWithin500 = calculatedDistance <= 500;
+        if (isWithin500) visibleCount++;
+
+        if (filterOnlyWithin500 && !isWithin500) return;
+
+        const markerEl = document.createElement('div');
+        const isMyPost = item.isMe === true;
+
+        markerEl.className = `absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 hover:scale-110 active:scale-95 group z-20 ${
+          isMyPost ? 'z-30' : ''
+        } ${!isWithin500 ? 'opacity-40 filter grayscale' : ''}`;
+        markerEl.style.left = `${item.x}px`;
+        markerEl.style.top = `${item.y}px`;
+
+        markerEl.innerHTML = `
+          <div class="relative flex flex-col items-center">
+            ${isMyPost ? `<div class="absolute -inset-1.5 rounded-2xl bg-orange-500/50 new-pin-animation pointer-events-none"></div>` : ''}
+
+            <div class="${isMyPost ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-orange-400 ring-2 ring-orange-200' : 'bg-white/95 border border-slate-200'} backdrop-blur px-2 py-1 rounded-xl shadow-lg flex items-center gap-1.5 max-w-[140px]">
+              <img src="${item.avatar}" class="w-5 h-5 rounded-full object-cover shrink-0 ${isMyPost ? 'border border-orange-400' : ''}">
+              <span class="text-[10px] font-bold ${isMyPost ? 'text-orange-900' : 'text-slate-800'} truncate">${item.author}</span>
+              ${item.image ? '<span class="text-[9px] text-indigo-600 font-semibold shrink-0">📷</span>' : ''}
+              ${item.comments && item.comments.length > 0 ? `<span class="text-[8px] bg-indigo-100 text-indigo-700 font-bold px-1 rounded-full shrink-0">💬${item.comments.length}</span>` : ''}
+            </div>
+
+            <div class="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] ${isMyPost ? 'border-t-orange-400' : 'border-t-white'} shadow-xs -mt-[1px]"></div>
+            
+            <span class="text-[8px] font-bold px-1.5 py-0.2 ${isMyPost ? 'bg-orange-600 text-white' : 'bg-slate-900/80 text-white'} rounded-full mt-0.5 whitespace-nowrap shadow">
+              ${isMyPost ? '⭐ 我发的 (' + calculatedDistance + 'm)' : calculatedDistance + 'm'}
+            </span>
+          </div>
+        `;
+
+        markerEl.onclick = () => openDetailSheet(item.id);
+        container.appendChild(markerEl);
+      });
+
+      document.getElementById('nearby-count-text').innerText = `附近 ${visibleCount} 条动态`;
+    }
+
+    // 打开详情抽屉
+    function openDetailSheet(statusId) {
+      selectedStatusId = statusId;
+      const item = statuses.find(s => s.id === statusId);
+      if (!item) return;
+
+      document.getElementById('detail-avatar').src = item.avatar;
+      document.getElementById('detail-author').innerText = item.author;
+      document.getElementById('detail-time').innerText = item.time;
+      document.getElementById('detail-distance').innerText = `${item.distance}米处`;
+      document.getElementById('detail-text').innerText = item.text;
+
+      const profile = item.authorProfile;
+      const genderTag = document.getElementById('detail-gender-tag');
+      if (profile && profile.gender) {
+        genderTag.innerText = (profile.gender === '女' ? '♀ ' : '♂ ') + (profile.age ? profile.age + '岁' : '');
+        genderTag.className = `text-[9px] px-1 rounded font-bold ${profile.gender === '女' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`;
+      } else {
+        genderTag.innerText = '';
+      }
+
+      const isMeBadge = document.getElementById('detail-is-me-badge');
+      if (item.isMe) {
+        isMeBadge.classList.remove('hidden');
+      } else {
+        isMeBadge.classList.add('hidden');
+      }
+
+      const imgBox = document.getElementById('detail-image-box');
+      const imgEl = document.getElementById('detail-image');
+      if (item.image) {
+        imgBox.classList.remove('hidden');
+        imgEl.src = item.image;
+      } else {
+        imgBox.classList.add('hidden');
+      }
+
+      renderCommentsList(item.comments);
+
+      const sheet = document.getElementById('detail-sheet');
+      sheet.classList.remove('translate-y-full');
+      sheet.classList.add('translate-y-0');
+    }
+
+    function renderCommentsList(comments) {
+      const container = document.getElementById('comments-list');
+      document.getElementById('detail-comment-count').innerText = comments.length;
+      container.innerHTML = '';
+
+      if (!comments || comments.length === 0) {
+        container.innerHTML = '<div class="text-[10px] text-slate-400 italic py-2 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">暂无留言，可在下方输入评价~</div>';
+        return;
+      }
+
+      comments.forEach(c => {
+        const row = document.createElement('div');
+        const isAuthor = c.author.includes("我");
+        row.className = `text-[11px] p-2.5 rounded-xl border flex items-start gap-2 ${
+          isAuthor ? 'bg-indigo-50/70 border-indigo-100' : 'bg-slate-50 border-slate-100'
+        }`;
+        
+        const avatarSrc = c.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80";
+
+        row.innerHTML = `
+          <div class="cursor-pointer" onclick="openCommenterCard('${c.author}')">
+            <img src="${avatarSrc}" class="w-6 h-6 rounded-full object-cover shrink-0 border border-slate-200 mt-0.5 hover:scale-105 transition" title="点击看资料">
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between text-[10px] mb-0.5">
+              <span class="font-bold ${isAuthor ? 'text-indigo-700' : 'text-slate-800'} cursor-pointer" onclick="openCommenterCard('${c.author}')">${c.author}</span>
+              <span class="text-[9px] text-slate-400">${c.time}</span>
+            </div>
+            <div class="text-slate-700 leading-snug">${c.text}</div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function openCommenterCard(authorName) {
+      if (authorName.includes("我")) {
+        openAuthorCard(myProfile, 0);
+      } else {
+        openAuthorCard({
+          name: authorName,
+          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+          gender: "男",
+          age: 26,
+          bio: "周边500米热心邻友，常来逛逛"
+        }, 120);
+      }
+    }
+
+    function closeDetailSheet() {
+      const sheet = document.getElementById('detail-sheet');
+      sheet.classList.remove('translate-y-0');
+      sheet.classList.add('translate-y-full');
+      selectedStatusId = null;
+    }
+
+    // 提交留言
+    function submitComment() {
+      const input = document.getElementById('comment-input');
+      const text = input.value.trim();
+      if (!text || !selectedStatusId) return;
+
+      const item = statuses.find(s => s.id === selectedStatusId);
+      if (!item) return;
+
+      const identitySelect = document.getElementById('comment-identity');
+      const val = identitySelect.value;
+
+      let authorName = myProfile.name;
+      let avatar = myProfile.avatar;
+      let userProfile = { ...myProfile };
+
+      if (val === 'stranger1') {
+        authorName = "路人小林 (200米邻居)";
+        avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80";
+        userProfile = { name: authorName, avatar: avatar, gender: "男", age: 24, bio: "就住在附近小区，喜欢拍照散步" };
+      } else if (val === 'runner') {
+        authorName = "周边跑友阿强";
+        avatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80";
+        userProfile = { name: authorName, avatar: avatar, gender: "男", age: 29, bio: "夜跑打卡中，欢迎约跑" };
+      } else if (val === 'coffee') {
+        authorName = "咖啡店老板";
+        avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+        userProfile = { name: authorName, avatar: avatar, gender: "女", age: 27, bio: "用心做好每一杯咖啡" };
+      }
+
+      item.comments.push({
+        author: authorName,
+        avatar: avatar,
+        text: text,
+        time: "刚刚",
+        authorProfile: userProfile
+      });
+
+      input.value = '';
+      renderCommentsList(item.comments);
+      renderMarkers();
+      showToast("✓ 评价已发布！点击头像可看发评人资料");
+    }
+
+    // 模拟别人来留言
+    function mockOthersComment() {
+      if (!selectedStatusId) return;
+      const item = statuses.find(s => s.id === selectedStatusId);
+      if (!item) return;
+
+      const randomQuotes = [
+        { author: "路人小明", text: "拍得太有氛围感了！就在我前面街区吗？", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80", gender: "男", age: 25, bio: "摄影爱好者，随心记录生活" },
+        { author: "周边邻居小晴", text: "留个爪印🐾 原来大家都住这么近呀！", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80", gender: "女", age: 23, bio: "热爱生活，发现身边的美好🌸" }
+      ];
+
+      const pick = randomQuotes[Math.floor(Math.random() * randomQuotes.length)];
+      item.comments.push({
+        author: pick.author,
+        avatar: pick.avatar,
+        text: pick.text,
+        time: "刚刚",
+        authorProfile: {
+          name: pick.author,
+          avatar: pick.avatar,
+          gender: pick.gender,
+          age: pick.age,
+          bio: pick.bio
+        }
+      });
+
+      renderCommentsList(item.comments);
+      renderMarkers();
+      showToast(`💬 收到【${pick.author}】的新评价！`);
+    }
+
+    // 发布弹窗控制
+    function openPublishModal() {
+      closeDetailSheet();
+      closeMyProfileSheet();
+      updateMyProfileUI();
+      const sheet = document.getElementById('publish-sheet');
+      sheet.classList.remove('translate-y-full');
+      sheet.classList.add('translate-y-0');
+      setTimeout(() => {
+        const ipt = document.getElementById('publish-input');
+        if (ipt) ipt.focus();
+      }, 150);
+    }
+
+    function closePublishModal() {
+      const sheet = document.getElementById('publish-sheet');
+      sheet.classList.remove('translate-y-0');
+      sheet.classList.add('translate-y-full');
+    }
+
+    function fillPublishText(txt) {
+      const ipt = document.getElementById('publish-input');
+      if (ipt) {
+        ipt.value = txt;
+        ipt.focus();
+      }
+    }
+
+    function triggerRealFileInput() {
+      document.getElementById('real-file-input').click();
+    }
+
+    function handleRealFileChosen(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        currentPickedImage = event.target.result;
+        document.getElementById('publish-preview-img').src = currentPickedImage;
+        document.getElementById('publish-preview-box').classList.remove('hidden');
+        showToast("✓ 本地照片读取成功！");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function usePresetSampleImage() {
+      currentPickedImage = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&auto=format&fit=crop&q=80";
+      document.getElementById('publish-preview-img').src = currentPickedImage;
+      document.getElementById('publish-preview-box').classList.remove('hidden');
+      showToast("✓ 示例美图已添加！");
+    }
+
+    function removePickImage(e) {
+      e.stopPropagation();
+      currentPickedImage = null;
+      document.getElementById('publish-preview-box').classList.add('hidden');
+      document.getElementById('real-file-input').value = '';
+    }
+
+    // 发布新状态
+    function submitNewStatus() {
+      const input = document.getElementById('publish-input');
+      const text = input.value.trim();
+      if (!text && !currentPickedImage) {
+        alert("请输入文字或添加图片");
+        return;
+      }
+
+      const offsetAngle = Math.random() * Math.PI * 2;
+      const offsetRadius = 35 + Math.random() * 15;
+
+      const newPostId = "my_post_" + Date.now();
+      const newPost = {
+        id: newPostId,
+        isMe: true,
+        author: myProfile.name,
+        avatar: myProfile.avatar,
+        x: Math.round(userPos.x + Math.cos(offsetAngle) * offsetRadius),
+        y: Math.round(userPos.y + Math.sin(offsetAngle) * offsetRadius),
+        distance: 15,
+        text: text || "分享了此地此刻的照片记录✨",
+        image: currentPickedImage,
+        time: "刚刚",
+        authorProfile: { ...myProfile }, // 绑定我的完整资料
+        comments: []
+      };
+
+      statuses.unshift(newPost);
+      input.value = '';
+      removePickImage(new Event('click'));
+      closePublishModal();
+
+      renderMarkers();
+      showToast("🎉 状态发布成功！已在地图打点展示");
+
+      setTimeout(() => {
+        openDetailSheet(newPostId);
+      }, 350);
+    }
+
+    function previewFullImg(url) {
+      if (!url) return;
+      window.open(url, '_blank');
+    }
+
+    function simulateMove() {
+      userPos.x = 120 + Math.random() * 140;
+      userPos.y = 280 + Math.random() * 160;
+
+      const userMarker = document.getElementById('user-marker');
+      const rangeCircle = document.getElementById('range-circle');
+
+      userMarker.style.left = `${userPos.x}px`;
+      userMarker.style.top = `${userPos.y}px`;
+      rangeCircle.style.left = `${userPos.x}px`;
+      rangeCircle.style.top = `${userPos.y}px`;
+
+      renderMarkers();
+      showToast("📍 位置已移动，500m内动态实时更新");
+    }
+
+    function resetToUserLocation() {
+      userPos.x = 187;
+      userPos.y = 360;
+      const userMarker = document.getElementById('user-marker');
+      const rangeCircle = document.getElementById('range-circle');
+      userMarker.style.left = `${userPos.x}px`;
+      userMarker.style.top = `${userPos.y}px`;
+      rangeCircle.style.left = `${userPos.x}px`;
+      rangeCircle.style.top = `${userPos.y}px`;
+      renderMarkers();
+      showToast("🎯 已复位到当前位置中心");
+    }
+
+    function toggleOutsideFilter() {
+      filterOnlyWithin500 = !filterOnlyWithin500;
+      const btn = document.getElementById('filter-btn');
+      if (filterOnlyWithin500) {
+        btn.innerText = "👁️ 仅看500m内 (已开启)";
+        btn.className = "text-xs font-medium px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition border border-slate-600";
+      } else {
+        btn.innerText = "👁️ 显示全部包括超出500m (已开启)";
+        btn.className = "text-xs font-medium px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition border border-amber-500";
+      }
+      renderMarkers();
+    }
+
+    function refreshNearby() {
+      renderMarkers();
+      showToast("🔄 周边动态已刷新");
+    }
+
+    // 初始化
+    updateMyProfileUI();
+    renderMarkers();
+  </script>
+</body>
+</html>

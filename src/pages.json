@@ -1,0 +1,20 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "500米圈",
+        "navigationStyle": "custom",
+        "app-plus": {
+          "titleNView": false
+        }
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "500米地图生活圈",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#EEF2F6"
+  }
+}
