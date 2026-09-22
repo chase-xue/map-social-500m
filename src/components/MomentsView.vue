@@ -52,13 +52,19 @@
     </view>
 
     <view class="moments-feed-list">
-      <view v-for="item in sortedMomentsStatuses" :key="item.id" class="moment-card" :class="{ 'moment-emergency-card': item.isHelp && item.isEmergency && !item.helpResolved }">
-        <view class="moment-avatar-col" @tap="viewAuthorProfile(item)">
+      <view
+        v-for="item in sortedMomentsStatuses"
+        :key="item.id"
+        class="moment-card"
+        :class="{ 'moment-emergency-card': item.isHelp && item.isEmergency && !item.helpResolved }"
+        @tap="openDetailSheet(item)"
+      >
+        <view class="moment-avatar-col" @tap.stop="openDetailSheet(item)">
           <image class="moment-author-avatar" :src="item.userAvatar" mode="aspectFill" />
         </view>
         <view class="moment-main-col">
           <view class="moment-author-header">
-            <view class="author-name-row" @tap="viewAuthorProfile(item)">
+            <view class="author-name-row" @tap.stop="openDetailSheet(item)">
               <text class="moment-author-name">{{ item.userName }}</text>
               <!-- 求助帖高亮徽章 (解决2小时后自动隐去) -->
               <text v-if="item.isHelp && isHelpResolvedPromptVisible(item)" class="moment-help-badge" :class="{ 'is-emergency': item.isEmergency && !item.helpResolved, 'is-resolved': item.helpResolved }">
@@ -71,9 +77,9 @@
             </view>
             <view class="moment-distance-tag"><text>📍 {{ item.distance }}米</text></view>
           </view>
-          <view class="moment-content-text" @tap="openDetailSheet(item)" hover-class="content-hover"><text>{{ item.content }}</text></view>
+          <view class="moment-content-text"><text>{{ item.content }}</text></view>
           <view v-if="item.images && item.images.length > 0" class="moment-media-grid" :class="item.images.length === 1 ? 'single-image' : item.images.length === 4 ? 'grid-4' : 'grid-multi'">
-            <image v-for="(img, idx) in item.images" :key="idx" class="moment-grid-img" :src="img" mode="aspectFill" @tap="previewImage(img, item.images)" />
+            <image v-for="(img, idx) in item.images" :key="idx" class="moment-grid-img" :src="img" mode="aspectFill" @tap.stop="previewImage(img, item.images)" />
           </view>
           <view class="moment-meta-row">
             <view class="meta-left">

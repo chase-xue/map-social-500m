@@ -343,12 +343,12 @@ function onMarkerTap(e: any) {
 
   if (markerId === 999999) {
     // 点击本人位置标记 (999999)：
-    // 优先检查我是否发布过状态，如果是，直接打开我最新的状态详情进行查看与互动
+    // 优先检查我是否发布过状态，如果是，直接打开我最新的状态详情 (图二) 进行查看与互动
     const myLatestStatus = allStatuses.value.find((s) => s.userId === myProfile.value.id);
     if (myLatestStatus) {
       openDetailSheet(myLatestStatus);
     } else {
-      openUserProfileCard(myProfile.value, 0);
+      uni.showToast({ title: "您还未在当前位置发布状态，点击右下角＋发状态", icon: "none" });
     }
     return;
   }
@@ -432,7 +432,8 @@ function handleSendComment() {
   const content = newCommentText.value.trim();
   if ((!content && !pickedCommentImage.value) || !activeStatus.value) return;
 
-  const newComment = addCommentToStatus(activeStatus.value.id, {
+  const targetId = activeStatus.value.id;
+  const newComment = addCommentToStatus(targetId, {
     userId: myProfile.value.id,
     userName: myProfile.value.name,
     userAvatar: myProfile.value.avatar,
@@ -443,10 +444,12 @@ function handleSendComment() {
 
   if (newComment) {
     allStatuses.value = readLocalData();
-    activeStatus.value = allStatuses.value.find((s) => s.id === activeStatus.value?.id) || null;
+    activeStatus.value = allStatuses.value.find((s) => s.id === targetId) || null;
     newCommentText.value = "";
     pickedCommentImage.value = "";
     uni.showToast({ title: "评论成功！", icon: "success" });
+  } else {
+    uni.showToast({ title: "评论保存异常，请重试", icon: "none" });
   }
 }
 

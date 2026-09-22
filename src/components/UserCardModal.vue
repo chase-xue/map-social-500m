@@ -1,5 +1,5 @@
 <template>
-  <view v-if="userCardVisible" class="modal-mask" @tap="closeUserCard(false)">
+  <view v-if="userCardVisible" class="modal-mask user-card-mask" @tap="closeUserCard(false)">
     <view class="user-card-modal" @tap.stop>
       <view class="card-close" @tap="closeUserCard(true)">✕</view>
       <view class="card-avatar-box">

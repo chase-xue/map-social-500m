@@ -180,40 +180,42 @@ sequenceDiagram
 
 ---
 
-### 4.3 动态详情抽屉与防误触关闭交互 (DetailSheet Interaction)
+### 4.3 核心递进交互与详情抽屉规范 (Two-Step Modal Hierarchy & DetailSheet)
 
-为了彻底解决“点击状态闪屏”、“点击弹出窗口无法关闭”等历史交互痛点，详情弹窗采用了双重可靠性保障：
+> 📌 **核心交互铁律（两段式层级递进）**：
+> 1. **第一步（点击状态）**：无论用户在地图上点击 Marker 打点/聚合气泡、还是在朋友圈 Feed 列表中点击动态卡片/文字，**必须 100% 优先打开【图二：动态详情抽屉 DetailSheet】**，完整展示动态正文、大图、发布时间、物理距离以及留言互动区；
+> 2. **第二步（查看名片）**：用户在【图二：动态详情抽屉】内，**主动点击作者头像（或查资料入口）后，才在详情上方弹出【图一：用户资料卡 UserCardModal】**。当用户关闭资料卡后，依然平滑停留在详情抽屉内，确保浏览上下文不中断。
 
 ```mermaid
 flowchart TD
-    A["用户触发打开详情 openDetailSheet(item)"] --> B["记录 lastModalOpenTime = Date.now()"]
-    B --> C["detailVisible.value = true 渲染详情抽屉"]
+    A["触发源：地图Marker打点 / 朋友圈卡片 / 聚合列表项"] --> B["第一步：打开【图二：动态详情抽屉 DetailSheet】"]
+    B --> C["展示：发布者概况、动态正文、高清大图图集、评论列表"]
+    B --> D["底部吸底固定：评论输入条 (输入框 + 相册选图 + 发送按钮)"]
     
-    D["用户操作关闭"] --> E{"关闭操作来源"}
+    B --> E["用户点击图二顶部的作者头像 (.avatar-clickable-wrapper)"]
+    E --> F["第二步：二次弹出【图一：用户资料卡 UserCardModal】 (z-index: 130)"]
+    F --> G["展示：年龄、性别、真实距离、个性签名、联系电话"]
+    F --> H["操作：一键拨打电话 / 加好友 / 发起私聊 / 编辑资料"]
     
-    E -- "点击右上角常驻按钮 ✕" --> F["触发 closeDetailSheet(true)"]
-    E -- "点击顶部拖动手柄" --> F
-    F --> G["强制关闭 (force=true)：瞬间隐藏，不设任何等待"]
-    
-    E -- "点击遮罩暗色背景 @tap" --> H["触发 closeDetailSheet(false)"]
-    H --> I{"Date.now() - lastModalOpenTime < 450ms ?"}
-    I -- "是 (拦截幽灵点击/合成事件穿透)" --> J["不予执行，保持弹窗开启"]
-    I -- "否 (用户真实意图点击外部)" --> K["平滑关闭弹窗"]
-    
-    E -- "点击白色弹窗卡片内部 @tap.stop" --> L["阻止事件向上冒泡，绝不触发遮罩点击"]
+    F -- "点击 ✕ 或遮罩关闭资料卡" --> B
+    B -- "点击 ✕ 或背景关闭详情抽屉" --> I["返回地图主界面 / 朋友圈列表"]
 ```
 
-#### 详情页内容排版与元素构成：
-1. **固定顶栏**：居中拖动手柄 + 右上角 `56rpx` 独立高对比圆形关闭按钮 `✕`；
-2. **发布者信息行**：头像（点击查阅资料/加好友）、昵称、作者标签（“我发的”）、性别年龄徽标、发布时间、物理距离 `📍 距离你 X 米`；
-3. **求助状态特权卡片**（仅求助帖显示，受2小时规则约束）：
-   - 救命紧急呼救卡片（红底高亮）；
-   - 紧急联系电话栏（一键拨打）；
-   - 发起人一键关闭按钮（`✅ 问题已解决，关闭求助`）；
-4. **动态正文与图集**：文字自动换行、多图网格自适应；
-5. **即时评论区**：
-   - 评论列表（包含评论者头像、姓名、时间、正文与配图）；
-   - 底部评论栏（文字输入、相机配图上传、即时发送）。
+#### 4.3.1 底部固定评论栏与“自己给自己评论”交互规范：
+1. **视口与吸底布局保障**：
+   - 抽屉整体采用 `height: 82vh; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;`；
+   - 顶部拖动手柄条固定 `flex-shrink: 0;`；
+   - 中间内容滚动区 `.detail-scroll-content` 设为 `flex: 1; min-height: 0; height: 0; overflow-y: auto;`；
+   - 底部评论栏 `.comment-input-bar` 设为 `flex-shrink: 0;`，并自适应安全区内边距 `padding-bottom: calc(16rpx + env(safe-area-inset-bottom));`，**确保无论动态内容多长，评论输入框永远稳定停留在可视窗口底部，绝不被截断隐藏**。
+2. **作者本人互动特权**：
+   - 系统支持作者本人在自己发布的内容下进行回复、进展补充或给自己留言；
+   - 当发布者打开自己的动态时，输入框占位符自适应切换为：`"我是发布者，写下最新进展或回复..."`；
+   - 发表成功后即刻在评论流中显示带【我】徽标的专属留言卡片。
+
+#### 详情页防误触关闭机制：
+- 点击右上角高对比常驻按钮 `✕` 或顶部手柄：触发 `closeDetailSheet(true)` 强制关闭，无延迟；
+- 点击外部暗色遮罩：触发 `closeDetailSheet(false)`，受 450ms 时间戳防护锁限制，拦截手机端手势穿透导致的闪退；
+- 点击白色卡片内部：`@tap.stop` 阻断冒泡，杜绝误触。
 
 ---
 
@@ -289,6 +291,8 @@ flowchart LR
 | **朋友圈模式** | 500米全动态按时间倒序流式展现，点赞动效，评论 | `src/components/MomentsView.vue` | `visibleMomentsStatuses`, `toggleLikeStatus()` | ✅ 完美实现 |
 | **隐私电话保护** | 个人资料支持隐藏/公开手机号，公开时一键拨打 | `src/components/UserCardModal.vue`, `MyProfileSheet.vue` | `showPhone`, `makePhoneCall()` | ✅ 完美实现 |
 | **好友与私聊** | 手机号加好友，申请审批流转，实时气泡私聊 | `src/components/FriendsSheet.vue`, `ChatSheet.vue` | `handleAddFriend()`, `handleAcceptFriend()`, `sendChatMessage()` | ✅ 完美实现 |
+| **两段式递进弹窗** | 点击状态必先打开详情抽屉(图二)，在图二点击头像才弹出资料卡(图一) | `MomentsView.vue`, `MapView.vue`, `DetailSheet.vue` | `openDetailSheet()`, `viewAuthorProfile()` | ✅ 完美实现 |
+| **底部吸底评论栏** | 评论输入框 flex-shrink: 0 强吸底不被截断，支持自己给自己发表评论 | `DetailSheet.vue`, `global.scss`, `useAppState.ts` | `handleSendComment()`, `addCommentToStatus()` | ✅ 完美实现 |
 | **模拟走动** | 支持一键模拟用户物理移动，重新计算 500m 圈与距离 | `src/components/MapView.vue`, `useAppState.ts` | `simulateUserMove()`, `recenterToUser()` | ✅ 完美实现 |
 
 ---

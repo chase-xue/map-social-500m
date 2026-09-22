@@ -106,7 +106,14 @@
         <view class="current-user-avatar-tag" title="当前发表身份">
           <image class="comment-my-avatar" :src="myProfile.avatar" mode="aspectFill" />
         </view>
-        <input class="comment-input" v-model="newCommentText" placeholder="写下你的真实评价..." placeholder-class="input-placeholder" confirm-type="send" @confirm="handleSendComment" />
+        <input
+          class="comment-input"
+          v-model="newCommentText"
+          :placeholder="activeStatus?.userId === myProfile.id ? '我是发布者，写下最新进展或回复...' : '写下你的真实评价...'"
+          placeholder-class="input-placeholder"
+          confirm-type="send"
+          @confirm="handleSendComment"
+        />
         <view class="comment-media-btns">
           <view class="comment-cam-btn" @tap="chooseCommentImage" title="从相册上传照片">
             <text>📷</text>
