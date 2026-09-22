@@ -1,0 +1,507 @@
+{
+  "communities": {
+    "0": [
+      "src_composables_useappstate",
+      "src_composables_useappstate_activecluster",
+      "src_composables_useappstate_activehelpstatuses",
+      "src_composables_useappstate_activestatus",
+      "src_composables_useappstate_activetab",
+      "src_composables_useappstate_allstatuses",
+      "src_composables_useappstate_chatscrolltop",
+      "src_composables_useappstate_chatsheetvisible",
+      "src_composables_useappstate_clustervisible",
+      "src_composables_useappstate_currentchatfriend",
+      "src_composables_useappstate_currentchatmessages",
+      "src_composables_useappstate_detailvisible",
+      "src_composables_useappstate_editingprofile",
+      "src_composables_useappstate_friendslist",
+      "src_composables_useappstate_friendssheetvisible",
+      "src_composables_useappstate_hasactiveemergency",
+      "src_composables_useappstate_helpcontactphone",
+      "src_composables_useappstate_helpsheetvisible",
+      "src_composables_useappstate_isemergencyhelp",
+      "src_composables_useappstate_ishelpsubmitting",
+      "src_composables_useappstate_ispublishing",
+      "src_composables_useappstate_locationclusters",
+      "src_composables_useappstate_mapcenter",
+      "src_composables_useappstate_mapcircles",
+      "src_composables_useappstate_mapmarkers",
+      "src_composables_useappstate_mapscale",
+      "src_composables_useappstate_myactivehelp",
+      "src_composables_useappstate_myhelphistory",
+      "src_composables_useappstate_myprofile",
+      "src_composables_useappstate_myprofilevisible",
+      "src_composables_useappstate_newchatmessagetext",
+      "src_composables_useappstate_newcommenttext",
+      "src_composables_useappstate_newhelpcontent",
+      "src_composables_useappstate_newpostcontent",
+      "src_composables_useappstate_pendingfriendscount",
+      "src_composables_useappstate_pickedcommentimage",
+      "src_composables_useappstate_pickedhelpimages",
+      "src_composables_useappstate_pickedimages",
+      "src_composables_useappstate_publishvisible",
+      "src_composables_useappstate_sortedmomentsstatuses",
+      "src_composables_useappstate_statusbarheight",
+      "src_composables_useappstate_usercardvisible",
+      "src_composables_useappstate_userlocation",
+      "src_composables_useappstate_viewingdistance",
+      "src_composables_useappstate_viewingprofile",
+      "src_composables_useappstate_visiblestatuses",
+      "src_composables_useappstate_z_index"
+    ],
+    "1": [
+      "src_composables_useappstate_handleclosehelp",
+      "src_composables_useappstate_handlesendcomment",
+      "src_composables_useappstate_initgeolocation",
+      "src_composables_useappstate_refreshnearbystatuses",
+      "src_composables_useappstate_togglelikestatus",
+      "src_services_geo",
+      "src_services_geo_calculatedistance",
+      "src_services_geo_clusterstatusesbylocation",
+      "src_services_geo_createoffsetcoordinates",
+      "src_services_geo_filterstatuseswithinrange",
+      "src_services_geo_formatdistance",
+      "src_services_geo_iswithin500meters",
+      "src_services_geo_toradians",
+      "src_services_storage",
+      "src_services_storage_addcommenttostatus",
+      "src_services_storage_addnewstatus",
+      "src_services_storage_default_user_profile",
+      "src_services_storage_ensureinitialmockdata",
+      "src_services_storage_readlocaldata",
+      "src_services_storage_resolvehelpstatus",
+      "src_services_storage_togglestatuslike",
+      "src_services_storage_writelocaldata",
+      "src_types_index",
+      "src_types_index_chatmessage",
+      "src_types_index_commentitem",
+      "src_types_index_coordinates",
+      "src_types_index_frienditem",
+      "src_types_index_locationcluster",
+      "src_types_index_mapcircle",
+      "src_types_index_mapmarker",
+      "src_types_index_statusitem",
+      "src_types_index_userprofile"
+    ],
+    "2": [
+      "dcloudio_uni_app",
+      "dcloudio_uni_app_plus",
+      "dcloudio_uni_components",
+      "dcloudio_uni_h5",
+      "dcloudio_uni_mp_toutiao",
+      "dcloudio_uni_mp_weixin",
+      "package",
+      "package_dependencies",
+      "package_dependencies_dcloudio_uni_app",
+      "package_dependencies_dcloudio_uni_app_plus",
+      "package_dependencies_dcloudio_uni_components",
+      "package_dependencies_dcloudio_uni_h5",
+      "package_dependencies_dcloudio_uni_mp_toutiao",
+      "package_dependencies_dcloudio_uni_mp_weixin",
+      "package_dependencies_vue",
+      "package_description",
+      "package_name",
+      "package_scripts",
+      "package_scripts_build_app",
+      "package_scripts_build_h5",
+      "package_scripts_build_mp_toutiao",
+      "package_scripts_build_mp_weixin",
+      "package_scripts_dev_app",
+      "package_scripts_dev_h5",
+      "package_scripts_dev_mp_toutiao",
+      "package_scripts_dev_mp_weixin",
+      "package_version",
+      "vue"
+    ],
+    "3": [
+      "ref_chooselocation",
+      "ref_getlocation",
+      "src_manifest",
+      "src_manifest_appid",
+      "src_manifest_description",
+      "src_manifest_mp_toutiao",
+      "src_manifest_mp_toutiao_appid",
+      "src_manifest_mp_toutiao_permission",
+      "src_manifest_mp_toutiao_requiredprivateinfos",
+      "src_manifest_mp_toutiao_setting",
+      "src_manifest_mp_toutiao_usingcomponents",
+      "src_manifest_mp_weixin",
+      "src_manifest_mp_weixin_appid",
+      "src_manifest_mp_weixin_permission",
+      "src_manifest_mp_weixin_requiredprivateinfos",
+      "src_manifest_mp_weixin_setting",
+      "src_manifest_mp_weixin_usingcomponents",
+      "src_manifest_name",
+      "src_manifest_permission_scope_userlocation",
+      "src_manifest_quickapp",
+      "src_manifest_scope_userlocation_desc",
+      "src_manifest_setting_es6",
+      "src_manifest_setting_minified",
+      "src_manifest_setting_urlcheck",
+      "src_manifest_transformpx",
+      "src_manifest_versioncode",
+      "src_manifest_versionname"
+    ],
+    "4": [
+      "src_components_chatsheet",
+      "src_components_chatsheet_chatsheetvisible_currentchatfriend_currentchatmessages_newchatmessagetext_chatscrolltop_myprofile_closechatsheet_sendcurrentchatmessage_formattime_openuserprofilecard",
+      "src_components_clustersheet",
+      "src_components_clustersheet_clustervisible_activecluster_closeclustersheet_previewimage_jumptomomentsfromcluster_formattime_opendetailsheet",
+      "src_components_detailsheet",
+      "src_components_detailsheet_detailvisible_activestatus_myprofile_pickedcommentimage_closedetailsheet_viewauthorprofile_viewcommenterprofile_previewimage_formattime_removecommentimage_choosecommentimage_handlesendcomment_handleclosehelp_makephonecall_ishelpresolvedpromptvisible",
+      "src_components_friendssheet",
+      "src_components_friendssheet_friendssheetvisible_friendslist_closefriendssheet_formattime_handleacceptfriend_openchatsheet",
+      "src_components_helpsheet",
+      "src_components_helpsheet_helpsheetvisible_isemergencyhelp_newhelpcontent_helpcontactphone_pickedhelpimages_ishelpsubmitting_closehelpsheet_choosehelpimages_removepickedhelpimage_submithelppost_previewimage_myactivehelp_opendetailsheet",
+      "src_components_mapview",
+      "src_components_mapview_mapcenter_mapscale_mapmarkers_mapcircles_onmarkertap_oncallouttap_onregionchange_recentertouser_refreshnearbystatuses_simulateusermove_visiblestatuses_openpublishsheet_opendetailsheet_locationclusters_activehelpstatuses_hasactiveemergency_openhelpsheet_myactivehelp",
+      "src_components_mapview_topemergencyhelp",
+      "src_components_momentsview",
+      "src_components_momentsview_statusbarheight_myprofile_sortedmomentsstatuses_activehelpstatuses_openmyprofilesheet_openpublishsheet_viewauthorprofile_viewcommenterprofile_previewimage_togglelikestatus_opendetailsheet_formattime_ishelpresolvedpromptvisible",
+      "src_components_momentsview_topemergencyhelp",
+      "src_components_myprofilesheet",
+      "src_components_myprofilesheet_genderoptions",
+      "src_components_myprofilesheet_myprofilevisible_editingprofile_myhelphistory_closemyprofilesheet_choosenewavatar_savemyprofile_onphoneprivacychange_opendetailsheet_formattime",
+      "src_components_publishsheet",
+      "src_components_publishsheet_publishvisible_myprofile_userlocation_newpostcontent_pickedimages_ispublishing_closepublishsheet_openmyprofilesheet_previewimage_removepickedimage_chooseimages_submitnewpost",
+      "src_components_topnav",
+      "src_components_topnav_statusbarheight_activetab_visiblestatuses_pendingfriendscount_myprofile_openfriendssheet_openmyprofilesheet",
+      "src_components_usercardmodal",
+      "src_components_usercardmodal_usercardvisible_viewingprofile_viewingdistance_myprofile_closeusercard_makephonecall_isfriend_isfriendpending_startchatfromcard_acceptfriendfromcard_handleaddfriend_openmyprofilesheet",
+      "src_pages_index_index",
+      "src_pages_index_index_activetab_initapp"
+    ],
+    "5": [
+      "ref_dcloudio_types",
+      "ref_dom",
+      "ref_esnext",
+      "ref_src_d_ts",
+      "ref_src_ts",
+      "ref_src_tsx",
+      "ref_src_vue",
+      "tsconfig",
+      "tsconfig_compileroptions",
+      "tsconfig_compileroptions_esmoduleinterop",
+      "tsconfig_compileroptions_isolatedmodules",
+      "tsconfig_compileroptions_jsx",
+      "tsconfig_compileroptions_lib",
+      "tsconfig_compileroptions_module",
+      "tsconfig_compileroptions_moduleresolution",
+      "tsconfig_compileroptions_resolvejsonmodule",
+      "tsconfig_compileroptions_skiplibcheck",
+      "tsconfig_compileroptions_sourcemap",
+      "tsconfig_compileroptions_strict",
+      "tsconfig_compileroptions_target",
+      "tsconfig_compileroptions_types",
+      "tsconfig_compileroptions_usedefineforclassfields",
+      "tsconfig_include"
+    ],
+    "6": [
+      "ref_uses_permission_android_name_android_permission_access_coarse_location",
+      "ref_uses_permission_android_name_android_permission_access_fine_location",
+      "ref_uses_permission_android_name_android_permission_camera",
+      "ref_uses_permission_android_name_android_permission_read_external_storage",
+      "src_manifest_android_permissions",
+      "src_manifest_app_plus",
+      "src_manifest_app_plus_compilerversion",
+      "src_manifest_app_plus_distribute",
+      "src_manifest_app_plus_modules",
+      "src_manifest_app_plus_nvuestylecompiler",
+      "src_manifest_app_plus_splashscreen",
+      "src_manifest_app_plus_usingcomponents",
+      "src_manifest_distribute_android",
+      "src_manifest_distribute_ios",
+      "src_manifest_ios_privacydescription",
+      "src_manifest_modules_maps",
+      "src_manifest_privacydescription_nscamerausagedescription",
+      "src_manifest_privacydescription_nslocationwheninuseusagedescription",
+      "src_manifest_privacydescription_nsphotolibraryusagedescription",
+      "src_manifest_splashscreen_alwaysshowbeforerender",
+      "src_manifest_splashscreen_autoclose",
+      "src_manifest_splashscreen_delay",
+      "src_manifest_splashscreen_waiting"
+    ],
+    "7": [
+      "src_composables_useappstate_choosehelpimages",
+      "src_composables_useappstate_chooseimages",
+      "src_composables_useappstate_closechatsheet",
+      "src_composables_useappstate_closeclustersheet",
+      "src_composables_useappstate_closedetailsheet",
+      "src_composables_useappstate_closefriendssheet",
+      "src_composables_useappstate_isfriend",
+      "src_composables_useappstate_isfriendpending",
+      "src_composables_useappstate_ishelpresolvedpromptvisible",
+      "src_composables_useappstate_jumptomomentsfromcluster",
+      "src_composables_useappstate_makephonecall",
+      "src_composables_useappstate_onphoneprivacychange",
+      "src_composables_useappstate_openhelpsheet",
+      "src_composables_useappstate_openmyprofilesheet",
+      "src_composables_useappstate_openpublishsheet",
+      "src_composables_useappstate_previewimage",
+      "src_composables_useappstate_recentertouser",
+      "src_composables_useappstate_removecommentimage",
+      "src_composables_useappstate_removepickedhelpimage",
+      "src_composables_useappstate_removepickedimage",
+      "src_composables_useappstate_simulateusermove",
+      "src_composables_useappstate_useappstate"
+    ],
+    "8": [
+      "src_composables_useappstate_getsysteminfo",
+      "src_composables_useappstate_handleacceptfriend",
+      "src_composables_useappstate_handleaddfriend",
+      "src_composables_useappstate_initapp",
+      "src_composables_useappstate_openfriendssheet",
+      "src_composables_useappstate_sendcurrentchatmessage",
+      "src_services_storage_acceptfriendrequest",
+      "src_services_storage_filesystemmanagerlike",
+      "src_services_storage_filesystemmanagerlike_accesssync",
+      "src_services_storage_filesystemmanagerlike_readfilesync",
+      "src_services_storage_filesystemmanagerlike_savefilesync",
+      "src_services_storage_filesystemmanagerlike_writefilesync",
+      "src_services_storage_getchatmessages",
+      "src_services_storage_getfriendslist",
+      "src_services_storage_getuserprofile",
+      "src_services_storage_readrawfile",
+      "src_services_storage_savefriendslist",
+      "src_services_storage_sendchatmessage",
+      "src_services_storage_sendfriendrequest",
+      "src_services_storage_writerawfile"
+    ],
+    "9": [
+      "dcloudio_types",
+      "dcloudio_uni_cli_shared",
+      "dcloudio_vite_plugin_uni",
+      "package_devdependencies",
+      "package_devdependencies_dcloudio_types",
+      "package_devdependencies_dcloudio_uni_cli_shared",
+      "package_devdependencies_dcloudio_vite_plugin_uni",
+      "package_devdependencies_sass",
+      "package_devdependencies_typescript",
+      "package_devdependencies_vite",
+      "sass",
+      "typescript",
+      "vite"
+    ],
+    "10": [
+      "src_manifest_amap_appkey_android",
+      "src_manifest_amap_appkey_ios",
+      "src_manifest_amap_key",
+      "src_manifest_amap_securityjscode",
+      "src_manifest_h5",
+      "src_manifest_h5_router",
+      "src_manifest_h5_sdkconfigs",
+      "src_manifest_h5_title",
+      "src_manifest_maps_amap",
+      "src_manifest_router_base",
+      "src_manifest_router_mode",
+      "src_manifest_sdkconfigs_maps"
+    ],
+    "11": [
+      "src_composables_useappstate_choosecommentimage",
+      "src_composables_useappstate_choosenewavatar",
+      "src_composables_useappstate_closehelpsheet",
+      "src_composables_useappstate_closepublishsheet",
+      "src_composables_useappstate_opendetailsheet",
+      "src_composables_useappstate_submithelppost",
+      "src_composables_useappstate_submitnewpost",
+      "src_services_storage_savelocalimagefile"
+    ],
+    "12": [
+      "src_composables_useappstate_oncallouttap",
+      "src_composables_useappstate_onmarkertap",
+      "src_composables_useappstate_openclustersheet",
+      "src_composables_useappstate_openuserprofilecard",
+      "src_composables_useappstate_viewauthorprofile",
+      "src_composables_useappstate_viewcommenterprofile"
+    ],
+    "13": [
+      "src_composables_useappstate_acceptfriendfromcard",
+      "src_composables_useappstate_closeusercard",
+      "src_composables_useappstate_openchatsheet",
+      "src_composables_useappstate_startchatfromcard"
+    ],
+    "14": [
+      "src_app",
+      "src_main",
+      "src_main_createapp"
+    ],
+    "15": [
+      "src_composables_useappstate_closemyprofilesheet",
+      "src_composables_useappstate_savemyprofile",
+      "src_services_storage_saveuserprofile"
+    ],
+    "16": [
+      "src_composables_useappstate_formattime",
+      "src_services_geo_formatrelativetime"
+    ],
+    "17": [
+      "vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.0425531914893617,
+    "1": 0.12298387096774194,
+    "2": 0.07142857142857142,
+    "3": 0.08547008547008547,
+    "4": 0.07407407407407407,
+    "5": 0.08695652173913043,
+    "6": 0.08695652173913043,
+    "7": 0.09523809523809523,
+    "8": 0.16842105263157894,
+    "9": 0.15384615384615385,
+    "10": 0.16666666666666666,
+    "11": 0.2857142857142857,
+    "12": 0.3333333333333333,
+    "13": 0.6666666666666666,
+    "14": 0.6666666666666666,
+    "15": 0.6666666666666666,
+    "16": 1.0,
+    "17": 1.0
+  },
+  "gods": [
+    {
+      "id": "src_composables_useappstate_useappstate",
+      "label": "useAppState()",
+      "degree": 63
+    },
+    {
+      "id": "src_services_storage_readlocaldata",
+      "label": "readLocalData()",
+      "degree": 14
+    },
+    {
+      "id": "tsconfig_compileroptions",
+      "label": "compilerOptions",
+      "degree": 14
+    },
+    {
+      "id": "src_services_storage_getfriendslist",
+      "label": "getFriendsList()",
+      "degree": 11
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 9
+    },
+    {
+      "id": "src_services_storage_sendchatmessage",
+      "label": "sendChatMessage()",
+      "degree": 9
+    },
+    {
+      "id": "src_composables_useappstate_submitnewpost",
+      "label": "submitNewPost()",
+      "degree": 8
+    },
+    {
+      "id": "src_composables_useappstate_submithelppost",
+      "label": "submitHelpPost()",
+      "degree": 8
+    },
+    {
+      "id": "src_services_storage_writerawfile",
+      "label": "writeRawFile()",
+      "degree": 8
+    },
+    {
+      "id": "src_services_storage_writelocaldata",
+      "label": "writeLocalData()",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "openChatSheet()",
+      "target": "getChatMessages()",
+      "source_files": [
+        "src/composables/useAppState.ts",
+        "src/services/storage.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "submitNewPost()",
+      "target": "createOffsetCoordinates()",
+      "source_files": [
+        "src/composables/useAppState.ts",
+        "src/services/geo.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "submitNewPost()",
+      "target": "addNewStatus()",
+      "source_files": [
+        "src/composables/useAppState.ts",
+        "src/services/storage.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "submitNewPost()",
+      "target": "readLocalData()",
+      "source_files": [
+        "src/composables/useAppState.ts",
+        "src/services/storage.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "submitHelpPost()",
+      "target": "createOffsetCoordinates()",
+      "source_files": [
+        "src/composables/useAppState.ts",
+        "src/services/geo.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `useAppState()` connect `useAppState` to `useAppState.ts`, `storage.ts`, `index.vue`, `getFriendsList`, `submitHelpPost`, `onMarkerTap`, `acceptFriendFromCard`, `saveMyProfile`, `formatTime`?",
+      "why": "High betweenness centrality (0.030) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `app-plus` connect `app-plus` to `manifest.json`?",
+      "why": "High betweenness centrality (0.024) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 50 inferred relationships involving `useAppState()` (e.g. with `acceptFriendFromCard()` and `chooseCommentImage()`) actually correct?",
+      "why": "`useAppState()` has 50 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `name`, `version`, `description` to the rest of the system?",
+      "why": "139 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `useAppState.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.0425531914893617 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `storage.ts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.12298387096774194 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `scripts` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.07142857142857142 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

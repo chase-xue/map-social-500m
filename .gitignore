@@ -37,3 +37,4 @@ coverage/
 *.tmp
 .cache/
 .temp/
+graphify-out/cache/

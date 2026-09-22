@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>/ — graphify tree viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      margin: 20px 0 0 24px;
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #1e3a56;
+    }
+    .controls {
+      margin: 20px 0 15px 24px;
+    }
+    button {
+      margin-right: 10px;
+      padding: 8px 18px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:active {
+      background: #004085;
+    }
+    #tree-container {
+      width: calc(100vw - 48px); /* Adjust for body margin/padding */
+      height: 85vh;
+      overflow: auto;
+      border-radius: 8px;
+      background: #fff;
+      margin-left: 24px;
+      margin-right: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #ddd;
+    }
+    svg {
+      background: #fff;
+      border-radius: 8px;
+      display: block; /* Important for D3 */
+    }
+    .node circle {
+      stroke-width: 2.5px;
+    }
+    .node text { /* Base style for the <text> container */
+      font: 13px 'Segoe UI', sans-serif;
+      paint-order: stroke fill; /* Ensures text is readable over lines */
+      stroke: #fff; /* White halo */
+      stroke-width: 3px; /* Halo thickness */
+      stroke-linejoin: round;
+      stroke-opacity: 0.85; /* Halo opacity */
+    }
+    .link {
+      fill: none;
+      stroke-opacity: 0.7;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body>
+  <h1>/ — Knowledge Graph</h1>
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="resetView()">Reset View</button>
+  </div>
+  <div id="tree-container">
+    <svg id="tree-svg" width="6000" height="8000"></svg>
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    const initialJsonData = {"name":"/","total_count":281,"children":[{"name":"package.json","total_count":40,"children":[{"name":"@dcloudio/types","total_count":1,"children":[]},{"name":"@dcloudio/types","total_count":1,"children":[]},{"name":"@dcloudio/uni-app","total_count":1,"children":[]},{"name":"@dcloudio/uni-app","total_count":1,"children":[]},{"name":"@dcloudio/uni-app-plus","total_count":1,"children":[]},{"name":"@dcloudio/uni-app-plus","total_count":1,"children":[]},{"name":"@dcloudio/uni-cli-shared","total_count":1,"children":[]},{"name":"@dcloudio/uni-cli-shared","total_count":1,"children":[]},{"name":"@dcloudio/uni-components","total_count":1,"children":[]},{"name":"@dcloudio/uni-components","total_count":1,"children":[]},{"name":"@dcloudio/uni-h5","total_count":1,"children":[]},{"name":"@dcloudio/uni-h5","total_count":1,"children":[]},{"name":"@dcloudio/uni-mp-toutiao","total_count":1,"children":[]},{"name":"@dcloudio/uni-mp-toutiao","total_count":1,"children":[]},{"name":"@dcloudio/uni-mp-weixin","total_count":1,"children":[]},{"name":"@dcloudio/uni-mp-weixin","total_count":1,"children":[]},{"name":"@dcloudio/vite-plugin-uni","total_count":1,"children":[]},{"name":"@dcloudio/vite-plugin-uni","total_count":1,"children":[]},{"name":"build:app","total_count":1,"children":[]},{"name":"build:h5","total_count":1,"children":[]},{"name":"build:mp-toutiao","total_count":1,"children":[]},{"name":"build:mp-weixin","total_count":1,"children":[]},{"name":"dependencies","total_count":1,"children":[]},{"name":"description","total_count":1,"children":[]},{"name":"dev:app","total_count":1,"children":[]},{"name":"dev:h5","total_count":1,"children":[]},{"name":"dev:mp-toutiao","total_count":1,"children":[]},{"name":"dev:mp-weixin","total_count":1,"children":[]},{"name":"devDependencies","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"sass","total_count":1,"children":[]},{"name":"sass","total_count":1,"children":[]},{"name":"scripts","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"typescript","total_count":1,"children":[]},{"name":"version","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]},{"name":"vite","total_count":1,"children":[]},{"name":"vue","total_count":1,"children":[]},{"name":"vue","total_count":1,"children":[]}]},{"name":"src","total_count":218,"children":[{"name":"components","total_count":14,"children":[{"name":"ChatSheet.vue","total_count":1,"children":[{"name":"{\n  chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText,\n  chatScrollTop, myProfile,\n  closeChatSheet, sendCurrentChatMessage, formatTime, openUserProfileCard,\n}","total_count":1,"children":[]}]},{"name":"ClusterSheet.vue","total_count":1,"children":[{"name":"{\n  clusterVisible, activeCluster,\n  closeClusterSheet, previewImage, jumpToMomentsFromCluster,\n  formatTime, openDetailSheet,\n}","total_count":1,"children":[]}]},{"name":"DetailSheet.vue","total_count":1,"children":[{"name":"{\n  detailVisible, activeStatus, myProfile,\n  pickedCommentImage,\n  closeDetailSheet, viewAuthorProfile, viewCommenterProfile, previewImage,\n  formatTime, removeCommentImage,\n  chooseCommentImage, handleSendComment, handleCloseHelp, makePhoneCall, isHelpResolvedPromptVisible,\n}","total_count":1,"children":[]}]},{"name":"FriendsSheet.vue","total_count":1,"children":[{"name":"{\n  friendsSheetVisible, friendsList,\n  closeFriendsSheet, formatTime, handleAcceptFriend, openChatSheet,\n}","total_count":1,"children":[]}]},{"name":"HelpSheet.vue","total_count":1,"children":[{"name":"{\n  helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,\n  closeHelpSheet, chooseHelpImages, removePickedHelpImage, submitHelpPost, previewImage,\n  myActiveHelp, openDetailSheet,\n}","total_count":1,"children":[]}]},{"name":"MapView.vue","total_count":2,"children":[{"name":"topEmergencyHelp","total_count":1,"children":[]},{"name":"{\n  mapCenter, mapScale, mapMarkers, mapCircles,\n  onMarkerTap, onCalloutTap, onRegionChange,\n  recenterToUser, refreshNearbyStatuses, simulateUserMove,\n  visibleStatuses, openPublishSheet, openDetailSheet, locationClusters,\n  activeHelpStatuses, hasActiveEmergency, openHelpSheet, myActiveHelp,\n}","total_count":1,"children":[]}]},{"name":"MomentsView.vue","total_count":2,"children":[{"name":"topEmergencyHelp","total_count":1,"children":[]},{"name":"{\n  statusBarHeight, myProfile, sortedMomentsStatuses, activeHelpStatuses,\n  openMyProfileSheet, openPublishSheet, viewAuthorProfile, viewCommenterProfile,\n  previewImage, toggleLikeStatus, openDetailSheet, formatTime, isHelpResolvedPromptVisible,\n}","total_count":1,"children":[]}]},{"name":"MyProfileSheet.vue","total_count":2,"children":[{"name":"genderOptions","total_count":1,"children":[]},{"name":"{\n  myProfileVisible, editingProfile, myHelpHistory,\n  closeMyProfileSheet, chooseNewAvatar, saveMyProfile, onPhonePrivacyChange,\n  openDetailSheet, formatTime,\n}","total_count":1,"children":[]}]},{"name":"PublishSheet.vue","total_count":1,"children":[{"name":"{\n  publishVisible, myProfile, userLocation, newPostContent, pickedImages, isPublishing,\n  closePublishSheet, openMyProfileSheet, previewImage, removePickedImage, chooseImages,\n  submitNewPost,\n}","total_count":1,"children":[]}]},{"name":"TopNav.vue","total_count":1,"children":[{"name":"{\n  statusBarHeight, activeTab, visibleStatuses,\n  pendingFriendsCount, myProfile,\n  openFriendsSheet, openMyProfileSheet,\n}","total_count":1,"children":[]}]},{"name":"UserCardModal.vue","total_count":1,"children":[{"name":"{\n  userCardVisible, viewingProfile, viewingDistance, myProfile,\n  closeUserCard, makePhoneCall, isFriend, isFriendPending,\n  startChatFromCard, acceptFriendFromCard, handleAddFriend, openMyProfileSheet,\n}","total_count":1,"children":[]}]}]},{"name":"composables","total_count":99,"children":[{"name":"useAppState.ts","total_count":99,"children":[{"name":"acceptFriendFromCard()","total_count":1,"children":[]},{"name":"activeCluster","total_count":1,"children":[]},{"name":"activeHelpStatuses","total_count":1,"children":[]},{"name":"activeStatus","total_count":1,"children":[]},{"name":"activeTab","total_count":1,"children":[]},{"name":"allStatuses","total_count":1,"children":[]},{"name":"chatScrollTop","total_count":1,"children":[]},{"name":"chatSheetVisible","total_count":1,"children":[]},{"name":"chooseCommentImage()","total_count":1,"children":[]},{"name":"chooseHelpImages()","total_count":1,"children":[]},{"name":"chooseImages()","total_count":1,"children":[]},{"name":"chooseNewAvatar()","total_count":1,"children":[]},{"name":"closeChatSheet()","total_count":1,"children":[]},{"name":"closeClusterSheet()","total_count":1,"children":[]},{"name":"closeDetailSheet()","total_count":1,"children":[]},{"name":"closeFriendsSheet()","total_count":1,"children":[]},{"name":"closeHelpSheet()","total_count":1,"children":[]},{"name":"closeMyProfileSheet()","total_count":1,"children":[]},{"name":"closePublishSheet()","total_count":1,"children":[]},{"name":"closeUserCard()","total_count":1,"children":[]},{"name":"clusterVisible","total_count":1,"children":[]},{"name":"currentChatFriend","total_count":1,"children":[]},{"name":"currentChatMessages","total_count":1,"children":[]},{"name":"detailVisible","total_count":1,"children":[]},{"name":"editingProfile","total_count":1,"children":[]},{"name":"formatTime()","total_count":1,"children":[]},{"name":"friendsList","total_count":1,"children":[]},{"name":"friendsSheetVisible","total_count":1,"children":[]},{"name":"getSystemInfo()","total_count":1,"children":[]},{"name":"handleAcceptFriend()","total_count":1,"children":[]},{"name":"handleAddFriend()","total_count":1,"children":[]},{"name":"handleCloseHelp()","total_count":1,"children":[]},{"name":"handleSendComment()","total_count":1,"children":[]},{"name":"hasActiveEmergency","total_count":1,"children":[]},{"name":"helpContactPhone","total_count":1,"children":[]},{"name":"helpSheetVisible","total_count":1,"children":[]},{"name":"initApp()","total_count":1,"children":[]},{"name":"initGeolocation()","total_count":1,"children":[]},{"name":"isEmergencyHelp","total_count":1,"children":[]},{"name":"isFriend()","total_count":1,"children":[]},{"name":"isFriendPending()","total_count":1,"children":[]},{"name":"isHelpResolvedPromptVisible()","total_count":1,"children":[]},{"name":"isHelpSubmitting","total_count":1,"children":[]},{"name":"isPublishing","total_count":1,"children":[]},{"name":"jumpToMomentsFromCluster()","total_count":1,"children":[]},{"name":"locationClusters","total_count":1,"children":[]},{"name":"makePhoneCall()","total_count":1,"children":[]},{"name":"mapCenter","total_count":1,"children":[]},{"name":"mapCircles","total_count":1,"children":[]},{"name":"mapMarkers","total_count":1,"children":[]},{"name":"mapScale","total_count":1,"children":[]},{"name":"myActiveHelp","total_count":1,"children":[]},{"name":"myHelpHistory","total_count":1,"children":[]},{"name":"myProfile","total_count":1,"children":[]},{"name":"myProfileVisible","total_count":1,"children":[]},{"name":"newChatMessageText","total_count":1,"children":[]},{"name":"newCommentText","total_count":1,"children":[]},{"name":"newHelpContent","total_count":1,"children":[]},{"name":"newPostContent","total_count":1,"children":[]},{"name":"onCalloutTap()","total_count":1,"children":[]},{"name":"onMarkerTap()","total_count":1,"children":[]},{"name":"onPhonePrivacyChange()","total_count":1,"children":[]},{"name":"openChatSheet()","total_count":1,"children":[]},{"name":"openClusterSheet()","total_count":1,"children":[]},{"name":"openDetailSheet()","total_count":1,"children":[]},{"name":"openFriendsSheet()","total_count":1,"children":[]},{"name":"openHelpSheet()","total_count":1,"children":[]},{"name":"openMyProfileSheet()","total_count":1,"children":[]},{"name":"openPublishSheet()","total_count":1,"children":[]},{"name":"openUserProfileCard()","total_count":1,"children":[]},{"name":"pendingFriendsCount","total_count":1,"children":[]},{"name":"pickedCommentImage","total_count":1,"children":[]},{"name":"pickedHelpImages","total_count":1,"children":[]},{"name":"pickedImages","total_count":1,"children":[]},{"name":"previewImage()","total_count":1,"children":[]},{"name":"publishVisible","total_count":1,"children":[]},{"name":"recenterToUser()","total_count":1,"children":[]},{"name":"refreshNearbyStatuses()","total_count":1,"children":[]},{"name":"removeCommentImage()","total_count":1,"children":[]},{"name":"removePickedHelpImage()","total_count":1,"children":[]},{"name":"removePickedImage()","total_count":1,"children":[]},{"name":"saveMyProfile()","total_count":1,"children":[]},{"name":"sendCurrentChatMessage()","total_count":1,"children":[]},{"name":"simulateUserMove()","total_count":1,"children":[]},{"name":"sortedMomentsStatuses","total_count":1,"children":[]},{"name":"startChatFromCard()","total_count":1,"children":[]},{"name":"statusBarHeight","total_count":1,"children":[]},{"name":"submitHelpPost()","total_count":1,"children":[]},{"name":"submitNewPost()","total_count":1,"children":[]},{"name":"toggleLikeStatus()","total_count":1,"children":[]},{"name":"useAppState()","total_count":1,"children":[]},{"name":"userCardVisible","total_count":1,"children":[]},{"name":"userLocation","total_count":1,"children":[]},{"name":"viewAuthorProfile()","total_count":1,"children":[]},{"name":"viewCommenterProfile()","total_count":1,"children":[]},{"name":"viewingDistance","total_count":1,"children":[]},{"name":"viewingProfile","total_count":1,"children":[]},{"name":"visibleStatuses","total_count":1,"children":[]},{"name":"Z_INDEX","total_count":1,"children":[]}]}]},{"name":"main.ts","total_count":1,"children":[{"name":"createApp()","total_count":1,"children":[]}]},{"name":"manifest.json","total_count":61,"children":[{"name":"<uses-permission android:name=\\\"android.permission.ACCESS_COARSE_LOCATION\\\"/>","total_count":1,"children":[]},{"name":"<uses-permission android:name=\\\"android.permission.ACCESS_FINE_LOCATION\\\"/>","total_count":1,"children":[]},{"name":"<uses-permission android:name=\\\"android.permission.CAMERA\\\"/>","total_count":1,"children":[]},{"name":"<uses-permission android:name=\\\"android.permission.READ_EXTERNAL_STORAGE\\\"/>","total_count":1,"children":[]},{"name":"alwaysShowBeforeRender","total_count":1,"children":[]},{"name":"amap","total_count":1,"children":[]},{"name":"android","total_count":1,"children":[]},{"name":"app-plus","total_count":1,"children":[]},{"name":"appid","total_count":1,"children":[]},{"name":"appid","total_count":1,"children":[]},{"name":"appid","total_count":1,"children":[]},{"name":"appkey_android","total_count":1,"children":[]},{"name":"appkey_ios","total_count":1,"children":[]},{"name":"autoclose","total_count":1,"children":[]},{"name":"base","total_count":1,"children":[]},{"name":"chooseLocation","total_count":1,"children":[]},{"name":"compilerVersion","total_count":1,"children":[]},{"name":"delay","total_count":1,"children":[]},{"name":"desc","total_count":1,"children":[]},{"name":"description","total_count":1,"children":[]},{"name":"distribute","total_count":1,"children":[]},{"name":"es6","total_count":1,"children":[]},{"name":"getLocation","total_count":1,"children":[]},{"name":"h5","total_count":1,"children":[]},{"name":"ios","total_count":1,"children":[]},{"name":"key","total_count":1,"children":[]},{"name":"Maps","total_count":1,"children":[]},{"name":"maps","total_count":1,"children":[]},{"name":"minified","total_count":1,"children":[]},{"name":"mode","total_count":1,"children":[]},{"name":"modules","total_count":1,"children":[]},{"name":"mp-toutiao","total_count":1,"children":[]},{"name":"mp-weixin","total_count":1,"children":[]},{"name":"name","total_count":1,"children":[]},{"name":"NSCameraUsageDescription","total_count":1,"children":[]},{"name":"NSLocationWhenInUseUsageDescription","total_count":1,"children":[]},{"name":"NSPhotoLibraryUsageDescription","total_count":1,"children":[]},{"name":"nvueStyleCompiler","total_count":1,"children":[]},{"name":"permission","total_count":1,"children":[]},{"name":"permission","total_count":1,"children":[]},{"name":"permissions","total_count":1,"children":[]},{"name":"privacyDescription","total_count":1,"children":[]},{"name":"quickapp","total_count":1,"children":[]},{"name":"requiredPrivateInfos","total_count":1,"children":[]},{"name":"requiredPrivateInfos","total_count":1,"children":[]},{"name":"router","total_count":1,"children":[]},{"name":"scope.userLocation","total_count":1,"children":[]},{"name":"sdkConfigs","total_count":1,"children":[]},{"name":"securityJsCode","total_count":1,"children":[]},{"name":"setting","total_count":1,"children":[]},{"name":"setting","total_count":1,"children":[]},{"name":"splashscreen","total_count":1,"children":[]},{"name":"title","total_count":1,"children":[]},{"name":"transformPx","total_count":1,"children":[]},{"name":"urlCheck","total_count":1,"children":[]},{"name":"usingComponents","total_count":1,"children":[]},{"name":"usingComponents","total_count":1,"children":[]},{"name":"usingComponents","total_count":1,"children":[]},{"name":"versionCode","total_count":1,"children":[]},{"name":"versionName","total_count":1,"children":[]},{"name":"waiting","total_count":1,"children":[]}]},{"name":"pages","total_count":1,"children":[{"name":"index","total_count":1,"children":[{"name":"index.vue","total_count":1,"children":[{"name":"{ activeTab, initApp }","total_count":1,"children":[]}]}]}]},{"name":"services","total_count":32,"children":[{"name":"geo.ts","total_count":8,"children":[{"name":"calculateDistance()","total_count":1,"children":[]},{"name":"clusterStatusesByLocation()","total_count":1,"children":[]},{"name":"createOffsetCoordinates()","total_count":1,"children":[]},{"name":"filterStatusesWithinRange()","total_count":1,"children":[]},{"name":"formatDistance()","total_count":1,"children":[]},{"name":"formatRelativeTime()","total_count":1,"children":[]},{"name":"isWithin500Meters()","total_count":1,"children":[]},{"name":"toRadians()","total_count":1,"children":[]}]},{"name":"storage.ts","total_count":24,"children":[{"name":".accessSync()","total_count":1,"children":[]},{"name":".readFileSync()","total_count":1,"children":[]},{"name":".saveFileSync()","total_count":1,"children":[]},{"name":".writeFileSync()","total_count":1,"children":[]},{"name":"acceptFriendRequest()","total_count":1,"children":[]},{"name":"addCommentToStatus()","total_count":1,"children":[]},{"name":"addNewStatus()","total_count":1,"children":[]},{"name":"DEFAULT_USER_PROFILE","total_count":1,"children":[]},{"name":"ensureInitialMockData()","total_count":1,"children":[]},{"name":"FileSystemManagerLike","total_count":1,"children":[]},{"name":"getChatMessages()","total_count":1,"children":[]},{"name":"getFriendsList()","total_count":1,"children":[]},{"name":"getUserProfile()","total_count":1,"children":[]},{"name":"readLocalData()","total_count":1,"children":[]},{"name":"readRawFile()","total_count":1,"children":[]},{"name":"resolveHelpStatus()","total_count":1,"children":[]},{"name":"saveFriendsList()","total_count":1,"children":[]},{"name":"saveLocalImageFile()","total_count":1,"children":[]},{"name":"saveUserProfile()","total_count":1,"children":[]},{"name":"sendChatMessage()","total_count":1,"children":[]},{"name":"sendFriendRequest()","total_count":1,"children":[]},{"name":"toggleStatusLike()","total_count":1,"children":[]},{"name":"writeLocalData()","total_count":1,"children":[]},{"name":"writeRawFile()","total_count":1,"children":[]}]}]},{"name":"types","total_count":9,"children":[{"name":"index.ts","total_count":9,"children":[{"name":"ChatMessage","total_count":1,"children":[]},{"name":"CommentItem","total_count":1,"children":[]},{"name":"Coordinates","total_count":1,"children":[]},{"name":"FriendItem","total_count":1,"children":[]},{"name":"LocationCluster","total_count":1,"children":[]},{"name":"MapCircle","total_count":1,"children":[]},{"name":"MapMarker","total_count":1,"children":[]},{"name":"StatusItem","total_count":1,"children":[]},{"name":"UserProfile","total_count":1,"children":[]}]}]},{"name":"App.vue","total_count":1,"children":[]}]},{"name":"tsconfig.json","total_count":22,"children":[{"name":"@dcloudio/types","total_count":1,"children":[]},{"name":"compilerOptions","total_count":1,"children":[]},{"name":"DOM","total_count":1,"children":[]},{"name":"esModuleInterop","total_count":1,"children":[]},{"name":"ESNext","total_count":1,"children":[]},{"name":"include","total_count":1,"children":[]},{"name":"isolatedModules","total_count":1,"children":[]},{"name":"jsx","total_count":1,"children":[]},{"name":"lib","total_count":1,"children":[]},{"name":"module","total_count":1,"children":[]},{"name":"moduleResolution","total_count":1,"children":[]},{"name":"resolveJsonModule","total_count":1,"children":[]},{"name":"skipLibCheck","total_count":1,"children":[]},{"name":"sourceMap","total_count":1,"children":[]},{"name":"src/**/*.d.ts","total_count":1,"children":[]},{"name":"src/**/*.ts","total_count":1,"children":[]},{"name":"src/**/*.tsx","total_count":1,"children":[]},{"name":"src/**/*.vue","total_count":1,"children":[]},{"name":"strict","total_count":1,"children":[]},{"name":"target","total_count":1,"children":[]},{"name":"types","total_count":1,"children":[]},{"name":"useDefineForClassFields","total_count":1,"children":[]}]},{"name":"vite.config.ts","total_count":1,"children":[]}]};
+
+    function transformData(jsonData) {
+        // Helper function to recursively build the children structure
+        function processNode(node, parentL1StageName) {
+            let displayName = node.name;
+            // Append total_count if it exists and is not already in the name
+            if (node.total_count !== undefined) {
+                if (!/\(Total Count: \d+\)$/.test(displayName)) {
+                    displayName += ` (Total Count: ${node.total_count})`;
+                }
+            }
+
+            const newNode = { name: displayName };
+
+            if (parentL1StageName === "Root") {
+                 newNode.originalStageName = node.name;
+            } else {
+                newNode.originalStageName = parentL1StageName;
+            }
+
+            if (node.children && node.children.length > 0) {
+                const stageNameToPass = (parentL1StageName === "Root") ? node.name : parentL1StageName;
+                newNode.children = node.children.map(child => processNode(child, stageNameToPass));
+            }
+
+            return newNode;
+        }
+
+        let rootDisplayName = jsonData.name;
+        if (jsonData.total_count !== undefined && !/\(Total Count: \d+\)$/.test(rootDisplayName)) {
+            rootDisplayName += ` (Total Count: ${jsonData.total_count})`;
+        }
+
+        return {
+            name: rootDisplayName,
+            originalStageName: "Root",
+            children: (jsonData.children || []).map(child => processNode(child, "Root"))
+        };
+    }
+
+    const treeData = transformData(initialJsonData);
+
+    // Auto-populated phaseColors: every depth-1 child of the root gets
+    // a stable colour from a bigger palette so all top-level dirs are
+    // distinguishable.
+    const PALETTE = [
+      ["#3498DB","#2980B9","#AED6F1"], ["#2ECC71","#27AE60","#A9DFBF"],
+      ["#E74C3C","#C0392B","#F5B7B1"], ["#9B59B6","#8E44AD","#D7BDE2"],
+      ["#F39C12","#D68910","#FAD7A0"], ["#1ABC9C","#117864","#A2D9CE"],
+      ["#34495E","#1B2631","#ABB2B9"], ["#E67E22","#BA4A00","#F5CBA7"],
+      ["#16A085","#0E6655","#A2D9CE"], ["#D35400","#A04000","#EDBB99"],
+      ["#7F8C8D","#566573","#D5DBDB"], ["#C0392B","#7B241C","#F5B7B1"],
+      ["#2E86C1","#1B4F72","#A9CCE3"], ["#28B463","#196F3D","#A9DFBF"],
+      ["#AF7AC5","#6C3483","#D2B4DE"],
+    ];
+    const phaseColors = { "Root": { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+                          "Default": { fill: "#BDC3C7", stroke: "#95A5A6", collapsedFill: "#ECF0F1" } };
+    (initialJsonData.children || []).forEach((c, i) => {
+      const pal = PALETTE[i % PALETTE.length];
+      phaseColors[c.name] = { fill: pal[0], stroke: pal[1], collapsedFill: pal[2] };
+    });
+
+    const levelSpecificPalettes = {
+      0: { fill: "#4A4A4A", stroke: "#333333", collapsedFill: "#6C757D" },
+      2: { fill: "#6ab04c", stroke: "#508a38", collapsedFill: "#a3d391" },
+      3: { fill: "#f0932b", stroke: "#d0730f", collapsedFill: "#f6c07e" },
+      4: { fill: "#be2edd", stroke: "#a01cb3", collapsedFill: "#e08bf2" },
+      5: { fill: "#00a8ff", stroke: "#007ac1", collapsedFill: "#74d2ff" },
+      6: { fill: "#e55039", stroke: "#c23620", collapsedFill: "#f09a8d" },
+      default: { fill: "#747d8c", stroke: "#57606f", collapsedFill: "#a4b0be" }
+    };
+
+    const svgElement = d3.select("#tree-svg");
+    const initialSvgWidth = +svgElement.attr("width");
+    const initialSvgHeight = +svgElement.attr("height");
+    const margin = { top: 40, right: 120, bottom: 80, left: 450 };
+    let width = initialSvgWidth - margin.left - margin.right;
+    let height = initialSvgHeight - margin.top - margin.bottom;
+    const duration = 500;
+    let nodeCounter = 0;
+    const g = svgElement.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    const treemap = d3.tree().nodeSize([40, 0]);
+    let rootNode = d3.hierarchy(treeData, d => d.children);
+    rootNode.x0 = 0;
+    rootNode.y0 = 0;
+
+    if (rootNode.children) {
+      rootNode.children.forEach(d_child => {
+        if (d_child.children) { collapseBranch(d_child); }
+      });
+    }
+    updateTree(rootNode);
+
+    function collapseBranch(d) { if (d.children) { d._children = d.children; d._children.forEach(collapseBranch); d.children = null; } }
+    function expandBranch(d) { if (d._children) { d.children = d._children; d._children = null; } if (d.children) { d.children.forEach(expandBranch); } }
+    window.expandAll = () => { expandBranch(rootNode); updateTree(rootNode); };
+    window.collapseAll = () => { if (rootNode.children) { rootNode.children.forEach(collapseBranch); } updateTree(rootNode); };
+    window.resetView = () => { if (rootNode.children) { rootNode.children.forEach(d_child => { if (d_child.children || d_child._children) { collapseBranch(d_child); } }); } if (rootNode._children && !rootNode.children) { rootNode.children = rootNode._children; rootNode._children = null; } updateTree(rootNode); };
+
+    function updateTree(source) {
+      const treeLayoutData = treemap(rootNode);
+      let nodes = treeLayoutData.descendants();
+      let links = treeLayoutData.descendants().slice(1);
+
+      let minX = 0;
+      let maxX = 0;
+      if (nodes.length > 0) {
+        minX = d3.min(nodes, d => d.x);
+        maxX = d3.max(nodes, d => d.x);
+      }
+
+      let neededHeight = Math.max(initialSvgHeight, maxX - minX + margin.top + margin.bottom + 100);
+      svgElement.transition().duration(duration / 2).attr("height", neededHeight);
+      g.transition().duration(duration / 2).attr("transform", `translate(${margin.left},${margin.top - minX + 40})`);
+
+      nodes.forEach(d => { d.y = d.depth * 400; }); // Adjust horizontal separation if needed
+
+      const node = g.selectAll('g.node').data(nodes, d => d.id || (d.id = ++nodeCounter));
+      const nodeEnter = node.enter().append('g')
+        .attr('class', d => "node" + (d.children || d._children ? " node--internal" : " node--leaf") + (d._children ? " _children" : ""))
+        .attr('transform', d => `translate(${source.y0},${source.x0})`)
+        .on('click', (event, d) => { if (d.children) { d._children = d.children; d.children = null; } else if (d._children) { d.children = d._children; d._children = null; } updateTree(d); })
+        .style('cursor', d => (d.children || d._children) ? 'pointer' : 'default');
+
+      nodeEnter.append('circle').attr('r', 1e-6);
+
+      nodeEnter.append('text')
+        .attr('dy', '.35em')
+        .attr('x', d => d.children || d._children ? -14 : 14)
+        .attr('text-anchor', d => d.children || d._children ? 'end' : 'start')
+        .style("fill-opacity", 1e-6)
+        .call(wrapText, 380);
+
+      const nodeUpdate = nodeEnter.merge(node);
+      nodeUpdate.transition().duration(duration)
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .attr('class', d => "node" + (d.children ? " node--internal" : " node--leaf") + (d._children ? " node--internal _children" : ""));
+
+      nodeUpdate.select('circle').attr('r', 8.5)
+        .style('fill', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            if (d._children) return palette.collapsedFill;
+            if (d.children) return palette.fill;
+            return "#fff";
+        })
+        .style('stroke', d => {
+            let palette;
+            if (d.depth === 0) {
+                palette = levelSpecificPalettes[0];
+            } else if (d.depth === 1) {
+                palette = phaseColors[d.data.originalStageName] || phaseColors.Default;
+            } else {
+                palette = levelSpecificPalettes[d.depth] || levelSpecificPalettes.default;
+            }
+            return palette.stroke;
+        });
+      nodeUpdate.select('text').style("fill-opacity", 1).call(wrapText, 380);
+
+      const nodeExit = node.exit().transition().duration(duration).attr('transform', d => `translate(${source.y},${source.x})`).remove();
+      nodeExit.select('circle').attr('r', 1e-6);
+      nodeExit.select('text').style('fill-opacity', 1e-6);
+
+      const link = g.selectAll('path.link').data(links, d => d.id);
+      const linkEnter = link.enter().insert('path', "g").attr('class', 'link').attr('d', d => { const o = { x: source.x0, y: source.y0 }; return diagonal(o, o); });
+
+      linkEnter.merge(link).transition().duration(duration).attr('d', d => diagonal(d, d.parent))
+        .style('stroke', d => {
+            const sourceNode = d.parent;
+            if (!sourceNode) return phaseColors.Default.stroke;
+            const l1AncestorName = sourceNode.data.originalStageName;
+            const colorPalette = phaseColors[l1AncestorName] || phaseColors.Default;
+            return colorPalette.stroke;
+        });
+      link.exit().transition().duration(duration).attr('d', d => { const o = { x: source.x, y: source.y }; return diagonal(o, o); }).remove();
+      nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+    }
+
+    function diagonal(s, d) { return `M ${s.y} ${s.x} C ${(s.y + d.y) / 2} ${s.x}, ${(s.y + d.y) / 2} ${d.x}, ${d.y} ${d.x}`; }
+
+    function wrapText(textElements, maxWidth) {
+        const textPartColors = {
+            name: '#343a40',
+            count: '#0056b3'
+        };
+        const countRegex = /(\s\(Total Count: \d+\))$/;
+
+        textElements.each(function () {
+            const textD3 = d3.select(this);
+            const originalNodeText = textD3.datum().data.name;
+            const x = parseFloat(textD3.attr("x") || 0);
+            const initialDy = textD3.attr("dy");
+            const textAnchor = textD3.attr("text-anchor");
+            const lineHeight = 1.1;
+
+            textD3.text(null);
+
+            let namePart = originalNodeText;
+            let countPartText = "";
+
+            const countMatch = originalNodeText.match(countRegex);
+            if (countMatch && originalNodeText.endsWith(countMatch[0])) {
+                namePart = originalNodeText.substring(0, originalNodeText.length - countMatch[0].length).trim();
+                countPartText = countMatch[0].trim();
+            }
+
+            const tokens = [];
+            namePart.split(/\s+/).filter(Boolean).forEach(word => {
+                tokens.push({ text: word, type: 'name' });
+            });
+            if (countPartText) {
+                tokens.push({ text: countPartText, type: 'count' });
+            }
+
+            if (tokens.length === 0 && originalNodeText) {
+                tokens.push({ text: originalNodeText, type: 'name' });
+            }
+
+            let currentTspan = textD3.append("tspan").attr("x", x).attr("dy", initialDy);
+            if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+
+            let lineTokens = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tokenObj = tokens[i];
+
+                lineTokens.push(tokenObj);
+                currentTspan.text(lineTokens.map(t => t.text).join(" "));
+
+                if (currentTspan.node().getComputedTextLength() > maxWidth && lineTokens.length > 1) {
+                    lineTokens.pop();
+
+                    currentTspan.text(null);
+                    lineTokens.forEach((prevToken, idx) => {
+                        currentTspan.append("tspan")
+                            .text((idx > 0 ? " " : "") + prevToken.text)
+                            .style("fill", textPartColors[prevToken.type] || textPartColors.name)
+                            .style("font-weight", prevToken.type === 'count' ? "bold" : "normal");
+                    });
+
+                    lineTokens = [tokenObj];
+                    currentTspan = textD3.append("tspan").attr("x", x).attr("dy", lineHeight + "em");
+                    if (textAnchor === "end") currentTspan.attr("text-anchor", "end");
+                }
+            }
+
+            currentTspan.text(null);
+            lineTokens.forEach((token, idx) => {
+                currentTspan.append("tspan")
+                    .text((idx > 0 ? " " : "") + token.text)
+                    .style("fill", textPartColors[token.type] || textPartColors.name)
+                    .style("font-weight", token.type === 'count' ? "bold" : "normal");
+            });
+
+            if (textD3.selectAll("tspan > tspan").empty() && textD3.select("tspan").text().length === 0 && originalNodeText) {
+                let t = textD3.select("tspan");
+                let displayText = originalNodeText;
+                t.text(displayText).style("fill", textPartColors.name);
+                if (t.node() && t.node().getComputedTextLength() > maxWidth && displayText.length > 20) {
+                    let estimatedChars = Math.floor(maxWidth / (t.node().getComputedTextLength()/displayText.length) );
+                    displayText = displayText.substring(0, Math.max(0, estimatedChars - 3)) + "...";
+                    t.text(displayText);
+                }
+            }
+        });
+    }
+  </script>
+</body>
+</html>
