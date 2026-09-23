@@ -119,7 +119,7 @@
             <text>📷</text>
           </view>
         </view>
-        <button class="comment-send-btn" :disabled="!newCommentText.trim() && !pickedCommentImage" @tap="handleSendComment" hover-class="btn-hover">
+        <button class="comment-send-btn" :disabled="(!newCommentText || !newCommentText.trim()) && !pickedCommentImage" @tap="handleSendComment" hover-class="btn-hover">
           发送
         </button>
       </view>
@@ -131,7 +131,7 @@
 import { useAppState } from "../composables/useAppState";
 const {
   detailVisible, activeStatus, myProfile,
-  pickedCommentImage,
+  newCommentText, pickedCommentImage,
   closeDetailSheet, viewAuthorProfile, viewCommenterProfile, previewImage,
   formatTime, removeCommentImage,
   chooseCommentImage, handleSendComment, handleCloseHelp, makePhoneCall, isHelpResolvedPromptVisible,

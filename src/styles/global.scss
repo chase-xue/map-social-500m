@@ -572,14 +572,21 @@ uni-scroll-view,
     }
   }
 
-  .detail-scroll-content {
-    flex: 1;
-    min-height: 0;
-    height: 0;
-    overflow-y: auto;
+  .detail-scroll-content,
+  uni-scroll-view.detail-scroll-content {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
     padding: 0;
-    width: 100%;
-    box-sizing: border-box;
+    width: 100% !important;
+    box-sizing: border-box !important;
+
+    > .uni-scroll-view {
+      height: 100% !important;
+      overflow-y: auto !important;
+    }
   }
 
   .detail-scroll-inner {
@@ -829,17 +836,17 @@ uni-scroll-view,
   }
 
   .comment-input-bar {
-    flex-shrink: 0;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
-    border-top: 1rpx solid #e2e8f0;
-    display: flex;
-    align-items: center;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom)) !important;
+    border-top: 1rpx solid #e2e8f0 !important;
+    display: flex !important;
+    align-items: center !important;
     gap: 12rpx;
-    background-color: #ffffff;
+    background-color: #ffffff !important;
     position: relative;
-    z-index: 10;
+    z-index: 20;
 
     .current-user-avatar-tag {
       width: 64rpx;
