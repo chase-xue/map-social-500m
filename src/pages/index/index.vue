@@ -18,7 +18,10 @@
       <!-- 3. 聊天 (微信) -->
       <ChatsTab v-show="mainTab === 'chats'" />
 
-      <!-- 4. 我 -->
+      <!-- 4. 小宇宙 (漂流瓶海洋) -->
+      <UniverseTab v-show="mainTab === 'universe'" />
+
+      <!-- 5. 我 -->
       <MeTab v-show="mainTab === 'me'" />
 
       <!-- 微信原生四大底层页签 TabBar -->
@@ -45,7 +48,7 @@ import { onMounted } from "vue";
 import { useAppState } from "../../composables/useAppState";
 import {
   TopNav, WeChatTabBar, ImagePreviewModal,
-  ContactsTab, ChatsTab, MeTab,
+  ContactsTab, ChatsTab, UniverseTab, MeTab,
   MapView, MomentsView, RecommendView, AcgnView,
   DetailSheet, PublishSheet, HelpSheet, MyProfileSheet,
   FriendsSheet, ChatSheet, ClusterSheet, UserCardModal, AiMatchSheet

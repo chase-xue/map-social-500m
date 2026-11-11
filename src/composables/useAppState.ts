@@ -12,6 +12,8 @@ import {
   SponsoredAdItem,
   AiMatchFilter,
   AiMatchUserResult,
+  DriftBottleItem,
+  DriftBottleReply,
 } from "../types";
 import {
   filterStatusesWithinRange,
@@ -20,6 +22,15 @@ import {
   clusterStatusesByLocation,
 } from "../services/geo";
 import { executeAiMatch } from "../services/aiMatch";
+import {
+  getStoredBottles,
+  saveStoredBottles,
+  getShellCount,
+  saveShellCount,
+  throwBottleToOcean,
+  fishBottleFromOcean,
+  replyToBottle,
+} from "../services/driftBottle";
 import {
   readLocalData,
   writeLocalData,
@@ -59,11 +70,13 @@ const userLocation = ref<Coordinates>({ latitude: 39.9087, longitude: 116.3975 }
 const mapCenter = ref<Coordinates>({ latitude: 39.9087, longitude: 116.3975 });
 
 // ============ 模块与微信四大页签切换 ============
-export type MainTabType = "chats" | "contacts" | "map" | "me";
+export type MainTabType = "chats" | "contacts" | "map" | "universe" | "me";
 export type MapSubTabType = "map" | "recommend" | "moments" | "acgn";
+export type UniverseSubTabType = "moments" | "cosmos" | "bottle";
 
 const mainTab = ref<MainTabType>("map");
 const mapSubTab = ref<MapSubTabType>("map");
+const universeSubTab = ref<UniverseSubTabType>("bottle");
 
 // 兼容老代码的 activeTab
 const activeTab = computed({
@@ -169,6 +182,14 @@ const pickedImages = ref<string[]>([]);
 const isPublishing = ref(false);
 const isAcgnPost = ref(false);
 const acgnTag = ref("Cosplay");
+
+// ============ 漂流瓶与小宇宙 ============
+const shellCount = ref<number>(getShellCount());
+const allDriftBottles = ref<DriftBottleItem[]>(getStoredBottles());
+const fishedBottle = ref<DriftBottleItem | null>(null);
+const throwBottleModalVisible = ref(false);
+const readBottleModalVisible = ref(false);
+const bottleMsgModalVisible = ref(false);
 
 // ============ AI 智能交友匹配 ============
 const aiMatchSheetVisible = ref(false);
@@ -788,6 +809,55 @@ function sendCurrentChatMessage() {
   }, 1200);
 }
 
+// ============ 漂流瓶逻辑 ============
+function openThrowBottleModal() {
+  lastModalOpenTime = Date.now();
+  throwBottleModalVisible.value = true;
+}
+
+function closeThrowBottleModal(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
+  throwBottleModalVisible.value = false;
+}
+
+function handleThrowBottle(content: string, tag: string = '💌 心事随想', bottleType: number = 1) {
+  if (!content.trim()) return;
+  throwBottleToOcean(myProfile.value, content.trim(), tag, bottleType);
+  allDriftBottles.value = getStoredBottles();
+  closeThrowBottleModal(true);
+  uni.showToast({ title: '🌊 瓶子已投掷进蔚蓝大海！', icon: 'success' });
+}
+
+function handleFishBottle() {
+  if (shellCount.value <= 0) {
+    uni.showToast({ title: '今日免费随机捞次数已用完～', icon: 'none' });
+    return;
+  }
+  shellCount.value--;
+  saveShellCount(shellCount.value);
+
+  const picked = fishBottleFromOcean(myProfile.value.id);
+  if (picked) {
+    fishedBottle.value = picked;
+    readBottleModalVisible.value = true;
+  } else {
+    uni.showToast({ title: '海面上空空如也，换个时间再来捞吧～', icon: 'none' });
+  }
+}
+
+function closeReadBottleModal() {
+  readBottleModalVisible.value = false;
+  fishedBottle.value = null;
+}
+
+function handleReplyBottle(bottleId: string, replyContent: string) {
+  if (!replyContent.trim()) return;
+  replyToBottle(bottleId, myProfile.value, replyContent.trim());
+  allDriftBottles.value = getStoredBottles();
+  closeReadBottleModal();
+  uni.showToast({ title: '已回信！会话已建立～', icon: 'success' });
+}
+
 // ============ AI 智能交友 ============
 function openAiMatchSheet() {
   lastModalOpenTime = Date.now();
@@ -1134,5 +1204,10 @@ export function useAppState() {
     // AI 智能交友
     aiMatchSheetVisible, aiMatchResults, isAiMatching,
     openAiMatchSheet, closeAiMatchSheet, runAiMatchFilter, applyAndChatWithMatch,
+    // 漂流瓶与小宇宙
+    universeSubTab, shellCount, allDriftBottles, fishedBottle,
+    throwBottleModalVisible, readBottleModalVisible, bottleMsgModalVisible,
+    openThrowBottleModal, closeThrowBottleModal, handleThrowBottle,
+    handleFishBottle, closeReadBottleModal, handleReplyBottle,
   };
 }

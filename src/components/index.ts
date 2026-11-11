@@ -7,9 +7,10 @@ export { default as TopNav } from "./common/TopNav.vue";
 export { default as WeChatTabBar } from "./common/WeChatTabBar.vue";
 export { default as ImagePreviewModal } from "./common/ImagePreviewModal.vue";
 
-// 2. 底部四大主页签核心页面 (Tabs)
+// 2. 底部五大主页签核心页面 (Tabs)
 export { default as ContactsTab } from "./tabs/ContactsTab.vue";
 export { default as ChatsTab } from "./tabs/ChatsTab.vue";
+export { default as UniverseTab } from "./tabs/UniverseTab.vue";
 export { default as MeTab } from "./tabs/MeTab.vue";
 
 // 3. 首页四大内容流视图 (Feeds)

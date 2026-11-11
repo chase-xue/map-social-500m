@@ -87,7 +87,30 @@
       <text class="tab-label">消息</text>
     </view>
 
-    <!-- 4. 我 -->
+    <!-- 4. 小宇宙 (漂流瓶海洋) -->
+    <view
+      class="tab-bar-item"
+      :class="{ 'item-active': mainTab === 'universe' }"
+      @tap="switchMainTab('universe')"
+    >
+      <view class="icon-box">
+        <!-- 小宇宙 Active 选中态: 高清实色行星与星环 (🪐) -->
+        <svg v-if="mainTab === 'universe'" class="tab-svg" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="5.6" fill="currentColor"/>
+          <ellipse cx="12" cy="12" rx="9.8" ry="3.6" transform="rotate(-25 12 12)" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M 4 15.5 C 6.5 18, 17 14, 19.5 8.5" stroke="#f7f7f7" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <path d="M 4.5 15.5 C 7 18, 16.5 14, 19 8.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        </svg>
+        <!-- 小宇宙 Inactive 未选中态: 极简线性行星与星环 (🪐) -->
+        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5.5"/>
+          <ellipse cx="12" cy="12" rx="9.8" ry="3.6" transform="rotate(-25 12 12)"/>
+        </svg>
+      </view>
+      <text class="tab-label">小宇宙</text>
+    </view>
+
+    <!-- 5. 我 -->
     <view
       class="tab-bar-item"
       :class="{ 'item-active': mainTab === 'me' }"

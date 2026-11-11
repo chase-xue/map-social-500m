@@ -158,3 +158,27 @@ export interface AiMatchUserResult {
   applied?: boolean;
 }
 
+export interface DriftBottleReply {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  createdAt: number;
+}
+
+export interface DriftBottleItem {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  tag: string;
+  createdAt: number;
+  distanceMeters: number;
+  bottleType: number; // 1~5
+  replies?: DriftBottleReply[];
+  isMine?: boolean;
+}
+
+
