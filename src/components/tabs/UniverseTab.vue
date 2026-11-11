@@ -22,7 +22,7 @@
           :class="{ 'tab-active': universeSubTab === 'bottle' }"
           @tap="handleNavTab('bottle')"
         >
-          <text>漂流瓶</text>
+          <text>小纸条</text>
         </view>
       </view>
 
@@ -43,10 +43,10 @@
       <view class="lighthouse-glow" />
       <view class="lighthouse-tower" />
 
-      <!-- 在线人数 (复刻用户截图: 197,582人在扔瓶子) -->
+      <!-- 在线人数 (复刻用户截图: 197,582人在扔纸条) -->
       <view class="online-counter">
         <text class="counter-num">197,582</text>
-        <text class="counter-label">人在扔瓶子</text>
+        <text class="counter-label">人在发小纸条</text>
       </view>
 
       <!-- 海面波浪线 -->
@@ -133,13 +133,13 @@
       </view>
     </view>
 
-    <!-- 弹窗 1：写纸条扔瓶子 -->
+    <!-- 弹窗 1：写心愿小纸条 -->
     <view v-if="throwBottleModalVisible" class="bottle-modal-mask" @tap="closeThrowBottleModal(false)">
       <view class="letter-card-box" @tap.stop>
         <view class="card-header">
           <view class="header-title-row">
             <text class="title-icon">📜</text>
-            <text class="title-text">写一张漂流瓶心愿纸条</text>
+            <text class="title-text">写一张心愿小纸条</text>
           </view>
           <view class="close-x" @tap="closeThrowBottleModal(true)">✕</view>
         </view>
@@ -161,24 +161,24 @@
         <textarea
           class="letter-textarea"
           v-model="inputContent"
-          placeholder="把你的心事、日常或寻觅搭子的愿望写在纸条上，装进玻璃瓶投向大海..."
+          placeholder="把你的心事、日常或寻觅搭子的愿望写在纸条上，折好投向大海..."
           maxlength="200"
         />
 
         <view class="modal-actions-row">
           <button class="btn-secondary" @tap="closeThrowBottleModal(true)">取消</button>
-          <button class="btn-primary" @tap="confirmThrow">🌊 封瓶投掷进大海</button>
+          <button class="btn-primary" @tap="confirmThrow">🌊 折好投进大海</button>
         </view>
       </view>
     </view>
 
-    <!-- 弹窗 2：捞起瓶子展开信纸 -->
+    <!-- 弹窗 2：捞起小纸条展开阅读 -->
     <view v-if="readBottleModalVisible && fishedBottle" class="bottle-modal-mask" @tap="closeReadBottleModal">
       <view class="letter-card-box read-card" @tap.stop>
         <view class="card-header">
           <view class="header-title-row">
-            <text class="title-icon">🍾</text>
-            <text class="title-text">{{ fishedBottle.userName }}的心情瓶</text>
+            <text class="title-icon">📜</text>
+            <text class="title-text">{{ fishedBottle.userName }}的心情小纸条</text>
           </view>
           <view class="status-pill">{{ fishedBottle.tag }}</view>
         </view>
@@ -203,7 +203,7 @@
         />
 
         <view class="modal-actions-row">
-          <button class="btn-secondary" @tap="closeReadBottleModal">扔回大海 🌊</button>
+          <button class="btn-secondary" @tap="closeReadBottleModal">放回大海 🌊</button>
           <button class="btn-primary" @tap="confirmReply">
             {{ isReplying ? '发送回信 🕊️' : '💬 立即回信交流' }}
           </button>
@@ -217,13 +217,13 @@
         <view class="card-header">
           <view class="header-title-row">
             <text class="title-icon">📬</text>
-            <text class="title-text">我的漂流瓶信箱</text>
+            <text class="title-text">我的小纸条信箱</text>
           </view>
           <view class="close-x" @tap="bottleMsgModalVisible = false">✕</view>
         </view>
 
         <scroll-view scroll-y class="msg-list-scroll">
-          <view v-if="allDriftBottles.length === 0" class="empty-tip">海面很静，还没有收到瓶子消息～</view>
+          <view v-if="allDriftBottles.length === 0" class="empty-tip">海面很静，还没有收到小纸条～</view>
           <view
             v-for="b in allDriftBottles"
             :key="b.id"

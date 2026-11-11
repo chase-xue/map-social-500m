@@ -825,7 +825,7 @@ function handleThrowBottle(content: string, tag: string = '💌 心事随想', b
   throwBottleToOcean(myProfile.value, content.trim(), tag, bottleType);
   allDriftBottles.value = getStoredBottles();
   closeThrowBottleModal(true);
-  uni.showToast({ title: '🌊 瓶子已投掷进蔚蓝大海！', icon: 'success' });
+  uni.showToast({ title: '🌊 小纸条已投掷进蔚蓝大海！', icon: 'success' });
 }
 
 function handleFishBottle() {
