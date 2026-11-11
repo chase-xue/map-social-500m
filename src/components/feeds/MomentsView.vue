@@ -20,18 +20,6 @@
         </view>
       </view>
 
-      <!-- 微信风格轻量通知条 (500米范围定位 + 快速发圈相机) -->
-      <view class="moments-info-banner">
-        <view class="banner-left">
-          <text class="banner-title">⏱️ 500米物理生活圈</text>
-          <text class="banner-badge">时间倒序</text>
-        </view>
-        <view class="moments-quick-post-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态">
-          <text class="post-icon">📷</text>
-          <text class="post-text">发动态</text>
-        </view>
-      </view>
-
       <!-- 全局活跃紧急求助广播 (有求助时吸顶提示) -->
       <view
         v-if="topEmergencyHelp"
