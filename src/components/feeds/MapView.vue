@@ -138,7 +138,7 @@ onUnmounted(() => {
 .global-emergency-banner,
 .my-active-help-banner {
   position: absolute;
-  top: 130rpx;
+  top: 112rpx;
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% - 32rpx);

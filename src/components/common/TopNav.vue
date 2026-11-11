@@ -1,8 +1,12 @@
 <template>
   <view class="top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
-    <view class="nav-content">
-      <!-- 微信风格居中胶囊切换器 [ 附近 | 推荐 | 关注 ] -->
-      <view class="nav-left">
+    <view class="nav-content-row">
+      <!-- 微信风格水平横向滚动胶囊切换器 (同行展示，过长自动横向滚动) -->
+      <scroll-view
+        scroll-x
+        class="tab-switcher-scroll"
+        :show-scrollbar="false"
+      >
         <view class="tab-switcher">
           <view
             class="tab-item"
@@ -41,12 +45,9 @@
             <view v-if="acgnStatuses.length > 0" class="tab-badge acgn-tab-badge">{{ acgnStatuses.length }}</view>
           </view>
         </view>
-        <view class="nav-subtitle">
-          <text>📍 500m生活圈 · {{ mapSubTab === 'map' ? 'Zenly地图雷达' : mapSubTab === 'recommend' ? '同城热门推荐与精选' : mapSubTab === 'acgn' ? '二次元同好专属专区' : '关注邻友时间线' }}</text>
-        </view>
-      </view>
+      </scroll-view>
 
-      <!-- 右侧快捷功能：发动态 / 相机 -->
+      <!-- 同行右侧快捷功能：发动态 -->
       <view class="nav-right-actions">
         <view class="nav-camera-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态">
           <text class="camera-icon">📷</text>
@@ -71,43 +72,48 @@ const {
   left: 0;
   right: 0;
   z-index: 50;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.85) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%);
   backdrop-filter: blur(12px);
   border-bottom: 0.5px solid rgba(226, 232, 240, 0.8);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 
-  .nav-content {
-    padding: 8px 16px;
+  .nav-content-row {
+    height: 48px;
+    padding: 0 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
     width: 100%;
     box-sizing: border-box;
 
-    .nav-left {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
+    .tab-switcher-scroll {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
 
       .tab-switcher {
-        display: flex;
+        display: inline-flex;
+        align-items: center;
         background-color: #ededed;
-        border-radius: 16px;
-        padding: 2px;
+        border-radius: 18px;
+        padding: 3px;
         border: 0.5px solid #dcdcdc;
 
         .tab-item {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           gap: 4px;
-          padding: 4px 12px;
-          border-radius: 14px;
+          padding: 5px 12px;
+          border-radius: 15px;
           font-size: 13px;
           font-weight: 500;
           color: #64748b;
           transition: all 0.2s ease;
           position: relative;
           cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
 
           .tab-icon { font-size: 13px; }
 
@@ -138,15 +144,10 @@ const {
           }
         }
       }
-
-      .nav-subtitle {
-        font-size: 10px;
-        color: #7f7f7f;
-        padding-left: 4px;
-      }
     }
 
     .nav-right-actions {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
 
@@ -158,8 +159,9 @@ const {
         border: 0.5px solid #dcdcdc;
         padding: 5px 12px;
         border-radius: 16px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         cursor: pointer;
+        white-space: nowrap;
 
         .camera-icon { font-size: 14px; }
         .camera-label { font-size: 12px; font-weight: 600; color: #191919; }
