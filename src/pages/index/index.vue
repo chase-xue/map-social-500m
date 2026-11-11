@@ -1,14 +1,26 @@
 <template>
   <view class="app-layout">
     <view class="container">
-      <!-- 顶部导航 -->
-      <TopNav />
+      <!-- 微信四大底层页签内容 -->
+      <!-- 1. 聊天 (微信) -->
+      <ChatsTab v-show="mainTab === 'chats'" />
 
-      <!-- 地图模式 -->
-      <MapView v-if="activeTab === 'map'" />
+      <!-- 2. 通讯录 -->
+      <ContactsTab v-show="mainTab === 'contacts'" />
 
-      <!-- 朋友圈模式 -->
-      <MomentsView v-if="activeTab === 'moments'" />
+      <!-- 3. 地图 (500米 Zenly 地图与朋友圈) -->
+      <view v-show="mainTab === 'map'" class="map-tab-container">
+        <!-- 地图顶栏 (胶囊切换器) -->
+        <TopNav />
+        <MapView v-if="mapSubTab === 'map'" />
+        <MomentsView v-if="mapSubTab === 'moments'" />
+      </view>
+
+      <!-- 4. 我 -->
+      <MeTab v-show="mainTab === 'me'" />
+
+      <!-- 微信原生四大底层页签 TabBar -->
+      <WeChatTabBar />
 
       <!-- 弹窗层 (z-index 分层管理) -->
       <DetailSheet />
@@ -26,6 +38,10 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { useAppState } from "../../composables/useAppState";
+import WeChatTabBar from "../../components/WeChatTabBar.vue";
+import ChatsTab from "../../components/ChatsTab.vue";
+import ContactsTab from "../../components/ContactsTab.vue";
+import MeTab from "../../components/MeTab.vue";
 import TopNav from "../../components/TopNav.vue";
 import MapView from "../../components/MapView.vue";
 import MomentsView from "../../components/MomentsView.vue";
@@ -38,7 +54,7 @@ import ChatSheet from "../../components/ChatSheet.vue";
 import ClusterSheet from "../../components/ClusterSheet.vue";
 import UserCardModal from "../../components/UserCardModal.vue";
 
-const { activeTab, initApp } = useAppState();
+const { mainTab, mapSubTab, initApp } = useAppState();
 
 onMounted(() => {
   initApp();
@@ -74,5 +90,12 @@ onMounted(() => {
     box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
     position: relative;
   }
+}
+
+.map-tab-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 </style>

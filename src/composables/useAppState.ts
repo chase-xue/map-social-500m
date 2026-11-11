@@ -54,8 +54,25 @@ const mapScale = ref(16);
 const userLocation = ref<Coordinates>({ latitude: 39.9087, longitude: 116.3975 });
 const mapCenter = ref<Coordinates>({ latitude: 39.9087, longitude: 116.3975 });
 
-// ============ 模块切换 ============
-const activeTab = ref<"map" | "moments">("map");
+// ============ 模块与微信四大页签切换 ============
+export type MainTabType = "chats" | "contacts" | "map" | "me";
+export type MapSubTabType = "map" | "moments";
+
+const mainTab = ref<MainTabType>("map");
+const mapSubTab = ref<MapSubTabType>("map");
+
+// 兼容老代码的 activeTab
+const activeTab = computed({
+  get: () => mapSubTab.value,
+  set: (val: "map" | "moments") => {
+    mainTab.value = "map";
+    mapSubTab.value = val;
+  }
+});
+
+function switchMainTab(tab: MainTabType) {
+  mainTab.value = tab;
+}
 
 // ============ 我的资料 ============
 const myProfile = ref<UserProfile>(getUserProfile());
@@ -146,6 +163,9 @@ const friendsSheetVisible = ref(false);
 const friendsList = ref<FriendItem[]>([]);
 const pendingFriendsCount = computed(() =>
   friendsList.value.filter((f) => f.status === "pending").length
+);
+const unreadChatsCount = computed(() =>
+  friendsList.value.reduce((acc, f) => acc + (f.unreadCount || 0), 0)
 );
 const currentChatFriend = ref<FriendItem | null>(null);
 const currentChatMessages = ref<ChatMessage[]>([]);
@@ -670,6 +690,12 @@ function openChatSheet(friend: FriendItem) {
   currentChatMessages.value = getChatMessages(friend.userId);
   chatSheetVisible.value = true;
   chatScrollTop.value = 999999;
+
+  // 清空此好友的未读计数
+  if (friend.unreadCount && friend.unreadCount > 0) {
+    friend.unreadCount = 0;
+    saveFriendsList(friendsList.value);
+  }
 }
 
 function closeChatSheet(force = false) {
@@ -881,8 +907,8 @@ export function useAppState() {
     statusBarHeight, mapScale,
     // 位置
     userLocation, mapCenter,
-    // 模块
-    activeTab,
+    // 模块与页签
+    mainTab, mapSubTab, switchMainTab, activeTab, unreadChatsCount,
     // 我的资料
     myProfile, editingProfile, myProfileVisible,
     openMyProfileSheet, closeMyProfileSheet, chooseNewAvatar, saveMyProfile, onPhonePrivacyChange,
