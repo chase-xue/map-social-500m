@@ -19,7 +19,7 @@
             @tap="selectedCategory = cat.name"
           >
             <text class="chip-emoji">{{ cat.emoji }}</text>
-            <text class="chip-text">{{ cat.name }}</text>
+            <text class="chip-text">{{ cat.name }} ({{ getCategoryCount(cat.name) }})</text>
           </view>
         </view>
       </scroll-view>
@@ -193,6 +193,8 @@ import { ref, computed } from "vue";
 import { useAppState } from "../../composables/useAppState";
 import { ACGN_TAG_CATEGORIES } from "../../constants/acgn";
 
+const ACGN_CATEGORIES = ACGN_TAG_CATEGORIES;
+
 const {
   statusBarHeight, myProfile, acgnStatuses,
   viewAuthorProfile, viewCommenterProfile, previewImage, openDetailSheet,
@@ -201,6 +203,12 @@ const {
 } = useAppState();
 
 const selectedCategory = ref<string>("all");
+
+function getCategoryCount(catName: string): number {
+  return acgnStatuses.value.filter(
+    (s) => s.acgnTag === catName || s.content.includes(catName)
+  ).length;
+}
 
 const filteredStatuses = computed(() => {
   if (selectedCategory.value === "all") {

@@ -359,6 +359,8 @@ function initApp() {
   getSystemInfo();
   myProfile.value = getUserProfile();
   friendsList.value = getFriendsList();
+  // 同步初始化状态数据，杜绝异步定位等待过程中的界面白板或空数据
+  allStatuses.value = ensureInitialMockData(userLocation.value);
   initGeolocation();
 }
 
