@@ -47,14 +47,15 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .app-layout {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   height: 100dvh;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   position: relative;
-  background-color: #0f172a;
+  background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 70%, #020617 100%);
 }
 
 .container {
@@ -64,5 +65,14 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
   background-color: #f8fafc;
+
+  @media (min-width: 768px) {
+    max-width: 430px;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0 auto;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+  }
 }
 </style>

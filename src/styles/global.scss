@@ -25,12 +25,10 @@ uni-scroll-view,
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
 
   .nav-content {
-    padding: 16rpx 24rpx;
+    padding: 16rpx 20rpx;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1080px;
-    margin: 0 auto;
     width: 100%;
     box-sizing: border-box;
 
@@ -394,8 +392,8 @@ uni-scroll-view,
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - 48rpx);
-  max-width: 520px;
+  width: calc(100% - 32rpx);
+  max-width: 100%;
   bottom: calc(24rpx + env(safe-area-inset-bottom, 0px));
   z-index: 40;
   background: rgba(255, 255, 255, 0.95);
@@ -503,7 +501,7 @@ uni-scroll-view,
   overflow: hidden;
 
   @media (min-width: 768px) {
-    max-width: 540px;
+    max-width: 430px;
     border-radius: 32rpx !important;
     margin: auto;
     box-shadow: 0 24rpx 60rpx rgba(0, 0, 0, 0.25);
@@ -1812,7 +1810,7 @@ uni-scroll-view,
   height: 100dvh;
   box-sizing: border-box;
   background-color: #ffffff;
-  max-width: 600px;
+  max-width: 100%;
   margin: 0 auto;
 
   .moments-cover-section {
@@ -2265,8 +2263,10 @@ uni-scroll-view,
   bottom: 0;
   left: 0;
   right: 0;
-  max-width: 600px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
   background-color: #f7f7f7;
   border-top: 1rpx solid #dcdcdc;
   padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
@@ -2275,6 +2275,10 @@ uni-scroll-view,
   gap: 16rpx;
   z-index: 100;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+
+  @media (min-width: 768px) {
+    max-width: 430px;
+  }
 
   .in-place-input {
     flex: 1;

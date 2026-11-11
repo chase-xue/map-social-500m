@@ -111,8 +111,8 @@ const topEmergencyHelp = computed(() => {
   top: 130rpx;
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - 48rpx);
-  max-width: 680px;
+  width: calc(100% - 32rpx);
+  max-width: 100%;
   z-index: 45;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   border: 2rpx solid #f59e0b;
