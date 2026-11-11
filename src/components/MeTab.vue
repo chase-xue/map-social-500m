@@ -113,7 +113,7 @@
 
         <view class="wechat-cell-item" @tap="openMyProfileSheet">
           <view class="cell-icon-box bg-gray">
-            <text class="cell-emoji">⚙️</text>
+            <text class="cell-emoji">🪪</text>
           </view>
           <view class="cell-content">
             <text class="cell-label">个人资料设置</text>
