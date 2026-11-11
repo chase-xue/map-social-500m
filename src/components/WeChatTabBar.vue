@@ -7,15 +7,19 @@
       @tap="switchMainTab('chats')"
     >
       <view class="icon-box">
-        <!-- 聊天 Active 选中态: 微信官方实色气泡 -->
-        <svg v-if="mainTab === 'chats'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M8.5 3C4.36 3 1 5.86 1 9.4c0 1.95.98 3.7 2.5 4.9L3 18.5l4.3-1.42c.38.1.78.16 1.2.16.27 0 .54-.03.8-.08A6.38 6.38 0 0 1 9 15.5c0-3.59 3.36-6.5 7.5-6.5.6 0 1.18.06 1.74.18C17.4 5.3 13.3 3 8.5 3zm-2.25 5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm4.5 0a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"/>
-          <path d="M16.5 10.5c-3.59 0-6.5 2.46-6.5 5.5 0 1.66.86 3.16 2.2 4.2L12 23l3.5-1.16c.32.1.66.16 1 .16 3.59 0 6.5-2.46 6.5-5.5s-2.91-5.5-6.5-5.5zm-2 4.25a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        <!-- 聊天 Active 选中态: 高清实色圆润对话气泡带 3 点 -->
+        <svg v-if="mainTab === 'chats'" class="tab-svg" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z" fill="currentColor"/>
+          <circle cx="8" cy="11" r="1.3" fill="white"/>
+          <circle cx="12" cy="11" r="1.3" fill="white"/>
+          <circle cx="16" cy="11" r="1.3" fill="white"/>
         </svg>
-        <!-- 聊天 Inactive 未选中态: 微信 8.0 线性优雅双气泡 -->
+        <!-- 聊天 Inactive 未选中态: 极简线性圆润对话气泡 -->
         <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8.5 3C4.36 3 1 5.86 1 9.4c0 1.95.98 3.7 2.5 4.9L3 18.5l4.3-1.42c.38.1.78.16 1.2.16.27 0 .54-.03.8-.08A6.38 6.38 0 0 1 9 15.5c0-3.59 3.36-6.5 7.5-6.5.6 0 1.18.06 1.74.18C17.4 5.3 13.3 3 8.5 3z"/>
-          <path d="M16.5 10.5c-3.59 0-6.5 2.46-6.5 5.5 0 1.66.86 3.16 2.2 4.2L12 23l3.5-1.16c.32.1.66.16 1 .16 3.59 0 6.5-2.46 6.5-5.5s-2.91-5.5-6.5-5.5z"/>
+          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
+          <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          <circle cx="12" cy="11" r="1" fill="currentColor"/>
+          <circle cx="16" cy="11" r="1" fill="currentColor"/>
         </svg>
 
         <view v-if="unreadChatsCount > 0" class="wechat-badge">
@@ -32,23 +36,20 @@
       @tap="switchMainTab('contacts')"
     >
       <view class="icon-box">
-        <!-- 通讯录 Active 选中态: 微信官方实色通讯录 -->
+        <!-- 通讯录 Active 选中态: 高级实色双人联系人 (👥) -->
         <svg v-if="mainTab === 'contacts'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <rect x="3" y="2.5" width="14" height="19" rx="2"/>
-          <circle cx="10" cy="9.5" r="2.5" fill="#f7f7f7"/>
-          <path d="M6.5 16.5c0-1.8 1.6-3 3.5-3s3.5 1.2 3.5 3" fill="none" stroke="#f7f7f7" stroke-width="1.8" stroke-linecap="round"/>
-          <line x1="20" y1="6" x2="20" y2="8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <line x1="20" y1="10.5" x2="20" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <line x1="20" y1="15" x2="20" y2="17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M9 13.5c-3.5 0-6.5 2-6.5 4.8v1.2h13v-1.2c0-2.8-3-4.8-6.5-4.8z"/>
+          <circle cx="9" cy="7" r="3.5"/>
+          <path d="M16 10.5a3 3 0 0 0 0-5.5 2.8 2.8 0 0 0-1 .2 4.8 4.8 0 0 1 0 5.1c.3.1.6.2 1 .2z"/>
+          <path d="M17.2 14c2 .4 3.3 1.7 3.3 3.3v1.2h-3v-1.2c0-1.2-.5-2.3-1.4-3 .4-.2.7-.3 1.1-.3z"/>
         </svg>
-        <!-- 通讯录 Inactive 未选中态: 微信官方线性通讯录 -->
+        <!-- 通讯录 Inactive 未选中态: 极简线性双人联系人 (👥) -->
         <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="3" width="13" height="18" rx="2"/>
-          <circle cx="10.5" cy="9.5" r="2.5"/>
-          <path d="M7 16c0-1.8 1.6-3 3.5-3s3.5 1.2 3.5 3"/>
-          <line x1="20" y1="7" x2="20" y2="9"/>
-          <line x1="20" y1="11" x2="20" y2="13"/>
-          <line x1="20" y1="15" x2="20" y2="17"/>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="3.5"/>
+          <path d="M17 11a3 3 0 0 1 0 6"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a3.5 3.5 0 0 1 0 6.74"/>
         </svg>
 
         <view v-if="pendingFriendsCount > 0" class="wechat-badge">
