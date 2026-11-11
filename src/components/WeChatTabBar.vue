@@ -36,20 +36,24 @@
       @tap="switchMainTab('contacts')"
     >
       <view class="icon-box">
-        <!-- 通讯录 Active 选中态: 高级实色双人联系人 (👥) -->
+        <!-- 通讯录 Active 选中态: 层次分明的优雅双人联系人 (👥) -->
         <svg v-if="mainTab === 'contacts'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M9 13.5c-3.5 0-6.5 2-6.5 4.8v1.2h13v-1.2c0-2.8-3-4.8-6.5-4.8z"/>
-          <circle cx="9" cy="7" r="3.5"/>
-          <path d="M16 10.5a3 3 0 0 0 0-5.5 2.8 2.8 0 0 0-1 .2 4.8 4.8 0 0 1 0 5.1c.3.1.6.2 1 .2z"/>
-          <path d="M17.2 14c2 .4 3.3 1.7 3.3 3.3v1.2h-3v-1.2c0-1.2-.5-2.3-1.4-3 .4-.2.7-.3 1.1-.3z"/>
+          <!-- 后排同伴 -->
+          <circle cx="15.5" cy="8" r="3.2"/>
+          <path d="M12 20.5c0-2.6 1.8-4.5 4.2-4.5 2.3 0 4.2 1.9 4.2 4.5v.5h-8.4v-.5z"/>
+          <!-- 前排主人物分层衬底 (与底色一致，杜绝任何碎裂悬挂物) -->
+          <circle cx="8.5" cy="8.5" r="4.3" fill="#f7f7f7"/>
+          <path d="M2.2 21c0-3.5 2.8-6.3 6.3-6.3 3.5 0 6.3 2.8 6.3 6.3v.8H2.2v-.8z" fill="#f7f7f7"/>
+          <!-- 前排主人物 -->
+          <circle cx="8.5" cy="8.5" r="3.4" fill="currentColor"/>
+          <path d="M3 21c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5v.5H3v-.5z" fill="currentColor"/>
         </svg>
         <!-- 通讯录 Inactive 未选中态: 极简线性双人联系人 (👥) -->
         <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="8.5" cy="7" r="3.5"/>
-          <path d="M17 11a3 3 0 0 1 0 6"/>
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a3.5 3.5 0 0 1 0 6.74"/>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
 
         <view v-if="pendingFriendsCount > 0" class="wechat-badge">
