@@ -8,7 +8,7 @@
 
       <view class="pub-title-box">
         <text class="pub-title">
-          {{ currentPublishMode === 'moments' ? '发关注动态' : currentPublishMode === 'status' ? '发地图状态' : '🚨 救命/急事呼救' }}
+          {{ currentPublishMode === 'moments' ? '发关注动态' : currentPublishMode === 'status' ? '发地图动态' : '🚨 救命/急事呼救' }}
         </text>
       </view>
 
@@ -104,7 +104,7 @@
               :class="{ 'pill-active': currentPublishMode === 'status' }"
               @tap="currentPublishMode = 'status'"
             >
-              <text class="pill-text">📍 地图状态</text>
+              <text class="pill-text">📍 地图动态</text>
             </view>
             <view
               class="mode-pill pill-emergency"
