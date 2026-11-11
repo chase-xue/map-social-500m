@@ -84,19 +84,44 @@ docs/
 
 ---
 
-## 🚀 本地开发与线上部署
+## 🌿 Git 分支管理与对外发布规范 (Branch & Release Protocol)
 
-### 1. 本地启动
+本项目严格采用 **源码分支** 与 **对外发布分支** 分离的双分支管理规范：
+
+| 分支名 | 分支定位 | 承载内容与职责 | 维护要求 |
+| :--- | :--- | :--- | :--- |
+| **`master`** | **源码开发分支** | 包含完整的 TypeScript / Vue 3 源码工程、配置文件、样式与文档。 | **代码开发主干**：所有功能迭代、Bug修复、组件重构必须在 `master` 分支提交与合并。 |
+| **`gh-pages`** | **对外发布分支** (生产上线) | 仅包含 `npm run build:h5` 编译生成的生产环境纯净静态产物（`index.html`、`assets/`、`static/`）。 | **外部访问基准**：GitHub Pages 绑定此分支对外提供 H5 在线体验，**严禁将未编译的开发源码提交至此分支**。 |
+
+---
+
+## 🚀 本地开发与对外发布流程
+
+### 1. 本地启动开发
 ```bash
+# 确保在 master 分支
+git checkout master
+
+# 安装依赖并启动本地 H5 调试服务器
 npm install
 npm run dev:h5
 ```
-访问本地：`http://localhost:5173`
+浏览器访问：`http://localhost:5173`
 
-### 2. 构建生产产物
+### 2. 编译生产构建
 ```bash
 npm run build:h5
 ```
+产物输出至 `dist/build/h5` 目录。
 
-### 3. 线上演示站点 (GitHub Pages)
-- **线上地址**：[https://chase-xue.github.io/map-social-500m/](https://chase-xue.github.io/map-social-500m/)
+### 3. 一键对外发布上线 (部署至 gh-pages)
+当在 `master` 分支完成开发与自测提交后，执行以下命令一键打包并推送到对外发布分支：
+```bash
+npm run deploy:h5
+```
+该命令会自动编译最新产物并将纯净生产包强制推送至 `origin/gh-pages`，无需手动切换分支，杜绝工作区与依赖污染。
+
+### 4. 线上对外访问地址
+- **生产环境公开访问 URL**：[https://chase-xue.github.io/map-social-500m/](https://chase-xue.github.io/map-social-500m/)
+- **对应发布分支**：`gh-pages`
+

@@ -10,7 +10,8 @@
     "dev:mp-toutiao": "uni -p mp-toutiao",
     "build:mp-toutiao": "uni build -p mp-toutiao",
     "dev:app": "uni -p app",
-    "build:app": "uni build -p app"
+    "build:app": "uni build -p app",
+    "deploy:h5": "npm run build:h5 && cd dist/build/h5 && git init && git add -A && git commit -m 'deploy: update GitHub Pages release' && git push -f https://github.com/chase-xue/map-social-500m.git HEAD:gh-pages && rm -rf .git"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-5020620260917001",
