@@ -9,8 +9,8 @@
             :class="{ 'tab-active': mapSubTab === 'map' }"
             @tap="mapSubTab = 'map'"
           >
-            <text class="tab-icon">🗺️</text>
-            <text class="tab-text">地图</text>
+            <text class="tab-icon">📍</text>
+            <text class="tab-text">附近</text>
           </view>
           <view
             class="tab-item"
