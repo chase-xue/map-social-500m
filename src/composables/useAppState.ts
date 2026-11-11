@@ -117,7 +117,9 @@ const inPlaceCommentTarget = ref<StatusItem | null>(null);
 const inPlaceReplyToUser = ref<string | null>(null);
 const inPlaceCommentText = ref("");
 
-// ============ 发布抽屉 ============
+// ============ 发布与朋友圈/状态/呼救创建 ============
+export type PublishMode = "moments" | "status" | "emergency";
+const currentPublishMode = ref<PublishMode>("moments");
 const publishVisible = ref(false);
 const newPostContent = ref("");
 const pickedImages = ref<string[]>([]);
@@ -725,11 +727,14 @@ function sendCurrentChatMessage() {
 }
 
 // ============ 发布 ============
-function openPublishSheet() {
+function openPublishSheet(mode: PublishMode = "moments") {
   lastModalOpenTime = Date.now();
+  currentPublishMode.value = mode;
   publishVisible.value = true;
   newPostContent.value = "";
   pickedImages.value = [];
+  helpContactPhone.value = myProfile.value.phone || "";
+  isEmergencyHelp.value = mode === "emergency";
 }
 
 function closePublishSheet(force = false) {
@@ -801,12 +806,7 @@ function formatTime(timestamp: number) {
 
 // ============ HELP 求助操作 ============
 function openHelpSheet(emergency = false) {
-  lastModalOpenTime = Date.now();
-  isEmergencyHelp.value = emergency;
-  newHelpContent.value = "";
-  helpContactPhone.value = myProfile.value.phone || "";
-  pickedHelpImages.value = [];
-  helpSheetVisible.value = true;
+  openPublishSheet(emergency ? "emergency" : "help");
 }
 
 function closeHelpSheet(force = false) {
@@ -927,7 +927,7 @@ export function useAppState() {
     openDetailSheet, closeDetailSheet,
     chooseCommentImage, removeCommentImage, handleSendComment,
     // 发布
-    publishVisible, newPostContent, pickedImages, isPublishing,
+    currentPublishMode, publishVisible, newPostContent, pickedImages, isPublishing,
     openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost,
     // HELP 求助
     helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,

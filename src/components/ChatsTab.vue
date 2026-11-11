@@ -119,18 +119,17 @@ function toggleQuickMenu() {
 
 function handleQuickPost() {
   quickMenuOpen.value = false;
-  openPublishSheet();
+  openPublishSheet("moments");
 }
 
 function handleQuickStatus() {
   quickMenuOpen.value = false;
-  switchMainTab("map");
-  openPublishSheet();
+  openPublishSheet("status");
 }
 
 function handleQuickEmergency() {
   quickMenuOpen.value = false;
-  openHelpSheet(true);
+  openPublishSheet("emergency");
 }
 </script>
 

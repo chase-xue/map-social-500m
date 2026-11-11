@@ -1,6 +1,6 @@
 <template>
-  <view v-if="chatSheetVisible" class="modal-mask" @tap="closeChatSheet(false)">
-    <view class="chat-sheet" @tap.stop>
+  <view v-if="chatSheetVisible" class="chat-fullscreen-page" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="chat-sheet">
       <!-- 微信标准顶栏: 返回键 + 昵称 + 更多菜单 -->
       <view class="chat-header">
         <view class="chat-back-btn" @tap="closeChatSheet(true)">
@@ -84,22 +84,33 @@
 <script setup lang="ts">
 import { useAppState } from "../composables/useAppState";
 const {
-  chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText,
+  statusBarHeight, chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText,
   chatScrollTop, myProfile,
   closeChatSheet, sendCurrentChatMessage, formatTime, openUserProfileCard,
 } = useAppState();
 </script>
 
 <style lang="scss" scoped>
+.chat-fullscreen-page {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ededed;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 .chat-sheet {
   background-color: #ededed;
   border-radius: 0;
   width: 100%;
   height: 100%;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
-  z-index: 150;
   box-sizing: border-box;
 
   .chat-header {
