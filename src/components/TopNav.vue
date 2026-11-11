@@ -13,6 +13,7 @@
             <text class="tab-text">附近</text>
           </view>
           <view
+            v-if="myProfile.showRecommendTab !== false"
             class="tab-item"
             :class="{ 'tab-active': mapSubTab === 'recommend' }"
             @tap="mapSubTab = 'recommend'"
@@ -29,9 +30,19 @@
             <text class="tab-text">关注</text>
             <view v-if="visibleStatuses.length > 0" class="tab-badge">{{ visibleStatuses.length }}</view>
           </view>
+          <view
+            v-if="myProfile.showAcgnTab !== false"
+            class="tab-item tab-acgn"
+            :class="{ 'tab-active': mapSubTab === 'acgn' }"
+            @tap="mapSubTab = 'acgn'"
+          >
+            <text class="tab-icon">🌸</text>
+            <text class="tab-text">二次元</text>
+            <view v-if="acgnStatuses.length > 0" class="tab-badge acgn-tab-badge">{{ acgnStatuses.length }}</view>
+          </view>
         </view>
         <view class="nav-subtitle">
-          <text>📍 500m生活圈 · {{ mapSubTab === 'map' ? 'Zenly地图雷达' : mapSubTab === 'recommend' ? '同城热门推荐与精选' : '关注邻友时间线' }}</text>
+          <text>📍 500m生活圈 · {{ mapSubTab === 'map' ? 'Zenly地图雷达' : mapSubTab === 'recommend' ? '同城热门推荐与精选' : mapSubTab === 'acgn' ? '二次元同好专属专区' : '关注邻友时间线' }}</text>
         </view>
       </view>
 
@@ -39,7 +50,7 @@
       <view class="nav-right-actions">
         <view class="nav-camera-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态">
           <text class="camera-icon">📷</text>
-          <text class="camera-label">{{ mapSubTab === 'map' ? '发附近' : mapSubTab === 'recommend' ? '发推荐' : '发动态' }}</text>
+          <text class="camera-label">发动态</text>
         </view>
       </view>
     </view>
@@ -49,7 +60,7 @@
 <script setup lang="ts">
 import { useAppState } from "../composables/useAppState";
 const {
-  statusBarHeight, mapSubTab, visibleStatuses, openPublishSheet
+  statusBarHeight, mapSubTab, visibleStatuses, acgnStatuses, myProfile, openPublishSheet
 } = useAppState();
 </script>
 
@@ -108,6 +119,10 @@ const {
             border-radius: 8px;
             font-weight: 700;
             line-height: 1;
+
+            &.acgn-tab-badge {
+              background-color: #ec4899;
+            }
           }
 
           &.tab-active {
@@ -115,6 +130,11 @@ const {
             color: #07c160;
             box-shadow: 0 1px 4px rgba(7, 193, 96, 0.2);
             font-weight: 700;
+          }
+
+          &.tab-acgn.tab-active {
+            color: #db2777;
+            box-shadow: 0 1px 4px rgba(219, 39, 119, 0.2);
           }
         }
       }

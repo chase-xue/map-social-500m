@@ -9,6 +9,7 @@
         <MapView v-if="mapSubTab === 'map'" />
         <RecommendView v-if="mapSubTab === 'recommend'" />
         <MomentsView v-if="mapSubTab === 'moments'" />
+        <AcgnView v-if="mapSubTab === 'acgn'" />
       </view>
 
       <!-- 2. 通讯录 -->
@@ -49,6 +50,7 @@ import TopNav from "../../components/TopNav.vue";
 import MapView from "../../components/MapView.vue";
 import RecommendView from "../../components/RecommendView.vue";
 import MomentsView from "../../components/MomentsView.vue";
+import AcgnView from "../../components/AcgnView.vue";
 import DetailSheet from "../../components/DetailSheet.vue";
 import PublishSheet from "../../components/PublishSheet.vue";
 import HelpSheet from "../../components/HelpSheet.vue";

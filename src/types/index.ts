@@ -12,6 +12,8 @@ export interface UserProfile {
   bio: string;
   phone?: string;        // 绑定的手机号
   showPhone?: boolean;   // 是否向附近500米内他人公开展示手机号
+  showAcgnTab?: boolean; // 首页顶部是否展示「二次元」页签 (可自定义开启/隐藏)
+  showRecommendTab?: boolean; // 首页顶部是否展示「推荐」页签
 }
 
 export interface FriendItem {

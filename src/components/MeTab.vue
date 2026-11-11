@@ -3,8 +3,8 @@
     <!-- 微信浅灰标准顶栏 -->
     <view class="wechat-header" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="header-inner">
-        <text class="header-title">我</text>
-        <!-- 微信原生「我」页面顶栏纯净无多余齿轮图标 -->
+        <text class="header-title">更多</text>
+        <!-- 微信原生「更多」页面顶栏纯净无多余齿轮图标 -->
         <view class="header-right-actions" />
       </view>
     </view>

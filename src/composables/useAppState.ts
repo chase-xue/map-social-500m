@@ -57,7 +57,7 @@ const mapCenter = ref<Coordinates>({ latitude: 39.9087, longitude: 116.3975 });
 
 // ============ 模块与微信四大页签切换 ============
 export type MainTabType = "chats" | "contacts" | "map" | "me";
-export type MapSubTabType = "map" | "recommend" | "moments";
+export type MapSubTabType = "map" | "recommend" | "moments" | "acgn";
 
 const mainTab = ref<MainTabType>("map");
 const mapSubTab = ref<MapSubTabType>("map");
@@ -113,6 +113,13 @@ const recommendedStatuses = computed(() => {
     })
     .sort((a, b) => b.score - a.score)
     .map((x) => x.item);
+});
+
+// 二次元模式：展示二次元/ACGN同好动态（支持全城/同好探索）
+const acgnStatuses = computed(() => {
+  return [...allStatuses.value]
+    .filter((s) => s.isAcgn)
+    .sort((a, b) => b.createdAt - a.createdAt);
 });
 
 // 推荐流每日广告：每天精选1条同城商户/生活福利推广
@@ -419,7 +426,7 @@ function onMarkerTap(e: any) {
     if (myLatestStatus) {
       openDetailSheet(myLatestStatus);
     } else {
-      uni.showToast({ title: "您还未在当前位置发布状态，点击右下角＋发状态", icon: "none" });
+      uni.showToast({ title: "您还未在当前位置发布动态，点击右下角＋发动态", icon: "none" });
     }
     return;
   }
@@ -558,6 +565,9 @@ function saveMyProfile() {
   }
   saveUserProfile(editingProfile.value);
   myProfile.value = { ...editingProfile.value };
+  if (myProfile.value.showAcgnTab === false && mapSubTab.value === "acgn") {
+    mapSubTab.value = "map";
+  }
   closeMyProfileSheet(true);
   uni.showToast({ title: "资料保存成功！", icon: "success" });
 }
@@ -1001,7 +1011,7 @@ export function useAppState() {
     userCardVisible, viewingProfile, viewingDistance,
     openUserProfileCard, closeUserCard, viewAuthorProfile, viewCommenterProfile, makePhoneCall,
     // 状态
-    allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses, recommendedStatuses, dailySponsoredAd,
+    allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses, recommendedStatuses, acgnStatuses, dailySponsoredAd,
     // 地图
     mapCircles, mapMarkers, onMarkerTap, onCalloutTap, onRegionChange: () => {},
     recenterToUser, refreshNearbyStatuses, simulateUserMove,

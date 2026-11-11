@@ -21,7 +21,7 @@
           {{ visibleStatuses.length }}
         </view>
       </view>
-      <text class="tab-label">地图</text>
+      <text class="tab-label">首页</text>
     </view>
 
     <!-- 2. 通讯录 -->
@@ -84,7 +84,7 @@
           {{ unreadChatsCount > 99 ? '99+' : unreadChatsCount }}
         </view>
       </view>
-      <text class="tab-label">聊天</text>
+      <text class="tab-label">消息</text>
     </view>
 
     <!-- 4. 我 -->
@@ -107,7 +107,7 @@
 
         <view v-if="hasActiveEmergency" class="wechat-dot" />
       </view>
-      <text class="tab-label">我</text>
+      <text class="tab-label">更多</text>
     </view>
   </view>
 </template>

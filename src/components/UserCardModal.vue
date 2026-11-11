@@ -72,15 +72,70 @@
         </view>
       </view>
 
-      <!-- 组 3: 朋友圈动态入口 -->
-      <view class="wechat-cells-group">
-        <view class="wechat-cell-row">
-          <text class="cell-label">关注与动态</text>
-          <view class="cell-right-box">
-            <text class="cell-dim-text">查看TA在周边发布的动态</text>
-            <text class="cell-arrow">›</text>
+      <!-- 组 3: 个人发表的所有动态 (和位置无关，支持完整查看) -->
+      <view class="wechat-user-statuses-section">
+        <view class="section-heading">
+          <text class="section-title">发表的动态 ({{ userAllStatuses.length }})</text>
+          <text class="section-subtitle">全部公开动态 · 无视距离限制</text>
+        </view>
+
+        <view v-if="userAllStatuses.length > 0" class="wechat-cells-group user-statuses-group">
+          <view
+            v-for="item in userAllStatuses"
+            :key="item.id"
+            class="user-status-card-cell"
+            @tap="openDetailSheet(item)"
+          >
+            <view class="card-cell-top">
+              <view class="card-badges">
+                <text v-if="item.isAcgn" class="badge-acgn">🌸 {{ item.acgnTag || '二次元' }}</text>
+                <text v-if="item.isEmergency" class="badge-sos">🚨 救命求助</text>
+                <text v-else-if="item.isHelp" class="badge-help">🆘 急事求助</text>
+              </view>
+              <text class="card-time">{{ formatTime(item.createdAt) }}</text>
+            </view>
+
+            <text class="card-content-text">{{ item.content }}</text>
+
+            <!-- 配图展示 -->
+            <view v-if="item.images && item.images.length > 0" class="card-images-grid">
+              <image
+                v-for="(img, idx) in item.images.slice(0, 4)"
+                :key="idx"
+                class="card-thumb"
+                :src="img"
+                mode="aspectFill"
+                @tap.stop="previewImage(img, item.images)"
+              />
+              <view v-if="item.images.length > 4" class="more-images-mask">
+                <text class="more-text">+{{ item.images.length - 4 }}</text>
+              </view>
+            </view>
+
+            <!-- 互动数据与查看详情提示 -->
+            <view class="card-cell-footer">
+              <view class="card-interactions">
+                <text v-if="item.likes && item.likes.length > 0" class="interact-item">
+                  ❤️ {{ item.likes.length }}
+                </text>
+                <text v-if="item.comments && item.comments.length > 0" class="interact-item">
+                  💬 {{ item.comments.length }}
+                </text>
+              </view>
+              <text class="card-enter-hint">查看详情 ›</text>
+            </view>
           </view>
         </view>
+
+        <!-- 空状态 -->
+        <view v-else class="user-empty-statuses">
+          <text class="empty-icon">📭</text>
+          <text class="empty-text">该用户暂未发表任何动态</text>
+        </view>
+      </view>
+
+      <!-- 组 4: 更多信息 -->
+      <view class="wechat-cells-group">
         <view class="wechat-cell-row">
           <text class="cell-label">更多信息</text>
           <view class="cell-right-box">
@@ -133,13 +188,23 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useAppState } from "../composables/useAppState";
 
 const {
-  statusBarHeight, userCardVisible, viewingProfile, viewingDistance, myProfile,
+  statusBarHeight, userCardVisible, viewingProfile, viewingDistance, myProfile, allStatuses,
   closeUserCard, makePhoneCall, isFriend, isFriendPending,
   startChatFromCard, acceptFriendFromCard, handleAddFriend, openMyProfileSheet,
+  openDetailSheet, previewImage, formatTime,
 } = useAppState();
+
+// 和位置无关：直接从 allStatuses 中筛选该用户的全部动态
+const userAllStatuses = computed(() => {
+  if (!viewingProfile.value?.id) return [];
+  return allStatuses.value
+    .filter((s) => s.userId === viewingProfile.value?.id)
+    .sort((a, b) => b.createdAt - a.createdAt);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -363,6 +428,170 @@ const {
               }
             }
           }
+        }
+      }
+    }
+
+    .wechat-user-statuses-section {
+      margin-top: 10px;
+
+      .section-heading {
+        padding: 4px 16px 8px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+
+        .section-title {
+          font-size: 13px;
+          color: #7f7f7f;
+          font-weight: 500;
+        }
+
+        .section-subtitle {
+          font-size: 11px;
+          color: #999999;
+        }
+      }
+
+      .user-status-card-cell {
+        padding: 12px 16px;
+        background-color: #ffffff;
+        border-bottom: 0.5px solid #ededed;
+        cursor: pointer;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:active {
+          background-color: #f7f7f7;
+        }
+
+        .card-cell-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 6px;
+
+          .card-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .badge-acgn {
+              font-size: 10px;
+              color: #db2777;
+              background-color: #fdf2f8;
+              border: 0.5px solid #fbcfe8;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 500;
+            }
+
+            .badge-sos {
+              font-size: 10px;
+              background-color: #fee2e2;
+              color: #dc2626;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 600;
+            }
+
+            .badge-help {
+              font-size: 10px;
+              background-color: #fef3c7;
+              color: #d97706;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 600;
+            }
+          }
+
+          .card-time {
+            font-size: 11px;
+            color: #999999;
+          }
+        }
+
+        .card-content-text {
+          font-size: 14px;
+          color: #191919;
+          line-height: 1.45;
+          margin-bottom: 8px;
+          word-break: break-all;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .card-images-grid {
+          display: flex;
+          gap: 6px;
+          position: relative;
+          margin-bottom: 8px;
+
+          .card-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+            background-color: #f7f7f7;
+          }
+
+          .more-images-mask {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .more-text {
+              color: #ffffff;
+              font-size: 13px;
+              font-weight: 600;
+            }
+          }
+        }
+
+        .card-cell-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          .card-interactions {
+            display: flex;
+            gap: 12px;
+
+            .interact-item {
+              font-size: 12px;
+              color: #888888;
+            }
+          }
+
+          .card-enter-hint {
+            font-size: 12px;
+            color: #576b95;
+          }
+        }
+      }
+
+      .user-empty-statuses {
+        background-color: #ffffff;
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+
+        .empty-icon {
+          font-size: 28px;
+        }
+
+        .empty-text {
+          font-size: 13px;
+          color: #999999;
         }
       }
     }

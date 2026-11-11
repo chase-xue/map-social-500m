@@ -21,7 +21,9 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   age: 24,
   bio: "在周边500米里记录最真实的烟火气与风景✨",
   phone: "13800138000",
-  showPhone: true // 是否向他人公开展示手机号
+  showPhone: true, // 是否向他人公开展示手机号
+  showAcgnTab: true, // 默认在首页展示二次元页签
+  showRecommendTab: true
 };
 
 // 平台环境下的文件管理器兼容处理

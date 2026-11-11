@@ -151,6 +151,121 @@
         </view>
       </view>
 
+      <!-- 组 4: 首页顶部页签展示设置 (附近/关注必选，二次元/推荐可选展示与隐藏) -->
+      <view class="wechat-cells-group">
+        <view class="setting-group-header">
+          <text class="setting-group-title">首页顶部页签展示设置</text>
+        </view>
+
+        <!-- 附近 (必须展示) -->
+        <view class="wechat-cell-row switch-row">
+          <view class="switch-left-col">
+            <text class="cell-label">📍 附近页签</text>
+            <text class="cell-sub-tip">500米生活圈雷达地图核心入口（必选展示）</text>
+          </view>
+          <view class="switch-right-box">
+            <switch
+              :checked="true"
+              :disabled="true"
+              color="#07c160"
+              style="transform: scale(0.85); opacity: 0.6;"
+            />
+          </view>
+        </view>
+
+        <!-- 关注 (必须展示) -->
+        <view class="wechat-cell-row switch-row">
+          <view class="switch-left-col">
+            <text class="cell-label">👥 关注页签</text>
+            <text class="cell-sub-tip">好友与周边动态时间线（必选展示）</text>
+          </view>
+          <view class="switch-right-box">
+            <switch
+              :checked="true"
+              :disabled="true"
+              color="#07c160"
+              style="transform: scale(0.85); opacity: 0.6;"
+            />
+          </view>
+        </view>
+
+        <!-- 二次元 (支持开启/隐藏) -->
+        <view class="wechat-cell-row switch-row">
+          <view class="switch-left-col">
+            <text class="cell-label">🌸 二次元页签</text>
+            <text class="cell-sub-tip">
+              {{ editingProfile.showAcgnTab !== false ? '已展示：在首页顶部显示「🌸 二次元」专属同好专区' : '已隐藏：首页顶部隐藏二次元页签' }}
+            </text>
+          </view>
+          <view class="switch-right-box">
+            <switch
+              :checked="editingProfile.showAcgnTab !== false"
+              @change="editingProfile.showAcgnTab = $event.detail.value"
+              color="#ec4899"
+              style="transform: scale(0.85);"
+            />
+          </view>
+        </view>
+
+        <!-- 推荐 (支持开启/隐藏) -->
+        <view class="wechat-cell-row switch-row">
+          <view class="switch-left-col">
+            <text class="cell-label">✨ 推荐页签</text>
+            <text class="cell-sub-tip">
+              {{ editingProfile.showRecommendTab !== false ? '已展示：在首页顶部显示同城热门推荐' : '已隐藏：首页顶部隐藏推荐页签' }}
+            </text>
+          </view>
+          <view class="switch-right-box">
+            <switch
+              :checked="editingProfile.showRecommendTab !== false"
+              @change="editingProfile.showRecommendTab = $event.detail.value"
+              color="#07c160"
+              style="transform: scale(0.85);"
+            />
+          </view>
+        </view>
+      </view>
+
+      <!-- 组 5: 我发表的所有动态 (和位置无关，展示全部发表记录) -->
+      <view class="wechat-help-section">
+        <view class="section-title">
+          <text>我发表的动态 ({{ myAllStatuses.length }})</text>
+        </view>
+
+        <view v-if="myAllStatuses.length > 0" class="wechat-cells-group">
+          <view
+            v-for="item in myAllStatuses"
+            :key="item.id"
+            class="wechat-help-record-cell"
+            @tap="closeMyProfileSheet(true); openDetailSheet(item)"
+          >
+            <view class="record-top-row">
+              <view class="record-status-tags">
+                <text v-if="item.isAcgn" class="record-acgn-tag">🌸 {{ item.acgnTag || '二次元' }}</text>
+                <text v-if="item.isEmergency" class="record-status-badge badge-emergency">🚨 救命求助</text>
+                <text v-else-if="item.isHelp" class="record-status-badge badge-normal">🆘 急事求助</text>
+                <text v-else class="record-status-badge badge-moment">📷 动态</text>
+              </view>
+              <text class="record-time">{{ formatTime(item.createdAt) }}</text>
+            </view>
+            <text class="record-content-snippet">{{ item.content }}</text>
+            <view v-if="item.images && item.images.length > 0" class="record-photos-row">
+              <image
+                v-for="(img, idx) in item.images.slice(0, 3)"
+                :key="idx"
+                class="record-mini-photo"
+                :src="img"
+                mode="aspectFill"
+              />
+              <text v-if="item.images.length > 3" class="record-photo-more">+{{ item.images.length - 3 }}</text>
+            </view>
+          </view>
+        </view>
+        <view v-else class="empty-status-tip">
+          <text>暂无发表的动态</text>
+        </view>
+      </view>
+
       <!-- 组 4: 我的求助与急事历史 (如果存在) -->
       <view v-if="myHelpHistory && myHelpHistory.length > 0" class="wechat-help-section">
         <view class="section-title">
@@ -214,16 +329,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useAppState } from "../composables/useAppState";
 
 const showGenderSheet = ref(false);
 
 const {
-  statusBarHeight, myProfileVisible, editingProfile, myHelpHistory,
+  statusBarHeight, myProfile, myProfileVisible, editingProfile, myHelpHistory, allStatuses,
   closeMyProfileSheet, chooseNewAvatar, saveMyProfile, onPhonePrivacyChange,
   openDetailSheet, formatTime,
 } = useAppState();
+
+const myAllStatuses = computed(() => {
+  return allStatuses.value
+    .filter((s) => s.userId === myProfile.value.id)
+    .sort((a, b) => b.createdAt - a.createdAt);
+});
 
 function selectGender(g: string) {
   editingProfile.value.gender = g;
@@ -439,9 +560,20 @@ function selectGender(g: string) {
         font-weight: 500;
       }
 
+      .setting-group-header {
+        padding: 12px 16px 4px;
+        background-color: #ededed;
+
+        .setting-group-title {
+          font-size: 13px;
+          color: #7f7f7f;
+          font-weight: 500;
+        }
+      }
+
       .wechat-help-record-cell {
         display: flex;
-        align-items: center;
+        flex-direction: column;
         padding: 12px 16px;
         border-bottom: 0.5px solid #ededed;
         background-color: #ffffff;
@@ -453,6 +585,76 @@ function selectGender(g: string) {
 
         &:active {
           background-color: #f7f7f7;
+        }
+
+        .record-top-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 6px;
+
+          .record-status-tags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .record-acgn-tag {
+              font-size: 10px;
+              color: #db2777;
+              background-color: #fdf2f8;
+              border: 0.5px solid #fbcfe8;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 500;
+            }
+
+            .record-status-badge {
+              font-size: 10px;
+              padding: 1px 6px;
+              border-radius: 4px;
+              font-weight: 500;
+
+              &.badge-emergency { background-color: #fee2e2; color: #dc2626; }
+              &.badge-normal { background-color: #fef3c7; color: #d97706; }
+              &.badge-moment { background-color: #f1f5f9; color: #475569; }
+            }
+          }
+
+          .record-time {
+            font-size: 11px;
+            color: #999999;
+          }
+        }
+
+        .record-content-snippet {
+          font-size: 14px;
+          color: #191919;
+          line-height: 1.4;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
+
+        .record-photos-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 8px;
+
+          .record-mini-photo {
+            width: 54px;
+            height: 54px;
+            border-radius: 4px;
+            background-color: #f7f7f7;
+          }
+
+          .record-photo-more {
+            font-size: 12px;
+            color: #888888;
+            font-weight: 600;
+          }
         }
 
         .record-badge-col {
@@ -506,6 +708,13 @@ function selectGender(g: string) {
             margin-left: 8px;
           }
         }
+      }
+      .empty-status-tip {
+        padding: 24px 16px;
+        text-align: center;
+        background-color: #ffffff;
+        font-size: 13px;
+        color: #999999;
       }
     }
 

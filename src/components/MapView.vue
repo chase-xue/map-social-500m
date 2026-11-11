@@ -80,7 +80,7 @@
       </view>
       <button class="publish-trigger-btn" @tap="openPublishSheet" hover-class="btn-hover">
         <text class="btn-plus">＋</text>
-        <text class="btn-label">在此发状态</text>
+        <text class="btn-label">在此发动态</text>
       </button>
     </view>
   </view>
