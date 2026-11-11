@@ -40,9 +40,9 @@
             <text class="cell-emoji">📷</text>
           </view>
           <view class="cell-content">
-            <text class="cell-label">朋友圈</text>
+            <text class="cell-label">关注动态</text>
             <view class="cell-right-info">
-              <text class="cell-tip">500米邻友动态</text>
+              <text class="cell-tip">关注邻友时间线</text>
               <text class="cell-arrow">›</text>
             </view>
           </view>

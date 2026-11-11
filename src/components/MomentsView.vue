@@ -26,9 +26,9 @@
           <text class="banner-title">⏱️ 500米物理生活圈</text>
           <text class="banner-badge">时间倒序</text>
         </view>
-        <view class="moments-quick-post-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发朋友圈">
+        <view class="moments-quick-post-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态">
           <text class="post-icon">📷</text>
-          <text class="post-text">发朋友圈</text>
+          <text class="post-text">发动态</text>
         </view>
       </view>
 
@@ -52,7 +52,7 @@
       <view v-if="sortedMomentsStatuses.length === 0" class="moments-empty-card">
         <text class="empty-icon">🍃</text>
         <text class="empty-title">周边 500 米内暂无动态</text>
-        <text class="empty-desc">成为这里第一个发朋友圈的人吧，500米内的邻友都能看到！</text>
+        <text class="empty-desc">成为这里第一个发动态的人吧，500米内关注你的邻友都能看到！</text>
         <button class="empty-post-btn" @tap="openPublishSheet">立即发布第一条动态</button>
       </view>
 

@@ -75,7 +75,7 @@
       <!-- 组 3: 朋友圈动态入口 -->
       <view class="wechat-cells-group">
         <view class="wechat-cell-row">
-          <text class="cell-label">朋友圈</text>
+          <text class="cell-label">关注与动态</text>
           <view class="cell-right-box">
             <text class="cell-dim-text">查看TA在周边发布的动态</text>
             <text class="cell-arrow">›</text>

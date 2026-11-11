@@ -1,7 +1,7 @@
 <template>
   <view class="top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
     <view class="nav-content">
-      <!-- 微信风格居中胶囊切换器 [ 地图 | 朋友圈 ] -->
+      <!-- 微信风格居中胶囊切换器 [ 附近 | 推荐 | 关注 ] -->
       <view class="nav-left">
         <view class="tab-switcher">
           <view
@@ -14,24 +14,32 @@
           </view>
           <view
             class="tab-item"
+            :class="{ 'tab-active': mapSubTab === 'recommend' }"
+            @tap="mapSubTab = 'recommend'"
+          >
+            <text class="tab-icon">✨</text>
+            <text class="tab-text">推荐</text>
+          </view>
+          <view
+            class="tab-item"
             :class="{ 'tab-active': mapSubTab === 'moments' }"
             @tap="mapSubTab = 'moments'"
           >
-            <text class="tab-icon">📰</text>
-            <text class="tab-text">朋友圈</text>
+            <text class="tab-icon">👥</text>
+            <text class="tab-text">关注</text>
             <view v-if="visibleStatuses.length > 0" class="tab-badge">{{ visibleStatuses.length }}</view>
           </view>
         </view>
         <view class="nav-subtitle">
-          <text>📍 500m生活圈 · {{ mapSubTab === 'map' ? 'Zenly地图雷达' : '发布时间倒序' }}</text>
+          <text>📍 500m生活圈 · {{ mapSubTab === 'map' ? 'Zenly地图雷达' : mapSubTab === 'recommend' ? '同城热门推荐与精选' : '关注邻友时间线' }}</text>
         </view>
       </view>
 
       <!-- 右侧快捷功能：发动态 / 相机 -->
       <view class="nav-right-actions">
-        <view class="nav-camera-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态/发朋友圈">
+        <view class="nav-camera-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态">
           <text class="camera-icon">📷</text>
-          <text class="camera-label">{{ mapSubTab === 'map' ? '发状态' : '发朋友圈' }}</text>
+          <text class="camera-label">{{ mapSubTab === 'map' ? '发附近' : mapSubTab === 'recommend' ? '发推荐' : '发动态' }}</text>
         </view>
       </view>
     </view>
