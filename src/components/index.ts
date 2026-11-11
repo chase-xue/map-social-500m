@@ -27,3 +27,4 @@ export { default as UserCardModal } from "./modals/UserCardModal.vue";
 export { default as ChatSheet } from "./modals/ChatSheet.vue";
 export { default as FriendsSheet } from "./modals/FriendsSheet.vue";
 export { default as ClusterSheet } from "./modals/ClusterSheet.vue";
+export { default as AiMatchSheet } from "./modals/AiMatchSheet.vue";

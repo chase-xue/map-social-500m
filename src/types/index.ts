@@ -14,6 +14,9 @@ export interface UserProfile {
   showPhone?: boolean;   // 是否向附近500米内他人公开展示手机号
   showAcgnTab?: boolean; // 首页顶部是否展示「二次元」页签 (可自定义开启/隐藏)
   showRecommendTab?: boolean; // 首页顶部是否展示「推荐」页签
+  constellation?: string; // 星座
+  personalityTags?: string[]; // 性格标签
+  mbti?: string;         // MBTI 人格
 }
 
 export interface FriendItem {
@@ -127,3 +130,31 @@ export interface SponsoredAdItem {
   phone?: string;
   likesCount: number;
 }
+
+export interface AiMatchFilter {
+  gender: 'all' | '女' | '男';
+  ageRange: 'all' | '18-24' | '25-30' | '31+';
+  constellation: string;
+  personalityMode: 'same' | 'complement';
+  personalityTags: string[];
+  customDesc?: string;
+}
+
+export interface AiMatchUserResult {
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  gender: '男' | '女' | '保密';
+  age: number;
+  constellation: string;
+  personalityTags: string[];
+  mbti?: string;
+  distance?: number;
+  matchScore: number;
+  matchHighlight: string;
+  aiReason: string;
+  icebreaker: string;
+  isFriend?: boolean;
+  applied?: boolean;
+}
+

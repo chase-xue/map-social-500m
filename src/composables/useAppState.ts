@@ -10,6 +10,8 @@ import {
   ChatMessage,
   LocationCluster,
   SponsoredAdItem,
+  AiMatchFilter,
+  AiMatchUserResult,
 } from "../types";
 import {
   filterStatusesWithinRange,
@@ -17,6 +19,7 @@ import {
   createOffsetCoordinates,
   clusterStatusesByLocation,
 } from "../services/geo";
+import { executeAiMatch } from "../services/aiMatch";
 import {
   readLocalData,
   writeLocalData,
@@ -166,6 +169,11 @@ const pickedImages = ref<string[]>([]);
 const isPublishing = ref(false);
 const isAcgnPost = ref(false);
 const acgnTag = ref("Cosplay");
+
+// ============ AI 智能交友匹配 ============
+const aiMatchSheetVisible = ref(false);
+const aiMatchResults = ref<AiMatchUserResult[]>([]);
+const isAiMatching = ref(false);
 
 // ============ HELP 求助 ============
 const helpSheetVisible = ref(false);
@@ -780,6 +788,81 @@ function sendCurrentChatMessage() {
   }, 1200);
 }
 
+// ============ AI 智能交友 ============
+function openAiMatchSheet() {
+  lastModalOpenTime = Date.now();
+  aiMatchSheetVisible.value = true;
+  if (aiMatchResults.value.length === 0) {
+    runAiMatchFilter({
+      gender: 'all',
+      ageRange: 'all',
+      constellation: 'all',
+      personalityMode: 'same',
+      personalityTags: ['二次元宅', '猫系慢热']
+    });
+  }
+}
+
+function closeAiMatchSheet(force = false) {
+  if (!force && Date.now() - lastModalOpenTime < 450) return;
+  aiMatchSheetVisible.value = false;
+}
+
+function runAiMatchFilter(filter: AiMatchFilter) {
+  isAiMatching.value = true;
+  setTimeout(() => {
+    const rawResults = executeAiMatch(filter);
+    const currentFriends = friendsList.value;
+    aiMatchResults.value = rawResults.map(r => ({
+      ...r,
+      isFriend: currentFriends.some(f => f.userId === r.userId && f.status === 'accepted'),
+      applied: currentFriends.some(f => f.userId === r.userId && f.status === 'pending')
+    }));
+    isAiMatching.value = false;
+  }, 350);
+}
+
+function applyAndChatWithMatch(candidate: AiMatchUserResult, customGreeting?: string) {
+  const greeting = customGreeting || candidate.icebreaker;
+  const existingFriend = friendsList.value.find(f => f.userId === candidate.userId);
+
+  if (existingFriend) {
+    closeAiMatchSheet(true);
+    openChatSheet(existingFriend);
+    return;
+  }
+
+  const newFriend: FriendItem = {
+    userId: candidate.userId,
+    name: candidate.userName,
+    avatar: candidate.userAvatar,
+    gender: candidate.gender,
+    age: candidate.age,
+    bio: `${candidate.constellation} · ${candidate.mbti} | ${candidate.personalityTags.join('/')}`,
+    status: 'accepted',
+    lastMessage: greeting,
+    lastMessageTime: Date.now(),
+    unreadCount: 0
+  };
+
+  friendsList.value.unshift(newFriend);
+  saveFriendsList(friendsList.value);
+
+  // 写入破冰对话
+  sendChatMessage(candidate.userId, greeting, 'text', myProfile.value.id);
+
+  // 模拟对方秒回破冰
+  setTimeout(() => {
+    sendChatMessage(candidate.userId, `收到啦！看到 AI 说我们契合度高达 ${candidate.matchScore}%，太开心了，同在 500 米生活圈随时常联系～✨`, 'text', candidate.userId);
+  }, 800);
+
+  candidate.isFriend = true;
+  candidate.applied = true;
+
+  closeAiMatchSheet(true);
+  openChatSheet(newFriend);
+}
+
 // ============ 发布 ============
 function openPublishSheet(mode: PublishMode = "moments") {
   lastModalOpenTime = Date.now();
@@ -1048,5 +1131,8 @@ export function useAppState() {
     previewImage, closeImagePreview, setImagePreviewIndex, formatTime,
     // 初始化
     initApp,
+    // AI 智能交友
+    aiMatchSheetVisible, aiMatchResults, isAiMatching,
+    openAiMatchSheet, closeAiMatchSheet, runAiMatchFilter, applyAndChatWithMatch,
   };
 }

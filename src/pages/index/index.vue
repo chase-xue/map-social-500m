@@ -33,6 +33,7 @@
       <ChatSheet />
       <UserCardModal />
       <HelpSheet />
+      <AiMatchSheet />
       <!-- 微信全屏大图预览灯箱弹窗 -->
       <ImagePreviewModal />
     </view>
@@ -47,7 +48,7 @@ import {
   ContactsTab, ChatsTab, MeTab,
   MapView, MomentsView, RecommendView, AcgnView,
   DetailSheet, PublishSheet, HelpSheet, MyProfileSheet,
-  FriendsSheet, ChatSheet, ClusterSheet, UserCardModal
+  FriendsSheet, ChatSheet, ClusterSheet, UserCardModal, AiMatchSheet
 } from "../../components";
 
 const { mainTab, mapSubTab, initApp } = useAppState();

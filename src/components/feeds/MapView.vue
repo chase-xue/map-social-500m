@@ -48,6 +48,17 @@
 
     <!-- 右侧控制按钮组 -->
     <view class="right-controls">
+      <!-- 方案 B：Zenly 原生轻量磨砂圆钮 AI 交友匹配 -->
+      <view
+        class="control-btn ai-match-btn"
+        @tap="openAiMatchSheet"
+        hover-class="btn-hover"
+        title="AI 智能交友匹配"
+      >
+        <text class="btn-icon">🤖</text>
+        <text class="ai-badge">AI</text>
+      </view>
+
       <!-- 醒目的全局 HELP 按钮 -->
       <view
         class="control-btn help-btn"
@@ -95,6 +106,7 @@ const {
   recenterToUser, refreshNearbyStatuses, simulateUserMove,
   visibleStatuses, openPublishSheet, openDetailSheet, locationClusters,
   activeHelpStatuses, hasActiveEmergency, openHelpSheet, myActiveHelp,
+  openAiMatchSheet
 } = useAppState();
 
 const topEmergencyHelp = computed(() => {
@@ -210,6 +222,31 @@ onUnmounted(() => {
 @keyframes emergency-banner-glow {
   0% { transform: scale(1); box-shadow: 0 8rpx 24rpx rgba(220, 38, 38, 0.4); }
   100% { transform: scale(1.01); box-shadow: 0 12rpx 36rpx rgba(220, 38, 38, 0.7); }
+}
+
+.ai-match-btn {
+  position: relative;
+  border: 2rpx solid #c4b5fd !important;
+  background: #ffffff !important;
+
+  .btn-icon {
+    font-size: 34rpx !important;
+  }
+
+  .ai-badge {
+    position: absolute;
+    top: -6rpx;
+    right: -6rpx;
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    color: #ffffff;
+    font-size: 16rpx;
+    font-weight: 800;
+    padding: 1rpx 8rpx;
+    border-radius: 10rpx;
+    border: 2rpx solid #ffffff;
+    line-height: 1.2;
+    box-shadow: 0 2rpx 6rpx rgba(139, 92, 246, 0.35);
+  }
 }
 
 .help-btn {
