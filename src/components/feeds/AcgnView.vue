@@ -1,6 +1,10 @@
 <template>
-  <view class="acgn-view-page" :style="{ paddingTop: (statusBarHeight + 52) + 'px' }">
-    <!-- 顶部二次元细分子标签水平滑动选择器 -->
+  <scroll-view
+    scroll-y
+    class="acgn-view-page"
+    :style="{ paddingTop: (statusBarHeight + 52) + 'px' }"
+  >
+    <!-- 顶部二次元细分子标签水平滑动选择器 (吸顶) -->
     <view class="acgn-subtabs-bar">
       <scroll-view scroll-x class="subtabs-scroll" :show-scrollbar="false">
         <view class="subtabs-inner">
@@ -28,10 +32,8 @@
       <view class="scroll-edge-fade" />
     </view>
 
-    <!-- 二次元专区滚动主体 -->
-    <scroll-view scroll-y class="acgn-scroll-area">
-      <!-- 专区顶部标语横幅 -->
-      <view class="acgn-header-banner">
+    <!-- 专区顶部标语横幅 -->
+    <view class="acgn-header-banner">
         <text class="banner-sparkle">🌸</text>
         <text class="banner-title">二次元同好空间 · 漫展正片 / 吃谷交流 / 番剧游戏</text>
       </view>
@@ -187,8 +189,7 @@
       </view>
 
       <view class="acgn-bottom-padding" />
-    </scroll-view>
-  </view>
+  </scroll-view>
 </template>
 
 <script setup lang="ts">
@@ -226,23 +227,27 @@ const filteredStatuses = computed(() => {
 <style lang="scss" scoped>
 .acgn-view-page {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   background-color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
 }
 
-/* 顶部子标签切换器 */
+/* 顶部子标签切换器 (Sticky 吸顶) */
 .acgn-subtabs-bar {
-  background-color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
   border-bottom: 0.5px solid #fbcfe8;
   padding: 8px 12px;
-  flex-shrink: 0;
-  position: relative;
+  box-sizing: border-box;
 
   .subtabs-scroll {
     white-space: nowrap;
@@ -306,13 +311,8 @@ const filteredStatuses = computed(() => {
     top: 0;
     bottom: 0;
     width: 24px;
-    background: linear-gradient(to left, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0));
   }
-}
-
-.acgn-scroll-area {
-  flex: 1;
-  background-color: #ffffff;
 }
 
 .acgn-header-banner {
@@ -601,6 +601,6 @@ const filteredStatuses = computed(() => {
 }
 
 .acgn-bottom-padding {
-  height: 120rpx;
+  height: 160rpx;
 }
 </style>
