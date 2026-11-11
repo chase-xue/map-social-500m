@@ -2,19 +2,19 @@
   <view class="app-layout">
     <view class="container">
       <!-- 微信四大底层页签内容 -->
-      <!-- 1. 聊天 (微信) -->
-      <ChatsTab v-show="mainTab === 'chats'" />
-
-      <!-- 2. 通讯录 -->
-      <ContactsTab v-show="mainTab === 'contacts'" />
-
-      <!-- 3. 地图 (500米 Zenly 地图与朋友圈) -->
+      <!-- 1. 地图 (500米 Zenly 地图与朋友圈) - 居首位 -->
       <view v-show="mainTab === 'map'" class="map-tab-container">
         <!-- 地图顶栏 (胶囊切换器) -->
         <TopNav />
         <MapView v-if="mapSubTab === 'map'" />
         <MomentsView v-if="mapSubTab === 'moments'" />
       </view>
+
+      <!-- 2. 聊天 (微信) -->
+      <ChatsTab v-show="mainTab === 'chats'" />
+
+      <!-- 3. 通讯录 -->
+      <ContactsTab v-show="mainTab === 'contacts'" />
 
       <!-- 4. 我 -->
       <MeTab v-show="mainTab === 'me'" />

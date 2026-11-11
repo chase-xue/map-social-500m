@@ -1,6 +1,30 @@
 <template>
   <view class="wechat-tab-bar">
-    <!-- 1. 聊天 (微信) -->
+    <!-- 1. 地图 (500米圈) - 居首位 -->
+    <view
+      class="tab-bar-item"
+      :class="{ 'item-active': mainTab === 'map' }"
+      @tap="switchMainTab('map')"
+    >
+      <view class="icon-box">
+        <!-- 地图 Active 选中态: 高光微信绿定位图钉 -->
+        <svg v-if="mainTab === 'map'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+        </svg>
+        <!-- 地图 Inactive 未选中态: 优雅线性定位图钉 -->
+        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+
+        <view v-if="visibleStatuses.length > 0 && mainTab !== 'map'" class="wechat-badge">
+          {{ visibleStatuses.length }}
+        </view>
+      </view>
+      <text class="tab-label">地图</text>
+    </view>
+
+    <!-- 2. 聊天 (微信) -->
     <view
       class="tab-bar-item"
       :class="{ 'item-active': mainTab === 'chats' }"
@@ -29,7 +53,7 @@
       <text class="tab-label">聊天</text>
     </view>
 
-    <!-- 2. 通讯录 -->
+    <!-- 3. 通讯录 -->
     <view
       class="tab-bar-item"
       :class="{ 'item-active': mainTab === 'contacts' }"
@@ -61,30 +85,6 @@
         </view>
       </view>
       <text class="tab-label">通讯录</text>
-    </view>
-
-    <!-- 3. 地图 (500米圈) -->
-    <view
-      class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'map' }"
-      @tap="switchMainTab('map')"
-    >
-      <view class="icon-box">
-        <!-- 地图 Active 选中态: 高光微信绿定位图钉 -->
-        <svg v-if="mainTab === 'map'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-        </svg>
-        <!-- 地图 Inactive 未选中态: 优雅线性定位图钉 -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-          <circle cx="12" cy="9" r="2.5"/>
-        </svg>
-
-        <view v-if="visibleStatuses.length > 0 && mainTab !== 'map'" class="wechat-badge">
-          {{ visibleStatuses.length }}
-        </view>
-      </view>
-      <text class="tab-label">地图</text>
     </view>
 
     <!-- 4. 我 -->
