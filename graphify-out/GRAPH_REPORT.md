@@ -1,16 +1,16 @@
 # Graph Report - map  (2026-11-11)
 
 ## Corpus Check
-- 46 files · ~34,876 words
+- 48 files · ~37,967 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 523 nodes · 849 edges · 24 communities (23 shown, 1 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 64 edges (avg confidence: 0.5)
+- 560 nodes · 925 edges · 24 communities (23 shown, 1 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 70 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fbab366b`
+- Built from commit: `6fc88de9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -39,7 +39,7 @@
 - RecommendView.vue
 
 ## God Nodes (most connected - your core abstractions)
-1. `useAppState()` - 88 edges
+1. `useAppState()` - 95 edges
 2. `readLocalData()` - 20 edges
 3. `compilerOptions` - 14 edges
 4. `getFriendsList()` - 11 edges
@@ -51,8 +51,8 @@
 10. `submitHelpPost()` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `handleApply()` --calls--> `applyAndChatWithMatch()`  [EXTRACTED]
-  src/components/modals/AiMatchSheet.vue → src/composables/useAppState.ts
+- `handleToggleLike()` --calls--> `toggleLikeStatus()`  [EXTRACTED]
+  src/components/modals/DetailSheet.vue → src/composables/useAppState.ts
 - `sendFriendRequest()` --calls--> `request()`  [EXTRACTED]
   src/api/friends.ts → src/api/client.ts
 - `getNearbyStatuses()` --calls--> `filterStatusesWithinRange()`  [EXTRACTED]
@@ -69,23 +69,23 @@
 
 ### Community 0 - "useAppState.ts"
 Cohesion: 0.03
-Nodes (70): acgnStatuses, acgnTag, activeActionMenuStatusId, activeCluster, activeHelpStatuses, activeStatus, activeTab, aiMatchResults (+62 more)
+Nodes (78): acgnStatuses, acgnTag, activeActionMenuStatusId, activeCluster, activeHelpStatuses, activeStatus, activeTab, aiMatchResults (+70 more)
 
 ### Community 1 - "storage.ts"
 Cohesion: 0.06
-Nodes (38): getAuthToken(), request(), RequestOptions, sendFriendRequest(), ApiResponse, PaginationParams, QueryStatusesParams, SendChatMessageDTO (+30 more)
+Nodes (37): getAuthToken(), request(), RequestOptions, sendFriendRequest(), ApiResponse, CreateCommentDTO, CreateStatusDTO, PaginationParams (+29 more)
 
 ### Community 2 - "scripts"
 Cohesion: 0.05
 Nodes (41): @dcloudio/types, @dcloudio/uni-app, @dcloudio/uni-app-plus, @dcloudio/uni-cli-shared, @dcloudio/uni-components, @dcloudio/uni-h5, @dcloudio/uni-mp-toutiao, @dcloudio/uni-mp-weixin (+33 more)
 
 ### Community 3 - "manifest.json"
-Cohesion: 0.07
-Nodes (31): chooseLocation, getLocation, appid, description, h5, router, title, mp-toutiao (+23 more)
+Cohesion: 0.09
+Nodes (26): chooseLocation, getLocation, appid, description, mp-toutiao, appid, permission, requiredPrivateInfos (+18 more)
 
 ### Community 4 - "index.vue"
-Cohesion: 0.05
-Nodes (28): {
+Cohesion: 0.04
+Nodes (29): {
   statusBarHeight, mapSubTab, visibleStatuses, acgnStatuses, myProfile, openPublishSheet
 }, {
   mainTab, switchMainTab, unreadChatsCount, pendingFriendsCount,
@@ -117,7 +117,7 @@ Nodes (28): {
   jumpToMomentsFromCluster,
   formatTime,
   openDetailSheet,
-} (+20 more)
+} (+21 more)
 
 ### Community 5 - "compilerOptions"
 Cohesion: 0.09
@@ -125,15 +125,15 @@ Nodes (22): @dcloudio/types, DOM, ESNext, src/**/*.d.ts, src/**/*.ts, src/**/*.t
 
 ### Community 6 - "app-plus"
 Cohesion: 0.06
-Nodes (31): <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>, <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>, <uses-permission android:name=\"android.permission.CAMERA\"/>, <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>, <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>, appkey_android, appkey_ios, key (+23 more)
+Nodes (36): <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>, <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>, <uses-permission android:name=\"android.permission.CAMERA\"/>, <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>, <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>, appkey_android, appkey_ios, key (+28 more)
 
 ### Community 7 - "useAppState"
 Cohesion: 0.07
-Nodes (35): addPresetSamplePhoto(), chooseHelpImages(), chooseImages(), closeAiMatchSheet(), closeChatSheet(), closeClusterSheet(), closeDetailSheet(), closeFriendsSheet() (+27 more)
+Nodes (38): addPresetSamplePhoto(), chooseHelpImages(), chooseImages(), closeActionMenu(), closeChatSheet(), closeClusterSheet(), closeDetailSheet(), closeFriendsSheet() (+30 more)
 
 ### Community 8 - "getFriendsList"
-Cohesion: 0.16
-Nodes (23): acceptFriendFromCard(), applyAndChatWithMatch(), getSystemInfo(), handleAcceptFriend(), handleAddFriend(), initApp(), initGeolocation(), openChatSheet() (+15 more)
+Cohesion: 0.09
+Nodes (44): createStatus(), getAcgnStatuses(), getNearbyStatuses(), getRecommendedStatuses(), getUserAllStatuses(), postCommentApi(), toggleLikeStatusApi(), handleApply() (+36 more)
 
 ### Community 9 - "devDependencies"
 Cohesion: 0.08
@@ -144,16 +144,33 @@ Cohesion: 0.08
 Nodes (24): 1.1 核心价值：超近距离 500m LBS 真实生活圈, 1.2 视觉与交互规范：微信 8.0 原生标准, 1. 产品定位与核心设计哲学, 2. 底层架构与四大主页签体系, 3.1 【首页】页签 (Home / Map Tab), 3.2 【通讯录】页签 (Contacts Tab), 3.3 【消息】页签 (Chats Tab), 3.4 【更多】页签 (Me / More Tab) (+16 more)
 
 ### Community 11 - "submitHelpPost"
-Cohesion: 0.32
-Nodes (8): handlePublish(), chooseCommentImage(), chooseNewAvatar(), closeHelpSheet(), closePublishSheet(), submitHelpPost(), submitNewPost(), saveLocalImageFile()
+Cohesion: 0.40
+Nodes (6): handlePublish(), chooseCommentImage(), chooseNewAvatar(), closePublishSheet(), submitNewPost(), saveLocalImageFile()
 
 ### Community 12 - "onMarkerTap"
-Cohesion: 0.16
-Nodes (22): createStatus(), getAcgnStatuses(), getNearbyStatuses(), getRecommendedStatuses(), getUserAllStatuses(), postCommentApi(), toggleLikeStatusApi(), CreateCommentDTO (+14 more)
+Cohesion: 0.11
+Nodes (23): BOTTLE_TAGS, confirmReply(), confirmThrow(), inputContent, isReplying, replyText, selectedTag, {
+  statusBarHeight,
+  universeSubTab,
+  shellCount,
+  allDriftBottles,
+  fishedBottle,
+  throwBottleModalVisible,
+  readBottleModalVisible,
+  bottleMsgModalVisible,
+  openThrowBottleModal,
+  closeThrowBottleModal,
+  handleThrowBottle,
+  handleFishBottle,
+  closeReadBottleModal,
+  handleReplyBottle,
+  mapSubTab,
+  switchMainTab,
+} (+15 more)
 
 ### Community 13 - "acceptFriendFromCard"
-Cohesion: 0.67
-Nodes (3): closeActionMenu(), handleLikeFromMenu(), openInPlaceComment()
+Cohesion: 0.50
+Nodes (4): onCalloutTap(), onMarkerTap(), openClusterSheet(), openDetailSheet()
 
 ### Community 15 - "saveMyProfile"
 Cohesion: 0.09
@@ -183,12 +200,12 @@ Cohesion: 0.33
 Nodes (5): 🗺️ 500米地图生活圈 (Map Social 500m) - 完整项目知识图谱与架构指引, 🎯 一、功能模块与代码修改快速检索表, 🔬 三、Graphify 核心指标与知识网络分析, 🏛️ 二、系统全景架构依赖拓扑图 (Mermaid Architecture), 🛠️ 四、后续图谱更新指引
 
 ### Community 21 - "MeTab.vue"
-Cohesion: 0.29
-Nodes (7): handleRecenterMap(), handleSimulateWalk(), jumpToMoments(), {
+Cohesion: 0.25
+Nodes (8): handleRecenterMap(), handleSimulateWalk(), jumpToMoments(), {
   statusBarHeight, myProfile, editingProfile, openMyProfileSheet,
   switchMainTab, openHelpSheet, myActiveHelp, myHelpHistory,
   recenterToUser, simulateUserMove
-}, recenterToUser(), simulateUserMove(), switchMainTab()
+}, handleNavTab(), recenterToUser(), simulateUserMove(), switchMainTab()
 
 ### Community 22 - "ImagePreviewModal.vue"
 Cohesion: 0.47
@@ -216,7 +233,7 @@ Nodes (4): handleAdClick(), {
 }, makePhoneCall(), previewImage()
 
 ## Knowledge Gaps
-- **258 isolated node(s):** `name`, `version`, `description`, `dev:h5`, `build:h5` (+253 more)
+- **273 isolated node(s):** `name`, `version`, `description`, `dev:h5`, `build:h5` (+268 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -224,16 +241,16 @@ Nodes (4): handleAdClick(), {
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `useAppState()` connect `useAppState` to `useAppState.ts`, `storage.ts`, `index.vue`, `getFriendsList`, `submitHelpPost`, `onMarkerTap`, `acceptFriendFromCard`, `formatTime`, `AcgnView.vue`, `MeTab.vue`, `ImagePreviewModal.vue`, `RecommendView.vue`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `readLocalData()` connect `onMarkerTap` to `useAppState.ts`, `getFriendsList`, `submitHelpPost`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `app-plus` connect `app-plus` to `manifest.json`?**
+  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+- **Why does `readLocalData()` connect `getFriendsList` to `useAppState.ts`, `submitHelpPost`, `useAppState`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Are the 64 inferred relationships involving `useAppState()` (e.g. with `acceptFriendFromCard()` and `addPresetSamplePhoto()`) actually correct?**
-  _`useAppState()` has 64 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `app-plus` connect `app-plus` to `manifest.json`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
+- **Are the 70 inferred relationships involving `useAppState()` (e.g. with `acceptFriendFromCard()` and `addPresetSamplePhoto()`) actually correct?**
+  _`useAppState()` has 70 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `version`, `description` to the rest of the system?**
-  _258 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _273 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `useAppState.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.028169014084507043 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.02531645569620253 - nodes in this community are weakly interconnected._
 - **Should `storage.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.06103896103896104 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06060606060606061 - nodes in this community are weakly interconnected._
