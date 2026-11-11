@@ -44,6 +44,7 @@ export interface CommentItem {
   userName: string;
   userAvatar: string;
   content: string;
+  replyToUserName?: string; // 微信朋友圈二级回复对象 (如 "婷婷 回复 咖啡老张:")
   images?: string[];       // 评论附带的照片，支持点击放大查看
   createdAt: number;
   authorProfile?: UserProfile;

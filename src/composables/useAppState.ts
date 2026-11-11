@@ -93,6 +93,13 @@ const activeStatus = ref<StatusItem | null>(null);
 const newCommentText = ref("");
 const pickedCommentImage = ref("");
 
+// ============ 朋友圈就地原生交互 (WeChat In-Place Moments Interaction) ============
+const activeActionMenuStatusId = ref<string | null>(null);
+const inPlaceCommentVisible = ref(false);
+const inPlaceCommentTarget = ref<StatusItem | null>(null);
+const inPlaceReplyToUser = ref<string | null>(null);
+const inPlaceCommentText = ref("");
+
 // ============ 发布抽屉 ============
 const publishVisible = ref(false);
 const newPostContent = ref("");
@@ -538,6 +545,64 @@ function toggleLikeStatus(item: StatusItem) {
   uni.showToast({ title: isLiked ? "❤️ 点赞成功！" : "已取消点赞", icon: "none" });
 }
 
+// ============ 朋友圈就地原生交互操作 ============
+function toggleActionMenu(statusId: string) {
+  if (activeActionMenuStatusId.value === statusId) {
+    activeActionMenuStatusId.value = null;
+  } else {
+    activeActionMenuStatusId.value = statusId;
+  }
+}
+
+function closeActionMenu() {
+  activeActionMenuStatusId.value = null;
+}
+
+function handleLikeFromMenu(item: StatusItem) {
+  closeActionMenu();
+  toggleLikeStatus(item);
+}
+
+function openInPlaceComment(status: StatusItem, replyToUser?: string) {
+  closeActionMenu();
+  inPlaceCommentTarget.value = status;
+  inPlaceReplyToUser.value = replyToUser || null;
+  inPlaceCommentText.value = "";
+  inPlaceCommentVisible.value = true;
+}
+
+function closeInPlaceComment() {
+  inPlaceCommentVisible.value = false;
+  inPlaceCommentTarget.value = null;
+  inPlaceReplyToUser.value = null;
+  inPlaceCommentText.value = "";
+}
+
+function handleSendInPlaceComment() {
+  const content = inPlaceCommentText.value.trim();
+  if (!content || !inPlaceCommentTarget.value) return;
+
+  const targetId = inPlaceCommentTarget.value.id;
+  const replyUser = inPlaceReplyToUser.value;
+
+  const newComment = addCommentToStatus(targetId, {
+    userId: myProfile.value.id,
+    userName: myProfile.value.name,
+    userAvatar: myProfile.value.avatar,
+    content: content,
+    replyToUserName: replyUser || undefined,
+    authorProfile: { ...myProfile.value },
+  });
+
+  if (newComment) {
+    allStatuses.value = readLocalData();
+    closeInPlaceComment();
+    uni.showToast({ title: "评论成功", icon: "none" });
+  } else {
+    uni.showToast({ title: "评论保存异常，请重试", icon: "none" });
+  }
+}
+
 // ============ 好友 ============
 function openFriendsSheet() {
   lastModalOpenTime = Date.now();
@@ -849,8 +914,11 @@ export function useAppState() {
     // 私聊
     chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText, chatScrollTop,
     openChatSheet, closeChatSheet, sendCurrentChatMessage,
-    // 点赞
+    // 点赞与朋友圈就地交互
     toggleLikeStatus,
+    activeActionMenuStatusId, toggleActionMenu, closeActionMenu, handleLikeFromMenu,
+    inPlaceCommentVisible, inPlaceCommentTarget, inPlaceReplyToUser, inPlaceCommentText,
+    openInPlaceComment, closeInPlaceComment, handleSendInPlaceComment,
     // 工具
     previewImage, formatTime,
     // 初始化

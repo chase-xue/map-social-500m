@@ -335,6 +335,7 @@ export function addCommentToStatus(
     userName: string;
     userAvatar: string;
     content: string;
+    replyToUserName?: string;
     images?: string[];
     authorProfile?: UserProfile;
   }
@@ -350,6 +351,7 @@ export function addCommentToStatus(
     userName: comment.userName,
     userAvatar: comment.userAvatar,
     content: comment.content,
+    replyToUserName: comment.replyToUserName,
     images: comment.images || [],
     authorProfile: comment.authorProfile,
     createdAt: Date.now()
@@ -358,7 +360,8 @@ export function addCommentToStatus(
   if (!target.comments) {
     target.comments = [];
   }
-  target.comments.unshift(newComment);
+  // 微信朋友圈按对话流自然顺序追加在底部
+  target.comments.push(newComment);
   writeLocalData(all);
   return newComment;
 }

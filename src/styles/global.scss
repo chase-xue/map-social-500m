@@ -1805,18 +1805,20 @@ uni-scroll-view,
   }
 }
 
-/* --- 朋友圈模块 --- */
+/* --- 朋友圈模块 (微信标准视觉体系) --- */
 .moments-scroll-view {
   width: 100%;
   height: 100%;
   height: 100dvh;
   box-sizing: border-box;
-  background-color: #f1f5f9;
+  background-color: #ffffff;
+  max-width: 600px;
+  margin: 0 auto;
 
   .moments-cover-section {
     position: relative;
     width: 100%;
-    height: 380rpx;
+    height: 480rpx;
     margin-bottom: 60rpx;
 
     .moments-cover-img { width: 100%; height: 100%; object-fit: cover; }
@@ -1824,27 +1826,35 @@ uni-scroll-view,
     .moments-cover-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.45) 100%);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.5) 100%);
     }
 
     .moments-user-badge {
       position: absolute;
       right: 32rpx;
-      bottom: -40rpx;
+      bottom: -44rpx;
       display: flex;
       align-items: center;
-      gap: 18rpx;
+      gap: 20rpx;
       z-index: 10;
+      cursor: pointer;
 
-      .moments-my-name { font-size: 32rpx; font-weight: 800; color: #ffffff; text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.8); }
+      .moments-my-name {
+        font-size: 34rpx;
+        font-weight: 700;
+        color: #ffffff;
+        text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.9);
+        margin-bottom: 16rpx;
+      }
 
       .moments-my-avatar {
-        width: 120rpx;
-        height: 120rpx;
-        border-radius: 24rpx;
+        width: 140rpx;
+        height: 140rpx;
+        border-radius: 16rpx;
         border: 4rpx solid #ffffff;
-        box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.25);
+        box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
         background-color: #ffffff;
+        object-fit: cover;
       }
     }
   }
@@ -1853,270 +1863,384 @@ uni-scroll-view,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 0 24rpx 20rpx;
-    padding: 18rpx 24rpx;
-    background: #ffffff;
-    border-radius: 24rpx;
-    border: 1rpx solid #e2e8f0;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
+    margin: 50rpx 32rpx 16rpx;
+    padding: 14rpx 0;
+    border-bottom: 0.5px solid #f0f0f0;
 
     .banner-left {
       display: flex;
-      flex-direction: column;
-      gap: 4rpx;
+      align-items: center;
+      gap: 12rpx;
 
-      .banner-title-row {
-        display: flex;
-        align-items: center;
-        gap: 12rpx;
-
-        .banner-title { font-size: 26rpx; font-weight: 800; color: #0f172a; }
-        .banner-badge { font-size: 18rpx; color: #4f46e5; background-color: #eef2ff; padding: 2rpx 10rpx; border-radius: 12rpx; font-weight: 700; }
-      }
-
-      .banner-desc { font-size: 18rpx; color: #64748b; }
+      .banner-title { font-size: 24rpx; color: #888888; font-weight: 500; }
+      .banner-badge { font-size: 20rpx; color: #576b95; background-color: #f2f2f2; padding: 2rpx 12rpx; border-radius: 6rpx; font-weight: 600; }
     }
 
     .moments-quick-post-btn {
-      margin: 0;
-      padding: 0 24rpx;
-      height: 64rpx;
-      line-height: 64rpx;
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      color: #ffffff;
-      border-radius: 20rpx;
-      font-size: 22rpx;
-      font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 8rpx;
-      box-shadow: 0 4rpx 12rpx rgba(99, 102, 241, 0.3);
+      gap: 6rpx;
+      color: #576b95;
+      font-size: 24rpx;
+      font-weight: 600;
+      cursor: pointer;
 
-      .post-icon { font-size: 24rpx; }
+      .post-icon { font-size: 26rpx; }
+      .post-text { font-size: 24rpx; }
     }
   }
 
   .moments-empty-card {
-    margin: 40rpx 24rpx;
+    margin: 60rpx 32rpx;
     padding: 60rpx 32rpx;
-    background-color: #ffffff;
-    border-radius: 28rpx;
     text-align: center;
-    border: 1rpx solid #e2e8f0;
 
     .empty-icon { font-size: 64rpx; display: block; margin-bottom: 16rpx; }
-    .empty-title { font-size: 30rpx; font-weight: 800; color: #1e293b; display: block; margin-bottom: 8rpx; }
-    .empty-desc { font-size: 22rpx; color: #94a3b8; display: block; margin-bottom: 28rpx; }
+    .empty-title { font-size: 28rpx; font-weight: 600; color: #191919; display: block; margin-bottom: 8rpx; }
+    .empty-desc { font-size: 22rpx; color: #888888; display: block; margin-bottom: 28rpx; }
 
     .empty-post-btn {
       margin: auto;
       width: 320rpx;
       height: 72rpx;
       line-height: 72rpx;
-      background: #6366f1;
+      background: #07c160;
       color: #ffffff;
       font-size: 24rpx;
-      font-weight: 700;
-      border-radius: 36rpx;
+      font-weight: 600;
+      border-radius: 8rpx;
     }
   }
 
-  .moments-feed-list {
-    padding: 0 24rpx;
+  /* 微信标准：纯净无边框社交流 (Hairline 极细线) */
+  .moments-feed-stream {
+    width: 100%;
 
-    .moment-card {
+    .moment-item {
       display: flex;
-      padding: 28rpx 24rpx;
+      padding: 32rpx 32rpx 36rpx;
+      border-bottom: 0.5px solid #f0f0f0;
+      position: relative;
       background-color: #ffffff;
-      border-radius: 28rpx;
-      margin-bottom: 20rpx;
-      border: 1rpx solid #e2e8f0;
-      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+      transition: background-color 0.15s;
 
-      .moment-avatar-col {
+      &.is-emergency-item {
+        background-color: #fffbfb;
+      }
+
+      .item-left {
         margin-right: 20rpx;
         flex-shrink: 0;
 
-        .moment-author-avatar { width: 84rpx; height: 84rpx; border-radius: 18rpx; border: 2rpx solid #e2e8f0; }
+        .author-avatar {
+          width: 88rpx;
+          height: 88rpx;
+          border-radius: 12rpx;
+          object-fit: cover;
+          background-color: #f7f7f7;
+          cursor: pointer;
+        }
       }
 
-      .moment-main-col {
+      .item-right {
         flex: 1;
-        overflow: hidden;
+        min-width: 0;
 
-        .moment-author-header {
+        .author-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 10rpx;
 
-          .author-name-row {
+          .author-name-box {
             display: flex;
             align-items: center;
             gap: 10rpx;
+            cursor: pointer;
 
-            .moment-author-name { font-size: 28rpx; font-weight: 800; color: #3b5998; }
+            .author-name {
+              font-size: 30rpx;
+              font-weight: 600;
+              color: #576b95;
+            }
 
-            .moment-my-tag { font-size: 18rpx; color: #ea580c; background-color: #ffedd5; padding: 2rpx 10rpx; border-radius: 12rpx; font-weight: 700; }
-
-            .moment-gender-tag {
-              font-size: 18rpx;
+            .help-mini-tag {
+              font-size: 20rpx;
               padding: 2rpx 10rpx;
-              border-radius: 12rpx;
+              border-radius: 6rpx;
               font-weight: 600;
 
-              &.female { background-color: #fce7f3; color: #db2777; }
-              &.male { background-color: #e0f2fe; color: #0284c7; }
+              &.emergency { background-color: #fee2e2; color: #dc2626; }
+              &.resolved { background-color: #ecfdf5; color: #059669; }
+            }
+
+            .author-my-tag {
+              font-size: 20rpx;
+              color: #888888;
+            }
+
+            .author-gender-hint {
+              font-size: 20rpx;
+              color: #888888;
             }
           }
 
-          .moment-distance-tag {
-            font-size: 20rpx;
-            color: #6366f1;
-            background-color: #eef2ff;
-            padding: 4rpx 12rpx;
-            border-radius: 12rpx;
-            font-weight: 600;
+          .dist-badge {
+            font-size: 22rpx;
+            color: #888888;
+            font-weight: 400;
           }
         }
 
-        .moment-content-text {
-          font-size: 26rpx;
-          color: #0f172a;
-          line-height: 1.6;
+        .post-text-wrap {
           margin-bottom: 16rpx;
-          word-break: break-word;
           cursor: pointer;
-          transition: opacity 0.15s ease;
 
-          &:hover {
-            opacity: 0.85;
-          }
+          .post-text {
+            font-size: 30rpx;
+            line-height: 1.55;
+            color: #191919;
+            word-break: break-word;
 
-          &:active,
-          &.content-hover {
-            opacity: 0.7;
+            &.emergency-text {
+              color: #b91c1c;
+              font-weight: 600;
+            }
           }
         }
 
-        .moment-media-grid {
-          margin-bottom: 18rpx;
+        .moment-media-wrap {
+          margin-bottom: 16rpx;
 
-          &.single-image .moment-grid-img { width: 420rpx; height: 320rpx; border-radius: 16rpx; }
+          .single-img-box {
+            max-width: 440rpx;
 
-          &.grid-4 {
-            display: grid;
-            grid-template-columns: repeat(2, 210rpx);
-            gap: 12rpx;
+            .single-img,
+            uni-image.single-img {
+              width: 380rpx !important;
+              height: 280rpx !important;
+              max-height: 280rpx !important;
+              border-radius: 8rpx;
+              overflow: hidden;
 
-            .moment-grid-img { width: 210rpx; height: 210rpx; border-radius: 12rpx; }
+              img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover;
+              }
+            }
           }
 
-          &.grid-multi {
+          .grid-4-box {
             display: grid;
-            grid-template-columns: repeat(3, 160rpx);
+            grid-template-columns: repeat(2, 170rpx);
             gap: 10rpx;
 
-            .moment-grid-img { width: 160rpx; height: 160rpx; border-radius: 12rpx; }
+            .grid-img-4,
+            uni-image.grid-img-4 {
+              width: 170rpx !important;
+              height: 170rpx !important;
+              border-radius: 6rpx;
+              overflow: hidden;
+
+              img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover;
+              }
+            }
+          }
+
+          .grid-multi-box {
+            display: grid;
+            grid-template-columns: repeat(3, 160rpx);
+            gap: 8rpx;
+
+            .grid-img-multi,
+            uni-image.grid-img-multi {
+              width: 160rpx !important;
+              height: 160rpx !important;
+              border-radius: 6rpx;
+              overflow: hidden;
+
+              img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover;
+              }
+            }
           }
         }
 
-        .moment-meta-row {
+        .location-link {
+          font-size: 24rpx;
+          color: #576b95;
+          margin-bottom: 14rpx;
+          display: inline-block;
+          cursor: pointer;
+        }
+
+        .item-meta-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 14rpx;
+          position: relative;
+          height: 48rpx;
+          margin-bottom: 10rpx;
 
-          .meta-left {
-            display: flex;
-            align-items: center;
-            gap: 8rpx;
-            font-size: 20rpx;
-            color: #94a3b8;
-
-            .moment-loc-text { color: #64748b; }
+          .meta-time {
+            font-size: 24rpx;
+            color: #b2b2b2;
           }
 
-          .moment-action-tools {
+          .dots-btn {
+            width: 64rpx;
+            height: 40rpx;
+            background-color: #f7f7f7;
+            border-radius: 8rpx;
             display: flex;
             align-items: center;
-            gap: 16rpx;
+            justify-content: center;
+            gap: 6rpx;
+            cursor: pointer;
+            transition: background-color 0.15s;
 
-            .action-tool-btn {
+            &.dots-hover,
+            &:active {
+              background-color: #ececec;
+            }
+
+            .dot {
+              width: 8rpx;
+              height: 8rpx;
+              background-color: #576b95;
+              border-radius: 50%;
+            }
+          }
+
+          /* 微信经典深色微胶囊 */
+          .action-capsule {
+            position: absolute;
+            right: 80rpx;
+            top: -6rpx;
+            height: 56rpx;
+            background-color: #4c4c4c;
+            border-radius: 8rpx;
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
+            z-index: 25;
+            overflow: hidden;
+
+            .capsule-btn {
               display: flex;
               align-items: center;
-              gap: 6rpx;
-              background-color: #f1f5f9;
-              padding: 8rpx 18rpx;
-              border-radius: 24rpx;
-              font-size: 20rpx;
-              color: #475569;
-              font-weight: 600;
+              gap: 8rpx;
+              padding: 0 24rpx;
+              height: 100%;
+              cursor: pointer;
+              font-weight: 500;
+              white-space: nowrap;
 
-              &.liked { background-color: #fee2e2; color: #ef4444; }
+              &:active {
+                background-color: #383838;
+              }
+
+              .capsule-icon { font-size: 24rpx; }
+              .capsule-text { font-size: 24rpx; color: #ffffff; }
+            }
+
+            .capsule-divider {
+              width: 1rpx;
+              height: 28rpx;
+              background-color: rgba(255, 255, 255, 0.2);
             }
           }
         }
 
-        .moment-interactions-box {
+        /* 微信经典折角灰色互动框 */
+        .interaction-bubble {
+          margin-top: 14rpx;
+          background-color: #f7f7f7;
+          border-radius: 8rpx;
+          padding: 14rpx 18rpx;
           position: relative;
-          background-color: #f8fafc;
-          border-radius: 16rpx;
-          padding: 16rpx 20rpx;
-          border: 1rpx solid #e2e8f0;
+          font-size: 26rpx;
+          line-height: 1.5;
 
-          .bubble-arrow {
+          &::before {
+            content: "";
             position: absolute;
             top: -12rpx;
-            left: 28rpx;
+            left: 24rpx;
             width: 0;
             height: 0;
             border-left: 12rpx solid transparent;
             border-right: 12rpx solid transparent;
-            border-bottom: 12rpx solid #f8fafc;
+            border-bottom: 12rpx solid #f7f7f7;
           }
 
-          .moment-likes-list {
+          .likes-line {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 10rpx;
-            font-size: 22rpx;
-            color: #3b5998;
-            font-weight: 700;
+            color: #576b95;
+            font-weight: 600;
+            font-size: 26rpx;
 
-            .heart-icon { font-size: 20rpx; }
-            .likes-names { line-height: 1.4; }
+            .like-heart-icon { font-size: 22rpx; margin-top: 2rpx; }
+            .likes-users { line-height: 1.45; }
           }
 
-          .interactions-divider { height: 1rpx; background-color: #e2e8f0; margin: 12rpx 0; }
+          .bubble-divider {
+            height: 1rpx;
+            background-color: #e5e5e5;
+            margin: 10rpx 0;
+          }
 
-          .moment-comments-list {
+          .comments-list {
             display: flex;
             flex-direction: column;
             gap: 8rpx;
 
-            .moment-comment-line {
-              font-size: 22rpx;
-              line-height: 1.4;
-              margin-bottom: 6rpx;
+            .comment-row {
+              font-size: 26rpx;
+              line-height: 1.45;
+              cursor: pointer;
+              padding: 2rpx 0;
 
-              .cmt-text-block {
-                display: block;
-
-                .cmt-user { color: #3b5998; font-weight: 700; }
-                .cmt-colon { color: #64748b; }
-                .cmt-content { color: #1e293b; }
+              .comment-user {
+                color: #576b95;
+                font-weight: 600;
               }
 
-              .cmt-attached-img-box {
+              .reply-text {
+                color: #7f7f7f;
+                margin: 0 4rpx;
+              }
+
+              .comment-reply-to {
+                color: #576b95;
+                font-weight: 600;
+              }
+
+              .comment-colon {
+                color: #576b95;
+              }
+
+              .comment-content {
+                color: #191919;
+              }
+
+              .cmt-img-preview-box {
                 margin-top: 8rpx;
-                display: flex;
-                align-items: center;
-                gap: 10rpx;
-
-                .cmt-attached-img { width: 120rpx; height: 120rpx; border-radius: 14rpx; border: 1rpx solid #e2e8f0; }
-
-                .cmt-img-zoom-hint { font-size: 18rpx; color: #4f46e5; background-color: #eef2ff; padding: 2rpx 10rpx; border-radius: 10rpx; font-weight: 600; }
+                .cmt-inline-photo {
+                  width: 120rpx;
+                  height: 120rpx;
+                  border-radius: 8rpx;
+                  object-fit: cover;
+                }
               }
             }
           }
@@ -2126,6 +2250,64 @@ uni-scroll-view,
   }
 
   .moments-bottom-padding { height: 120rpx; }
+}
+
+/* --- 原地底部评论条与遮罩 --- */
+.in-place-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.in-place-comment-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #f7f7f7;
+  border-top: 1rpx solid #dcdcdc;
+  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  z-index: 100;
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+
+  .in-place-input {
+    flex: 1;
+    height: 72rpx;
+    background-color: #ffffff;
+    border: 1rpx solid #d0d0d0;
+    border-radius: 10rpx;
+    padding: 0 20rpx;
+    font-size: 28rpx;
+    color: #191919;
+  }
+
+  .in-place-placeholder {
+    color: #999999;
+    font-size: 26rpx;
+  }
+
+  .in-place-send-btn {
+    margin: 0;
+    padding: 0 28rpx;
+    height: 72rpx;
+    line-height: 72rpx;
+    background-color: #07c160;
+    color: #ffffff;
+    border-radius: 8rpx;
+    font-size: 26rpx;
+    font-weight: 600;
+
+    &[disabled] {
+      background-color: #a4e6bd;
+      color: #ffffff;
+    }
+  }
 }
 
 /* --- 通用 --- */
