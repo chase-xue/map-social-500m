@@ -110,3 +110,16 @@ export interface MapCircle {
   fillColor: string;
   strokeWidth: number;
 }
+
+export interface SponsoredAdItem {
+  id: string;
+  brandName: string;
+  brandAvatar: string;
+  tag: string;
+  title: string;
+  content: string;
+  images: string[];
+  actionText: string;
+  phone?: string;
+  likesCount: number;
+}

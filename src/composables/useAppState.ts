@@ -9,6 +9,7 @@ import {
   FriendItem,
   ChatMessage,
   LocationCluster,
+  SponsoredAdItem,
 } from "../types";
 import {
   filterStatusesWithinRange,
@@ -56,7 +57,7 @@ const mapCenter = ref<Coordinates>({ latitude: 39.9087, longitude: 116.3975 });
 
 // ============ 模块与微信四大页签切换 ============
 export type MainTabType = "chats" | "contacts" | "map" | "me";
-export type MapSubTabType = "map" | "moments";
+export type MapSubTabType = "map" | "recommend" | "moments";
 
 const mainTab = ref<MainTabType>("map");
 const mapSubTab = ref<MapSubTabType>("map");
@@ -64,7 +65,7 @@ const mapSubTab = ref<MapSubTabType>("map");
 // 兼容老代码的 activeTab
 const activeTab = computed({
   get: () => mapSubTab.value,
-  set: (val: "map" | "moments") => {
+  set: (val: MapSubTabType) => {
     mainTab.value = "map";
     mapSubTab.value = val;
   }
@@ -99,6 +100,38 @@ const locationClusters = computed(() =>
 const sortedMomentsStatuses = computed(() =>
   [...visibleStatuses.value].sort((a, b) => b.createdAt - a.createdAt)
 );
+
+// 推荐模式：同城点赞多 + 最新发布的加权推荐
+const recommendedStatuses = computed(() => {
+  return [...allStatuses.value]
+    .map((item) => {
+      const likesCount = item.likes?.length || 0;
+      const hoursOld = (Date.now() - item.createdAt) / (1000 * 60 * 60);
+      const recencyScore = Math.max(0, 100 - hoursOld * 3);
+      const score = likesCount * 80 + recencyScore;
+      return { item, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.item);
+});
+
+// 推荐流每日广告：每天精选1条同城商户/生活福利推广
+const dailySponsoredAd = ref<SponsoredAdItem>({
+  id: "ad_daily_coffee_01",
+  brandName: "漫度精品咖啡馆 (同城总店)",
+  brandAvatar: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=150",
+  tag: "广告 · 每日精选",
+  title: "凭500米生活圈邻友认证，全城手冲咖啡享7折！",
+  content: "【今日同城邻里精选福利】漫度咖啡今日特别供应哥斯达黎加厌氧日晒咖啡豆，凭500米生活圈邻友认证进店，享全单精品手冲 7 折优惠，限时打卡再送精品挂耳包1盒！欢迎邻里朋友常来坐坐品鉴交流☕✨",
+  images: [
+    "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600",
+    "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600",
+    "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600"
+  ],
+  actionText: "🎁 立即领取福利 / 电话预约",
+  phone: "13912345678",
+  likesCount: 128
+});
 
 // ============ 聚合抽屉 ============
 const clusterVisible = ref(false);
@@ -955,7 +988,7 @@ export function useAppState() {
     userCardVisible, viewingProfile, viewingDistance,
     openUserProfileCard, closeUserCard, viewAuthorProfile, viewCommenterProfile, makePhoneCall,
     // 状态
-    allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses,
+    allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses, recommendedStatuses, dailySponsoredAd,
     // 地图
     mapCircles, mapMarkers, onMarkerTap, onCalloutTap, onRegionChange: () => {},
     recenterToUser, refreshNearbyStatuses, simulateUserMove,

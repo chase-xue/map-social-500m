@@ -7,6 +7,7 @@
         <!-- 地图顶栏 (胶囊切换器) -->
         <TopNav />
         <MapView v-if="mapSubTab === 'map'" />
+        <RecommendView v-if="mapSubTab === 'recommend'" />
         <MomentsView v-if="mapSubTab === 'moments'" />
       </view>
 
@@ -46,6 +47,7 @@ import ContactsTab from "../../components/ContactsTab.vue";
 import MeTab from "../../components/MeTab.vue";
 import TopNav from "../../components/TopNav.vue";
 import MapView from "../../components/MapView.vue";
+import RecommendView from "../../components/RecommendView.vue";
 import MomentsView from "../../components/MomentsView.vue";
 import DetailSheet from "../../components/DetailSheet.vue";
 import PublishSheet from "../../components/PublishSheet.vue";
