@@ -9,7 +9,8 @@
             :class="{ 'chip-active': selectedCategory === 'all' }"
             @tap="selectedCategory = 'all'"
           >
-            <text class="chip-text">🌸 全部 ({{ acgnStatuses.length }})</text>
+            <text class="chip-emoji">🌸</text>
+            <text class="chip-text">全部 ({{ acgnStatuses.length }})</text>
           </view>
           <view
             v-for="cat in ACGN_CATEGORIES"
@@ -23,6 +24,8 @@
           </view>
         </view>
       </scroll-view>
+      <!-- 右侧边缘微渐变遮罩，自然提示可向右滑动更多 -->
+      <view class="scroll-edge-fade" />
     </view>
 
     <!-- 二次元专区滚动主体 -->
@@ -239,36 +242,71 @@ const filteredStatuses = computed(() => {
   border-bottom: 0.5px solid #fbcfe8;
   padding: 8px 12px;
   flex-shrink: 0;
+  position: relative;
 
   .subtabs-scroll {
     white-space: nowrap;
     width: 100%;
+    -webkit-overflow-scrolling: touch;
+
+    :deep(.uni-scroll-view-content) {
+      display: inline-flex;
+      width: max-content;
+    }
 
     .subtabs-inner {
       display: inline-flex;
+      align-items: center;
       gap: 8px;
+      white-space: nowrap;
+      width: max-content;
+      padding-right: 24px; /* 为右侧横向滑动留出自然呼吸空间 */
 
       .subtab-chip {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 5px 12px;
-        border-radius: 16px;
+        gap: 5px;
+        padding: 6px 14px;
+        border-radius: 18px;
         background-color: #fdf2f8;
         border: 1px solid #fbcfe8;
         cursor: pointer;
         transition: all 0.15s ease;
+        flex-shrink: 0;
+        white-space: nowrap;
+        box-sizing: border-box;
 
-        .chip-emoji { font-size: 13px; }
-        .chip-text { font-size: 12px; color: #be185d; font-weight: 500; }
+        .chip-emoji { 
+          font-size: 13px; 
+          line-height: 1;
+        }
+
+        .chip-text { 
+          font-size: 12px; 
+          color: #be185d; 
+          font-weight: 500;
+          white-space: nowrap;
+          line-height: 1.2;
+        }
 
         &.chip-active {
           background-color: #ec4899;
           border-color: #db2777;
+          box-shadow: 0 2px 6px rgba(236, 72, 153, 0.25);
           .chip-text { color: #ffffff; font-weight: 600; }
         }
       }
     }
+  }
+
+  .scroll-edge-fade {
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
   }
 }
 
