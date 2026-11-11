@@ -77,6 +77,12 @@
         </view>
       </view>
 
+      <!-- 快速填入精选街景配图 (方便免选图快捷测试与发布) -->
+      <view v-if="pickedImages.length < 9" class="quick-sample-row">
+        <text class="quick-sample-btn" @tap="addPresetSamplePhoto">📸 快捷添加街景美图</text>
+        <text class="quick-sample-tip">(已选 {{ pickedImages.length }}/9，点击图片可放大预览)</text>
+      </view>
+
       <!-- 微信朋友圈经典列表功能行 (Hairline 分割线) -->
       <view class="wechat-meta-rows">
         <!-- 行 1: 发布类型三档切换 (发朋友圈 / 发状态 / 救命呼救) -->
@@ -175,7 +181,7 @@ import { useAppState } from "../composables/useAppState";
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
   isPublishing, myProfile, helpContactPhone,
-  closePublishSheet, chooseImages, removePickedImage, previewImage,
+  closePublishSheet, chooseImages, removePickedImage, previewImage, addPresetSamplePhoto,
   submitNewPost, submitHelpPost, openMyProfileSheet, switchMainTab
 } = useAppState();
 
@@ -374,6 +380,32 @@ async function handlePublish() {
         &.add-box-hover {
           background-color: #ececec;
         }
+      }
+    }
+
+    .quick-sample-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .quick-sample-btn {
+        font-size: 12px;
+        color: #576B95;
+        background: #f2f5f9;
+        padding: 4px 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+
+        &:active {
+          background: #e2eaf5;
+        }
+      }
+
+      .quick-sample-tip {
+        font-size: 11px;
+        color: #999999;
       }
     }
   }

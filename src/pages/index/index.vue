@@ -31,6 +31,8 @@
       <ChatSheet />
       <UserCardModal />
       <HelpSheet />
+      <!-- 微信全屏大图预览灯箱弹窗 -->
+      <ImagePreviewModal />
     </view>
   </view>
 </template>
@@ -53,6 +55,7 @@ import FriendsSheet from "../../components/FriendsSheet.vue";
 import ChatSheet from "../../components/ChatSheet.vue";
 import ClusterSheet from "../../components/ClusterSheet.vue";
 import UserCardModal from "../../components/UserCardModal.vue";
+import ImagePreviewModal from "../../components/ImagePreviewModal.vue";
 
 const { mainTab, mapSubTab, initApp } = useAppState();
 

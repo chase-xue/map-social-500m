@@ -743,18 +743,38 @@ function closePublishSheet(force = false) {
 }
 
 function chooseImages() {
-  const count = 3 - pickedImages.value.length;
-  if (count <= 0) return;
+  const count = 9 - pickedImages.value.length;
+  if (count <= 0) {
+    uni.showToast({ title: "最多选择9张图片", icon: "none" });
+    return;
+  }
   uni.chooseImage({
     count,
     sizeType: ["compressed"],
     sourceType: ["album", "camera"],
     success: (res) => {
       if (res.tempFilePaths?.length) {
-        pickedImages.value = [...pickedImages.value, ...res.tempFilePaths];
+        pickedImages.value = [...pickedImages.value, ...res.tempFilePaths].slice(0, 9);
       }
     },
   });
+}
+
+const PRESET_SAMPLE_PHOTOS = [
+  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80"
+];
+
+function addPresetSamplePhoto() {
+  if (pickedImages.value.length >= 9) {
+    uni.showToast({ title: "最多添加9张图片", icon: "none" });
+    return;
+  }
+  const nextImg = PRESET_SAMPLE_PHOTOS[pickedImages.value.length % PRESET_SAMPLE_PHOTOS.length];
+  pickedImages.value.push(nextImg);
 }
 
 function removePickedImage(idx: number) {
@@ -795,9 +815,28 @@ async function submitNewPost() {
   }
 }
 
-// ============ 通用工具 ============
-function previewImage(current: string, urls: string[]) {
-  uni.previewImage({ current, urls });
+// ============ 微信全屏大图预览灯箱状态 (原生组件级，杜绝 uni.previewImage 路由白屏) ============
+const imagePreviewVisible = ref(false);
+const imagePreviewUrls = ref<string[]>([]);
+const imagePreviewIndex = ref(0);
+
+function previewImage(current: string, urls: string[] = []) {
+  if (!current) return;
+  const list = (urls && urls.length > 0) ? urls.filter(Boolean) : [current];
+  imagePreviewUrls.value = list.length > 0 ? list : [current];
+  const idx = imagePreviewUrls.value.indexOf(current);
+  imagePreviewIndex.value = idx >= 0 ? idx : 0;
+  imagePreviewVisible.value = true;
+}
+
+function closeImagePreview() {
+  imagePreviewVisible.value = false;
+}
+
+function setImagePreviewIndex(idx: number) {
+  if (idx >= 0 && idx < imagePreviewUrls.value.length) {
+    imagePreviewIndex.value = idx;
+  }
 }
 
 function formatTime(timestamp: number) {
@@ -928,7 +967,7 @@ export function useAppState() {
     chooseCommentImage, removeCommentImage, handleSendComment,
     // 发布
     currentPublishMode, publishVisible, newPostContent, pickedImages, isPublishing,
-    openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost,
+    openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost, addPresetSamplePhoto,
     // HELP 求助
     helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,
     activeHelpStatuses, hasActiveEmergency, myActiveHelp, myHelpHistory, isHelpResolvedPromptVisible,
@@ -945,8 +984,9 @@ export function useAppState() {
     activeActionMenuStatusId, toggleActionMenu, closeActionMenu, handleLikeFromMenu,
     inPlaceCommentVisible, inPlaceCommentTarget, inPlaceReplyToUser, inPlaceCommentText,
     openInPlaceComment, closeInPlaceComment, handleSendInPlaceComment,
-    // 工具
-    previewImage, formatTime,
+    // 工具与大图灯箱
+    imagePreviewVisible, imagePreviewUrls, imagePreviewIndex,
+    previewImage, closeImagePreview, setImagePreviewIndex, formatTime,
     // 初始化
     initApp,
   };
