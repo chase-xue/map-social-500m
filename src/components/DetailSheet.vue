@@ -1,125 +1,251 @@
 <template>
-  <view v-if="detailVisible" class="modal-mask" @tap="closeDetailSheet(false)">
-    <view class="detail-sheet" @tap.stop>
-      <!-- 固定顶部栏：拖动把手 + 明显的右上角关闭按钮 -->
-      <view class="detail-header-bar">
-        <view class="sheet-handle" @tap="closeDetailSheet(true)" />
-        <view class="detail-close-btn" @tap="closeDetailSheet(true)" hover-class="btn-hover" title="关闭详情">✕</view>
+  <view
+    v-if="detailVisible"
+    class="wechat-detail-page"
+    :style="{ paddingTop: statusBarHeight + 'px' }"
+  >
+    <!-- 1. 微信原生顶栏: ‹ 返回 | 详情 | 点赞/更多 -->
+    <view class="wechat-detail-header">
+      <view class="header-back-btn" @tap="closeDetailSheet(true)">
+        <text class="back-arrow">‹</text>
+        <text class="back-text">返回</text>
       </view>
 
-      <scroll-view scroll-y class="detail-scroll-content">
-        <view class="detail-scroll-inner">
-          <view class="author-row">
-            <view class="avatar-clickable-wrapper" @tap="viewAuthorProfile(activeStatus)">
-              <image class="author-avatar" :src="activeStatus?.userAvatar" mode="aspectFill" />
-              <text class="click-avatar-hint">查资料</text>
-            </view>
-            <view class="author-meta" @tap="viewAuthorProfile(activeStatus)">
-              <view class="name-box">
-                <text class="author-name">{{ activeStatus?.userName }}</text>
-                <text v-if="activeStatus?.userId === myProfile.id" class="my-badge">我发的</text>
-                <text v-if="activeStatus?.authorProfile?.gender" class="gender-badge" :class="activeStatus.authorProfile.gender === '女' ? 'gender-female' : 'gender-male'">
-                  {{ activeStatus.authorProfile.gender === '女' ? '♀' : '♂' }} {{ activeStatus.authorProfile.age }}岁
-                </text>
-              </view>
-              <view class="meta-sub">
-                <text class="meta-time">{{ activeStatus?.createdAt ? formatTime(activeStatus.createdAt) : '' }}</text>
-                <text class="meta-dot">•</text>
-                <text class="meta-distance">📍 距离你 {{ activeStatus?.distance }} 米</text>
-              </view>
-            </view>
-          </view>
+      <view class="header-title-box">
+        <text class="header-title">
+          {{ activeStatus?.isEmergency ? '救命呼救详情' : activeStatus?.isHelp ? '急事求助详情' : '动态详情' }}
+        </text>
+      </view>
 
-          <!-- 求助帖专属状态卡片 (解决2小时后自动消失) -->
-          <view
-            v-if="activeStatus?.isHelp && isHelpResolvedPromptVisible(activeStatus)"
-            class="help-status-card"
-            :class="{ 'is-emergency-card': activeStatus.isEmergency && !activeStatus.helpResolved, 'is-resolved-card': activeStatus.helpResolved }"
-          >
-            <view class="help-status-top">
-              <view class="status-indicator">
-                <text class="status-badge-icon">{{ activeStatus.helpResolved ? '✅' : activeStatus.isEmergency ? '🚨' : '🆘' }}</text>
-                <text class="status-badge-text">
-                  {{ activeStatus.helpResolved ? '求助已圆满解决 · 发起人已关闭 (提示将于2小时后隐去)' : activeStatus.isEmergency ? '救命紧急呼救进行中！' : '邻里急事求助中' }}
-                </text>
-              </view>
-              <!-- 仅发起人可见的解决关闭按钮 -->
-              <button
-                v-if="activeStatus.userId === myProfile.id && !activeStatus.helpResolved"
-                class="close-help-btn"
-                @tap="handleCloseHelp(activeStatus.id)"
-                hover-class="btn-hover"
+      <view class="header-action-box">
+        <view
+          v-if="activeStatus"
+          class="header-like-btn"
+          :class="{ 'is-liked': isLiked }"
+          @tap="handleToggleLike"
+        >
+          <text class="like-icon">{{ isLiked ? '❤️' : '🤍' }}</text>
+          <text class="like-text">{{ isLiked ? '已赞' : '点赞' }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 2. 微信朋友圈原生风格滚动内容区 -->
+    <scroll-view scroll-y class="detail-scroll-view">
+      <view class="detail-content-wrap">
+        <!-- 作者信息栏 -->
+        <view class="wechat-author-row">
+          <image
+            class="wechat-author-avatar"
+            :src="activeStatus?.userAvatar"
+            mode="aspectFill"
+            @tap="viewAuthorProfile(activeStatus)"
+          />
+          <view class="author-info-col" @tap="viewAuthorProfile(activeStatus)">
+            <view class="author-name-row">
+              <text class="author-name">{{ activeStatus?.userName }}</text>
+              <text v-if="activeStatus?.userId === myProfile.id" class="author-badge-me">我</text>
+              <text
+                v-if="activeStatus?.authorProfile?.gender"
+                class="gender-pill"
+                :class="activeStatus.authorProfile.gender === '女' ? 'gender-female' : 'gender-male'"
               >
-                ✅ 问题已解决，关闭求助
-              </button>
+                {{ activeStatus.authorProfile.gender === '女' ? '♀' : '♂' }} {{ activeStatus.authorProfile.age }}岁
+              </text>
             </view>
-            <view v-if="activeStatus.helpContactPhone && !activeStatus.helpResolved" class="help-phone-line" @tap="makePhoneCall(activeStatus.helpContactPhone)">
-              <text class="phone-label">📞 紧急联系电话：</text>
-              <text class="phone-num">{{ activeStatus.helpContactPhone }}</text>
-              <text class="phone-dial-tag">立即拨打 ›</text>
+            <view class="author-meta-row">
+              <text class="meta-time">{{ activeStatus?.createdAt ? formatTime(activeStatus.createdAt) : '' }}</text>
+              <text class="meta-dot">·</text>
+              <text class="meta-dist">📍 距离你 {{ distanceText }}</text>
             </view>
+          </view>
+        </view>
+
+        <!-- 3. 急事/救命求助服务提醒横幅 (如果是求助帖) -->
+        <view
+          v-if="activeStatus?.isHelp && isHelpResolvedPromptVisible(activeStatus)"
+          class="wechat-service-banner"
+          :class="{
+            'banner-emergency': activeStatus.isEmergency && !activeStatus.helpResolved,
+            'banner-resolved': activeStatus.helpResolved,
+            'banner-help': !activeStatus.isEmergency && !activeStatus.helpResolved
+          }"
+        >
+          <view class="banner-top-row">
+            <view class="banner-badge-title">
+              <text class="banner-icon">{{ activeStatus.helpResolved ? '✅' : activeStatus.isEmergency ? '🚨' : '🆘' }}</text>
+              <text class="banner-main-text">
+                {{
+                  activeStatus.helpResolved
+                    ? '求助已圆满解决 · 发起人已关闭'
+                    : activeStatus.isEmergency
+                    ? '救命紧急呼救进行中！'
+                    : '邻里急事求助中'
+                }}
+              </text>
+            </view>
+
+            <!-- 仅发起人可见的微信绿解决按钮 -->
+            <button
+              v-if="activeStatus.userId === myProfile.id && !activeStatus.helpResolved"
+              class="banner-resolve-btn"
+              @tap="handleCloseHelp(activeStatus.id)"
+            >
+              ✅ 问题已解决，关闭求助
+            </button>
           </view>
 
-          <view class="status-content">
-            <text class="status-text">{{ activeStatus?.content }}</text>
+          <!-- 紧急联系电话行 -->
+          <view
+            v-if="activeStatus.helpContactPhone && !activeStatus.helpResolved"
+            class="banner-phone-row"
+            @tap="makePhoneCall(activeStatus.helpContactPhone)"
+          >
+            <text class="phone-label">📞 紧急联系电话：</text>
+            <text class="phone-number">{{ activeStatus.helpContactPhone }}</text>
+            <text class="phone-dial-btn">立即拨打 ›</text>
           </view>
-          <view v-if="activeStatus?.images && activeStatus.images.length > 0" class="image-gallery">
-            <image v-for="(img, idx) in activeStatus.images" :key="idx" class="gallery-image" :src="img" mode="aspectFill" @tap="previewImage(img, activeStatus.images)" />
+        </view>
+
+        <!-- 4. 正文文字内容 -->
+        <view class="status-body-text">
+          <text>{{ activeStatus?.content }}</text>
+        </view>
+
+        <!-- 5. 微信九宫格 / 单图媒体展示区 -->
+        <view
+          v-if="activeStatus?.images && activeStatus.images.length > 0"
+          class="media-gallery-box"
+          :class="{
+            'single-image-mode': activeStatus.images.length === 1,
+            'four-grid-mode': activeStatus.images.length === 4
+          }"
+        >
+          <image
+            v-for="(img, idx) in activeStatus.images"
+            :key="idx"
+            class="gallery-thumb"
+            :src="img"
+            :mode="activeStatus.images.length === 1 ? 'aspectFit' : 'aspectFill'"
+            @tap="previewImage(img, activeStatus.images)"
+          />
+        </view>
+
+        <!-- 6. 微信位置与 500m 空间胶囊 -->
+        <view class="location-capsule-row">
+          <text class="location-text">📍 北京 · 500米地理生活圈 ›</text>
+        </view>
+
+        <!-- 7. 微信朋友圈点赞名单灰框 -->
+        <view class="likes-summary-box">
+          <text class="likes-heart-icon">❤️</text>
+          <text class="likes-user-names">
+            {{ likesSummaryText }}
+          </text>
+        </view>
+
+        <!-- 8. 微信原生留言互动评论流 -->
+        <view class="wechat-comments-block">
+          <view class="comments-section-header">
+            <text class="comments-section-title">留言互动 ({{ activeStatus?.comments?.length || 0 }})</text>
           </view>
-          <view class="comments-section">
-            <view class="comments-header">
-              <text class="comments-title">留言互动 ({{ activeStatus?.comments?.length || 0 }})</text>
-            </view>
-            <view v-if="!activeStatus?.comments || activeStatus.comments.length === 0" class="empty-comments">
-              <text>暂无留言，在下方写下第一条真实评价吧~</text>
-            </view>
-            <view v-else class="comments-list">
-              <view v-for="cmt in activeStatus.comments" :key="cmt.id" class="comment-card" :class="{ 'my-comment-card': cmt.userId === myProfile.id }">
-                <view @tap="viewCommenterProfile(cmt)">
-                  <image class="comment-avatar" :src="cmt.userAvatar" mode="aspectFill" />
+
+          <!-- 空留言提示 -->
+          <view v-if="!activeStatus?.comments || activeStatus.comments.length === 0" class="empty-comments-box">
+            <text class="empty-text">暂无留言，在下方写下第一条真实评价吧~</text>
+          </view>
+
+          <!-- 评论列表 -->
+          <view v-else class="comments-stream">
+            <view
+              v-for="cmt in activeStatus.comments"
+              :key="cmt.id"
+              class="comment-row-item"
+            >
+              <image
+                class="comment-author-avatar"
+                :src="cmt.userAvatar"
+                mode="aspectFill"
+                @tap="viewCommenterProfile(cmt)"
+              />
+              <view class="comment-content-col">
+                <view class="comment-author-top">
+                  <view class="comment-name-badge-wrap">
+                    <text class="comment-author-name" @tap="viewCommenterProfile(cmt)">{{ cmt.userName }}</text>
+                    <text v-if="cmt.userId === activeStatus?.userId" class="author-owner-tag">作者</text>
+                    <text v-else-if="cmt.userId === myProfile.id" class="author-me-tag">我</text>
+                  </view>
+                  <text class="comment-post-time">{{ formatTime(cmt.createdAt) }}</text>
                 </view>
-                <view class="comment-body">
-                  <view class="comment-top">
-                    <text class="comment-user">{{ cmt.userName }}</text>
-                    <text v-if="cmt.userId === myProfile.id" class="my-comment-tag">我</text>
-                    <text class="comment-time">{{ formatTime(cmt.createdAt) }}</text>
-                  </view>
+
+                <!-- 评论正文 -->
+                <view class="comment-text-box">
                   <text class="comment-text">{{ cmt.content }}</text>
-                  <view v-if="cmt.images && cmt.images.length > 0" class="comment-photo-row">
-                    <image v-for="(cImg, ci) in cmt.images" :key="ci" class="comment-attached-photo" :src="cImg" mode="aspectFill" @tap.stop="previewImage(cImg, cmt.images)" />
-                    <text class="photo-zoom-tag" @tap.stop="previewImage(cmt.images[0], cmt.images)">🔍 点击放大</text>
-                  </view>
+                </view>
+
+                <!-- 评论配图 (如果有) -->
+                <view v-if="cmt.images && cmt.images.length > 0" class="comment-photo-wrap">
+                  <image
+                    v-for="(cImg, ci) in cmt.images"
+                    :key="ci"
+                    class="comment-photo-thumb"
+                    :src="cImg"
+                    mode="aspectFill"
+                    @tap.stop="previewImage(cImg, cmt.images)"
+                  />
+                  <text class="photo-zoom-hint" @tap.stop="previewImage(cmt.images[0], cmt.images)">🔍 点击查看大图</text>
                 </view>
               </view>
             </view>
           </view>
         </view>
-      </scroll-view>
+      </view>
+    </scroll-view>
+
+    <!-- 9. 微信原生固定底部评论回复栏 -->
+    <view class="wechat-bottom-bar-wrap">
+      <!-- 评论待上传配图预览条 -->
       <view v-if="pickedCommentImage" class="comment-img-preview-bar">
         <view class="comment-preview-box">
-          <image class="comment-preview-img" :src="pickedCommentImage" mode="aspectFill" @tap="previewImage(pickedCommentImage, [pickedCommentImage])" />
+          <image
+            class="comment-preview-img"
+            :src="pickedCommentImage"
+            mode="aspectFill"
+            @tap="previewImage(pickedCommentImage, [pickedCommentImage])"
+          />
           <view class="comment-img-del" @tap="removeCommentImage">✕</view>
         </view>
         <text class="comment-img-tip">已添加评论配图 (点击查看大图 / ✕ 删除)</text>
       </view>
-      <view class="comment-input-bar">
-        <view class="current-user-avatar-tag" title="当前发表身份">
-          <image class="comment-my-avatar" :src="myProfile.avatar" mode="aspectFill" />
-        </view>
+
+      <!-- 输入栏主体 -->
+      <view class="wechat-reply-input-bar">
+        <image
+          class="reply-user-avatar"
+          :src="myProfile.avatar"
+          mode="aspectFill"
+          title="当前回复身份"
+        />
+
         <input
-          class="comment-input"
+          class="reply-text-input"
           v-model="newCommentText"
           :placeholder="activeStatus?.userId === myProfile.id ? '我是发布者，写下最新进展或回复...' : '写下你的真实评价...'"
-          placeholder-class="input-placeholder"
+          placeholder-class="wechat-input-placeholder"
           confirm-type="send"
           @confirm="handleSendComment"
         />
-        <view class="comment-media-btns">
-          <view class="comment-cam-btn" @tap="chooseCommentImage" title="从相册上传照片">
-            <text>📷</text>
-          </view>
+
+        <view class="reply-cam-btn" @tap="chooseCommentImage" title="从相册上传配图">
+          <text class="cam-icon">📷</text>
         </view>
-        <button class="comment-send-btn" :disabled="(!newCommentText || !newCommentText.trim()) && !pickedCommentImage" @tap="handleSendComment" hover-class="btn-hover">
+
+        <button
+          class="reply-send-btn"
+          :class="{ 'btn-send-active': canSendComment }"
+          :disabled="!canSendComment"
+          @tap="handleSendComment"
+        >
           发送
         </button>
       </view>
@@ -128,81 +254,667 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useAppState } from "../composables/useAppState";
+
 const {
-  detailVisible, activeStatus, myProfile,
-  newCommentText, pickedCommentImage,
-  closeDetailSheet, viewAuthorProfile, viewCommenterProfile, previewImage,
-  formatTime, removeCommentImage,
-  chooseCommentImage, handleSendComment, handleCloseHelp, makePhoneCall, isHelpResolvedPromptVisible,
+  detailVisible,
+  activeStatus,
+  myProfile,
+  statusBarHeight,
+  newCommentText,
+  pickedCommentImage,
+  closeDetailSheet,
+  viewAuthorProfile,
+  viewCommenterProfile,
+  previewImage,
+  formatTime,
+  removeCommentImage,
+  chooseCommentImage,
+  handleSendComment,
+  handleCloseHelp,
+  makePhoneCall,
+  isHelpResolvedPromptVisible,
+  toggleLikeStatus,
 } = useAppState();
+
+const isLiked = computed(() => {
+  if (!activeStatus.value?.likes) return false;
+  return activeStatus.value.likes.includes(myProfile.value.name);
+});
+
+const distanceText = computed(() => {
+  const d = activeStatus.value?.distance;
+  if (d === undefined || d === null) return "500米以内";
+  return `${d} 米`;
+});
+
+const likesSummaryText = computed(() => {
+  const likes = activeStatus.value?.likes;
+  if (!likes || likes.length === 0) {
+    return "周边邻友尚未点赞，点击右上角成为第一个点赞的人吧";
+  }
+  return likes.join("、 ");
+});
+
+const canSendComment = computed(() => {
+  const hasText = !!(newCommentText.value && newCommentText.value.trim());
+  const hasImg = !!pickedCommentImage.value;
+  return hasText || hasImg;
+});
+
+function handleToggleLike() {
+  if (activeStatus.value) {
+    toggleLikeStatus(activeStatus.value);
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-.help-status-card {
-  margin: 16rpx 0;
-  padding: 18rpx 20rpx;
-  border-radius: 20rpx;
-  background-color: #fffbeb;
-  border: 2rpx solid #f59e0b;
+/* 微信原生全屏页面容器 */
+.wechat-detail-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ededed;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
 
-  &.is-emergency-card {
-    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-    border-color: #ef4444;
-    box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.2);
+/* 微信标准顶栏 */
+.wechat-detail-header {
+  height: 88rpx;
+  background-color: #ededed;
+  border-bottom: 1rpx solid #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
 
-    .status-badge-text { color: #b91c1c; font-weight: 800; }
+  .header-back-btn {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    min-width: 140rpx;
+
+    .back-arrow {
+      font-size: 48rpx;
+      color: #191919;
+      line-height: 1;
+      margin-right: 4rpx;
+      margin-top: -6rpx;
+      font-weight: 300;
+    }
+
+    .back-text {
+      font-size: 32rpx;
+      color: #191919;
+      font-weight: 400;
+    }
   }
 
-  &.is-resolved-card {
+  .header-title-box {
+    flex: 1;
+    text-align: center;
+
+    .header-title {
+      font-size: 34rpx;
+      font-weight: 600;
+      color: #191919;
+    }
+  }
+
+  .header-action-box {
+    min-width: 140rpx;
+    display: flex;
+    justify-content: flex-end;
+
+    .header-like-btn {
+      display: flex;
+      align-items: center;
+      gap: 6rpx;
+      padding: 8rpx 16rpx;
+      border-radius: 24rpx;
+      background-color: #ffffff;
+      border: 1rpx solid #e2e8f0;
+      cursor: pointer;
+
+      .like-icon {
+        font-size: 24rpx;
+      }
+
+      .like-text {
+        font-size: 24rpx;
+        color: #576b95;
+        font-weight: 600;
+      }
+
+      &.is-liked {
+        background-color: #fef2f2;
+        border-color: #fca5a5;
+        .like-text {
+          color: #dc2626;
+        }
+      }
+    }
+  }
+}
+
+/* 滚动区 */
+.detail-scroll-view {
+  flex: 1;
+  min-height: 0;
+  background-color: #ffffff;
+}
+
+.detail-content-wrap {
+  padding: 30rpx 32rpx;
+  box-sizing: border-box;
+}
+
+/* 作者行 */
+.wechat-author-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+
+  .wechat-author-avatar {
+    width: 88rpx;
+    height: 88rpx;
+    border-radius: 12rpx;
+    background-color: #f1f5f9;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .author-info-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+
+    .author-name-row {
+      display: flex;
+      align-items: center;
+      gap: 12rpx;
+      margin-bottom: 6rpx;
+
+      .author-name {
+        font-size: 32rpx;
+        font-weight: 600;
+        color: #576b95;
+      }
+
+      .author-badge-me {
+        font-size: 20rpx;
+        color: #07c160;
+        background-color: #e8f8f0;
+        padding: 2rpx 12rpx;
+        border-radius: 8rpx;
+        font-weight: 600;
+      }
+
+      .gender-pill {
+        font-size: 20rpx;
+        padding: 2rpx 12rpx;
+        border-radius: 8rpx;
+        font-weight: 600;
+
+        &.gender-female {
+          background-color: #fdf2f8;
+          color: #db2777;
+        }
+
+        &.gender-male {
+          background-color: #eff6ff;
+          color: #2563eb;
+        }
+      }
+    }
+
+    .author-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10rpx;
+
+      .meta-time {
+        font-size: 24rpx;
+        color: #999999;
+      }
+
+      .meta-dot {
+        font-size: 24rpx;
+        color: #999999;
+      }
+
+      .meta-dist {
+        font-size: 24rpx;
+        color: #576b95;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+/* 微信求助/救命横幅 */
+.wechat-service-banner {
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+
+  &.banner-emergency {
+    background-color: #fef2f2;
+    border-left: 8rpx solid #ef4444;
+
+    .banner-main-text {
+      color: #b91c1c;
+      font-weight: 700;
+    }
+  }
+
+  &.banner-help {
+    background-color: #fffbeb;
+    border-left: 8rpx solid #f59e0b;
+
+    .banner-main-text {
+      color: #b45309;
+      font-weight: 600;
+    }
+  }
+
+  &.banner-resolved {
     background-color: #ecfdf5;
-    border-color: #10b981;
+    border-left: 8rpx solid #10b981;
 
-    .status-badge-text { color: #047857; }
+    .banner-main-text {
+      color: #047857;
+      font-weight: 600;
+    }
   }
 
-  .help-status-top {
+  .banner-top-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12rpx;
+    gap: 16rpx;
 
-    .status-indicator {
+    .banner-badge-title {
       display: flex;
       align-items: center;
-      gap: 8rpx;
+      gap: 10rpx;
 
-      .status-badge-icon { font-size: 28rpx; }
-      .status-badge-text { font-size: 24rpx; font-weight: 700; color: #b45309; }
+      .banner-icon {
+        font-size: 32rpx;
+      }
+
+      .banner-main-text {
+        font-size: 26rpx;
+      }
     }
 
-    .close-help-btn {
+    .banner-resolve-btn {
       margin: 0;
       padding: 0 20rpx;
       height: 56rpx;
       line-height: 56rpx;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background-color: #07c160;
       color: #ffffff;
-      font-size: 20rpx;
-      font-weight: 700;
-      border-radius: 28rpx;
-      box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.35);
+      font-size: 22rpx;
+      font-weight: 600;
+      border-radius: 8rpx;
+      border: none;
       flex-shrink: 0;
     }
   }
 
-  .help-phone-line {
-    margin-top: 14rpx;
-    padding-top: 12rpx;
-    border-top: 1rpx dashed rgba(0, 0, 0, 0.1);
+  .banner-phone-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding-top: 12rpx;
+    border-top: 1rpx dashed rgba(0, 0, 0, 0.08);
     cursor: pointer;
 
-    .phone-label { font-size: 22rpx; color: #475569; font-weight: 600; }
-    .phone-num { font-size: 24rpx; color: #2563eb; font-weight: 700; }
-    .phone-dial-tag { font-size: 20rpx; color: #2563eb; font-weight: 600; }
+    .phone-label {
+      font-size: 24rpx;
+      color: #4b5563;
+      font-weight: 500;
+    }
+
+    .phone-number {
+      font-size: 26rpx;
+      color: #576b95;
+      font-weight: 700;
+    }
+
+    .phone-dial-btn {
+      font-size: 22rpx;
+      color: #07c160;
+      font-weight: 600;
+    }
+  }
+}
+
+/* 动态正文 */
+.status-body-text {
+  margin-top: 24rpx;
+  font-size: 32rpx;
+  line-height: 1.6;
+  color: #191919;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* 九宫格媒体区 */
+.media-gallery-box {
+  margin-top: 20rpx;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10rpx;
+
+  &.single-image-mode {
+    display: block;
+    .gallery-thumb {
+      max-width: 480rpx;
+      max-height: 480rpx;
+      width: auto;
+      height: auto;
+      border-radius: 8rpx;
+    }
+  }
+
+  &.four-grid-mode {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 480rpx;
+  }
+
+  .gallery-thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8rpx;
+    background-color: #f1f5f9;
+    cursor: pointer;
+  }
+}
+
+/* 位置标签 */
+.location-capsule-row {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+
+  .location-text {
+    font-size: 24rpx;
+    color: #576b95;
+  }
+}
+
+/* 点赞灰框 */
+.likes-summary-box {
+  margin-top: 24rpx;
+  background-color: #f7f7f7;
+  border-radius: 8rpx;
+  padding: 16rpx 20rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+
+  .likes-heart-icon {
+    font-size: 24rpx;
+    margin-top: 2rpx;
+  }
+
+  .likes-user-names {
+    flex: 1;
+    font-size: 26rpx;
+    color: #576b95;
+    line-height: 1.5;
+  }
+}
+
+/* 微信评论流 */
+.wechat-comments-block {
+  margin-top: 36rpx;
+  border-top: 1rpx solid #ededed;
+  padding-top: 24rpx;
+
+  .comments-section-header {
+    margin-bottom: 20rpx;
+
+    .comments-section-title {
+      font-size: 28rpx;
+      font-weight: 600;
+      color: #191919;
+    }
+  }
+
+  .empty-comments-box {
+    padding: 40rpx 0;
+    text-align: center;
+
+    .empty-text {
+      font-size: 26rpx;
+      color: #999999;
+    }
+  }
+
+  .comments-stream {
+    display: flex;
+    flex-direction: column;
+    gap: 24rpx;
+
+    .comment-row-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16rpx;
+
+      .comment-author-avatar {
+        width: 64rpx;
+        height: 64rpx;
+        border-radius: 8rpx;
+        background-color: #f1f5f9;
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+
+      .comment-content-col {
+        flex: 1;
+
+        .comment-author-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 6rpx;
+
+          .comment-name-badge-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8rpx;
+
+            .comment-author-name {
+              font-size: 26rpx;
+              font-weight: 600;
+              color: #576b95;
+              cursor: pointer;
+            }
+
+            .author-owner-tag {
+              font-size: 18rpx;
+              color: #07c160;
+              background-color: #e8f8f0;
+              padding: 1rpx 8rpx;
+              border-radius: 6rpx;
+            }
+
+            .author-me-tag {
+              font-size: 18rpx;
+              color: #576b95;
+              background-color: #f1f5f9;
+              padding: 1rpx 8rpx;
+              border-radius: 6rpx;
+            }
+          }
+
+          .comment-post-time {
+            font-size: 22rpx;
+            color: #b2b2b2;
+          }
+        }
+
+        .comment-text-box {
+          .comment-text {
+            font-size: 28rpx;
+            color: #191919;
+            line-height: 1.5;
+            word-break: break-all;
+          }
+        }
+
+        .comment-photo-wrap {
+          margin-top: 10rpx;
+          display: flex;
+          align-items: center;
+          gap: 12rpx;
+
+          .comment-photo-thumb {
+            width: 120rpx;
+            height: 120rpx;
+            border-radius: 8rpx;
+            background-color: #f1f5f9;
+            cursor: pointer;
+          }
+
+          .photo-zoom-hint {
+            font-size: 22rpx;
+            color: #576b95;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* 微信固定底栏 */
+.wechat-bottom-bar-wrap {
+  flex-shrink: 0;
+  background-color: #f7f7f7;
+  border-top: 1rpx solid #d9d9d9;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.comment-img-preview-bar {
+  padding: 12rpx 24rpx;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  border-bottom: 1rpx solid #e2e8f0;
+
+  .comment-preview-box {
+    position: relative;
+    width: 64rpx;
+    height: 64rpx;
+
+    .comment-preview-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 6rpx;
+    }
+
+    .comment-img-del {
+      position: absolute;
+      top: -8rpx;
+      right: -8rpx;
+      width: 28rpx;
+      height: 28rpx;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: #ffffff;
+      font-size: 18rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+  }
+
+  .comment-img-tip {
+    font-size: 22rpx;
+    color: #64748b;
+  }
+}
+
+.wechat-reply-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  box-sizing: border-box;
+
+  .reply-user-avatar {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 8rpx;
+    background-color: #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .reply-text-input {
+    flex: 1;
+    height: 72rpx;
+    background-color: #ffffff;
+    border-radius: 8rpx;
+    border: 1rpx solid #e2e8f0;
+    padding: 0 20rpx;
+    font-size: 28rpx;
+    color: #191919;
+  }
+
+  .wechat-input-placeholder {
+    color: #b2b2b2;
+    font-size: 28rpx;
+  }
+
+  .reply-cam-btn {
+    width: 64rpx;
+    height: 64rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38rpx;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .reply-send-btn {
+    margin: 0;
+    padding: 0 24rpx;
+    height: 68rpx;
+    line-height: 68rpx;
+    border-radius: 8rpx;
+    background-color: #e5e5e5;
+    color: #b2b2b2;
+    font-size: 28rpx;
+    font-weight: 500;
+    border: none;
+    flex-shrink: 0;
+
+    &.btn-send-active {
+      background-color: #07c160;
+      color: #ffffff;
+    }
   }
 }
 </style>
