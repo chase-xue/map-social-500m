@@ -1,168 +1,102 @@
-# 500米地图生活圈
+# 500米地图生活圈 (Map Social 500m)
 
-基于 uni-app 的超近距离 LBS 地图社交系统，支持微信小程序、抖音小程序、手机 App（Android/iOS）和 H5 网页。
+基于 **uni-app (Vue 3 + Vite + TypeScript)** 打造的高保真、超近距离 LBS 真实邻里生活圈社交系统。采用严格的 **微信 8.0 原生规范** 与 **Zenly 风格沉浸式地图**，支持微信小程序、手机 App（iOS/Android）及 H5 网页。
 
-## ✨ 核心功能
-
-### 🗺️ 地图模式
-- **全屏地图渲染**：原生高性能地图组件
-- **精准定位**：GPS 自动定位 + 呼吸光标
-- **500m 可视围栏**：Haversine 球面距离算法，严格过滤 500m 范围外状态
-- **地图打点**：状态以 Marker 气泡形式展示在对应坐标
-- **同地点聚合**：35m 内多条状态聚合为一个标记，展示首发人照片和总条数
-
-### 📰 朋友圈模式
-- **时间倒序**：按发布时间倒序展示所有 500m 内动态
-- **点赞互动**：朋友圈式 ❤️ 点赞列表
-- **评论系统**：支持文字 + 图片评论，图片可点击放大查看
-
-### 👤 个人资料
-- **我的模块**：编辑头像、昵称、性别、年龄、个性签名
-- **手机号绑定**：可选择公开展示或隐藏保密
-- **资料卡查看**：点击他人头像查看基本信息（性别、年龄、签名、手机号）
-
-### 💬 社交功能
-- **好友系统**：双方绑定手机号后可申请加好友
-- **私聊消息**：好友间 1v1 文字聊天
-- **一键拨打**：对方公开手机号时可直接拨打
-
-### 💾 数据存储
-- **本地持久化**：JSON 文件 + Storage 双保险，无需远程服务器
-- **跨平台兼容**：微信小程序、抖音小程序、App、H5 统一存储方案
-
-## 📦 技术栈
-
-- **框架**：uni-app (Vue 3 + Vite + TypeScript)
-- **地图**：原生 map 组件
-- **样式**：SCSS
-- **架构**：Composable 单例状态管理 + 组件化拆分
-
-## 🏗️ 项目结构
-
-```
-src/
-├── components/          # 功能组件
-│   ├── TopNav.vue       # 顶部导航（地图/朋友圈切换）
-│   ├── MapView.vue      # 地图视图（500m 圈、Marker、控制按钮）
-│   ├── MomentsView.vue  # 朋友圈信息流
-│   ├── DetailSheet.vue  # 状态详情 + 评论抽屉
-│   ├── PublishSheet.vue # 发布状态抽屉
-│   ├── MyProfileSheet.vue # 我的资料编辑
-│   ├── UserCardModal.vue  # 他人资料卡弹窗
-│   ├── FriendsSheet.vue   # 好友列表
-│   ├── ChatSheet.vue      # 私聊窗口
-│   └── ClusterSheet.vue   # 同地点聚合抽屉
-├── composables/
-│   └── useAppState.ts   # 全局状态管理（单例）
-├── services/
-│   ├── geo.ts           # Haversine 距离算法 + 500m 过滤
-│   └── storage.ts       # 本地文件存储 + 数据读写
-├── types/
-│   └── index.ts         # TypeScript 类型定义
-├── styles/
-│   └── global.scss      # 全局样式（z-index 分层）
-├── static/
-│   └── icons/           # 地图图标资源
-└── pages/
-    └── index/
-        └── index.vue    # 页面入口（组合根）
-```
-
-## 🚀 快速开始
-
-### 1. 安装依赖
-
-```bash
-npm install
-```
-
-### 2. 运行平台
-
-#### H5 网页（本地开发）
-```bash
-npm run dev:h5
-```
-访问 `http://localhost:5173`
-
-#### 微信小程序
-```bash
-npm run dev:mp-weixin
-```
-用微信开发者工具导入 `dist/dev/mp-weixin` 目录
-
-#### 抖音小程序
-```bash
-npm run dev:mp-toutiao
-```
-用抖音开发者工具导入 `dist/dev/mp-toutiao` 目录
-
-#### 手机 App
-```bash
-# 构建 App 资源
-npm run build:app
-
-# 使用 HBuilderX 云打包生成 APK/IPA
-```
-
-## 📱 跨端打包指南
-
-### 微信小程序
-1. `npm run build:mp-weixin`
-2. 微信开发者工具 → 导入项目 → 选择 `dist/build/mp-weixin`
-3. 填入 AppID → 上传 → 提交审核
-
-### 抖音小程序
-1. `npm run build:mp-toutiao`
-2. 抖音开发者工具 → 导入项目 → 选择 `dist/build/mp-toutiao`
-3. 填入 AppID → 上传 → 提交审核
-
-### Android/iOS App
-1. `npm run build:app`
-2. 下载 [HBuilderX](https://www.dcloud.io/hbuilderx.html)
-3. 文件 → 打开目录 → 选择项目根目录
-4. 发行 → 原生 App-云打包
-5. 勾选 Android (APK) 或 iOS (IPA) → 打包
-
-## 🎨 Z-Index 分层规范
-
-```
-L10  - 内容层（地图/朋友圈）
-L40  - 悬浮控制按钮
-L50  - 顶部导航
-L100 - 弹窗遮罩
-L110 - 底部抽屉（详情/发布/资料/好友/聚合）
-L150 - 聊天窗口
-L200 - 用户资料卡（最顶层）
-```
-
-## 🔧 核心算法
-
-### 500m 距离过滤（Haversine 公式）
-
-```typescript
-d = 2R × arcsin(√[sin²(Δlat/2) + cos(lat1) × cos(lat2) × sin²(Δlon/2)])
-```
-
-其中 R = 6378137m（地球赤道半径）
-
-### 同地点聚合
-
-- 阈值：35m 内视为同地点
-- 展示：首发人照片 + 总条数
-- 交互：点击后在聚合抽屉查看所有状态，或跳转朋友圈模式
-
-## 📝 开发规范
-
-- **组件化**：每个功能模块独立组件，单一职责
-- **状态管理**：Composable 单例模式，全局共享状态
-- **类型安全**：TypeScript 严格类型定义
-- **样式隔离**：全局样式统一管理，z-index 分层防止遮挡
-
-## 📄 License
-
-MIT
+> 📖 **完整交互手册与开发设计规范**：详见 [docs/INTERACTION_MANUAL.md](docs/INTERACTION_MANUAL.md)。后续所有产品交互设计、前后端开发与页面迭代均须严格遵循此手册。
 
 ---
 
-**开发团队**：Kylin Insights  
-**联系方式**：[your-email@example.com]
+## 📱 核心架构与四大底层页签
+
+应用底部导航栏固定采用微信标准原生高度，四大主页签顺序严格定义如下：
+
+```
+[📍 地图]  ───────  [👥 通讯录]  ───────  [💬 聊天]  ───────  [👤 我]
+ (第1位)             (第2位)             (第3位)            (第4位)
+```
+
+| 序号 | 核心页签 | 图标规范 | 核心功能与交互 |
+| :---: | :--- | :--- | :--- |
+| **1** | **地图** | 未选：1.8px 优雅线性定位针<br>激活：`#07c160` 填充定位图钉 | Zenly 地图雷达、500m 地理围栏圈、35m 同地点动态聚合气泡、顶栏胶囊无缝切换朋友圈时间流 |
+| **2** | **通讯录** | 未选：1.8px 经典线性双人像<br>激活：分层遮罩微信绿双人像 | 微信标准搜索栏、新的朋友（待处理申请红点）、500m 邻友雷达、邻友字母排序与直达私聊 |
+| **3** | **聊天** | 未选：1.8px 线性双气泡<br>激活：绿色填充双气泡（带未读徽标） | 邻里 1v1 私聊会话流、最新消息预览与未读管理、点击直接推入全屏私聊窗口 |
+| **4** | **我** | 未选：1.8px 线性单人人像<br>激活：绿色填充单人人像 | 极简纯净顶栏（严禁齿轮/多余按键）、个人名片 Hero 卡片、求助历史记录、手机号隐私加密保护 |
+
+---
+
+## 🎨 页面交互设计准则 (WeChat Native Standard)
+
+1. **全屏二级流转（严禁桌面式浮动弹窗）**：
+   - 彻底废除居中浮动小窗与黑色遮罩弹窗；
+   - 状态详情（`DetailSheet`）、个人资料（`MyProfileSheet`）、详细资料卡（`UserCardModal`）、发状态（`PublishSheet`）、私聊窗口（`ChatSheet`）等次级页面**一律采用全屏铺满容器（`position: absolute; inset: 0; z-index: 100;`）**，配备微信原生 `‹ 返回` 顶栏；
+2. **高德地图纯净视界**：
+   - 三层底层 CSS 规则与动态拦截，100% 抹除高德地图 Logo、审图号与版权水印，打造沉浸式极简地图；
+3. **点赞与评论流原生化**：
+   - 朋友圈原汁原味 `#f7f7f7` 灰底点赞名单；
+   - 底部固定评论栏：当前身份头像展示、白底圆角输入框、📷 相册选图与微信绿发送按钮；
+4. **全屏大图预览灯箱**：
+   - 采用纯黑底、`<swiper>` 横向滑动的沉浸式灯箱，替代易引发虚拟路由错误的 `uni.previewImage`。
+
+---
+
+## 🚨 救命呼救与邻里急事求助机制
+
+- **双档位分级**：
+  - **普通急事 (🆘 HELP)**：借工具、问路、寻物、寻宠等，在生活圈内广播；
+  - **救命呼救 (🚨 EMERGENCY)**：特大人身安全紧急呼救，地图打上特大红色脉冲警报标记，并在全站顶部闪烁广播；
+- **发起人闭环与归档**：
+  - 仅发起人可见 `✅ 问题已解决，关闭求助` 按钮；
+  - 关闭后状态标记为已解决，提示在 2 小时后平滑淡出归档。
+
+---
+
+## 🏗️ 目录结构
+
+```
+src/
+├── components/          # 功能组件 (已全面微信原生化)
+│   ├── WeChatTabBar.vue # 微信原生四大底部页签
+│   ├── TopNav.vue       # 顶栏胶囊 (地图/朋友圈切换)
+│   ├── MapView.vue      # 地图模式 (Zenly 围栏、无水印、35m聚合)
+│   ├── MomentsView.vue  # 朋友圈模式 (无边框极细线社交流)
+│   ├── ContactsTab.vue  # 通讯录主页面 (第2页签)
+│   ├── ChatsTab.vue     # 聊天会话列表 (第3页签)
+│   ├── MeTab.vue        # 我 (第4页签，纯净顶栏)
+│   ├── DetailSheet.vue  # 动态/求助详情 (全屏原生页)
+│   ├── ClusterSheet.vue # 地点聚合动态 (全屏原生页)
+│   ├── PublishSheet.vue # 发布动态/呼救 (全屏原生页)
+│   ├── MyProfileSheet.vue # 个人信息设置 (全屏原生页 + ActionSheet)
+│   ├── UserCardModal.vue# 他人详细资料 (全屏原生页)
+│   ├── ChatSheet.vue    # 1v1 私聊窗口 (全屏原生页)
+│   └── ImagePreviewModal.vue # 全屏大图灯箱预览
+├── composables/
+│   └── useAppState.ts   # 全局单例状态流与数据契约
+├── services/
+│   ├── geo.ts           # Haversine 500m 精确球面距离过滤
+│   └── storage.ts       # 本地双保险持久化存储
+├── types/
+│   └── index.ts         # TypeScript 数据模型定义
+└── pages/
+    └── index/index.vue  # 应用主容器
+docs/
+└── INTERACTION_MANUAL.md # 完整产品交互与开发设计手册
+```
+
+---
+
+## 🚀 本地开发与线上部署
+
+### 1. 本地启动
+```bash
+npm install
+npm run dev:h5
+```
+访问本地：`http://localhost:5173`
+
+### 2. 构建生产产物
+```bash
+npm run build:h5
+```
+
+### 3. 线上演示站点 (GitHub Pages)
+- **线上地址**：[https://chase-xue.github.io/map-social-500m/](https://chase-xue.github.io/map-social-500m/)
