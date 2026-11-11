@@ -7,30 +7,11 @@
           聊天{{ unreadChatsCount > 0 ? ` (${unreadChatsCount})` : '' }}
         </text>
         <view class="header-right-actions">
-          <view class="header-icon-btn" @tap="toggleQuickMenu">
+          <view class="header-icon-btn" @tap="openPublishSheet('moments')" title="发动态 / 朋友圈">
             <svg class="action-svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
             </svg>
           </view>
-        </view>
-      </view>
-
-      <!-- 微信经典右上角下拉快捷菜单 -->
-      <view v-if="quickMenuOpen" class="quick-menu-mask" @tap="quickMenuOpen = false" />
-      <view v-if="quickMenuOpen" class="quick-menu-dropdown">
-        <view class="menu-item" @tap="handleQuickPost">
-          <text class="menu-icon">📷</text>
-          <text class="menu-label">发朋友圈</text>
-        </view>
-        <view class="menu-divider" />
-        <view class="menu-item" @tap="handleQuickStatus">
-          <text class="menu-icon">📍</text>
-          <text class="menu-label">在此发状态</text>
-        </view>
-        <view class="menu-divider" />
-        <view class="menu-item menu-emergency" @tap="handleQuickEmergency">
-          <text class="menu-icon">🚨</text>
-          <text class="menu-label">救命 / 急事呼救</text>
         </view>
       </view>
     </view>
@@ -99,11 +80,9 @@ import { useAppState } from "../composables/useAppState";
 const {
   statusBarHeight, unreadChatsCount, friendsList,
   openChatSheet, switchMainTab, formatTime, openPublishSheet,
-  openHelpSheet
 } = useAppState();
 
 const searchQuery = ref("");
-const quickMenuOpen = ref(false);
 
 const filteredFriends = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
@@ -112,25 +91,6 @@ const filteredFriends = computed(() => {
     f => f.name.toLowerCase().includes(query) || (f.lastMessage && f.lastMessage.toLowerCase().includes(query))
   );
 });
-
-function toggleQuickMenu() {
-  quickMenuOpen.value = !quickMenuOpen.value;
-}
-
-function handleQuickPost() {
-  quickMenuOpen.value = false;
-  openPublishSheet("moments");
-}
-
-function handleQuickStatus() {
-  quickMenuOpen.value = false;
-  openPublishSheet("status");
-}
-
-function handleQuickEmergency() {
-  quickMenuOpen.value = false;
-  openPublishSheet("emergency");
-}
 </script>
 
 <style lang="scss" scoped>
@@ -187,48 +147,6 @@ function handleQuickEmergency() {
     }
   }
 
-  .quick-menu-mask {
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-  }
-
-  .quick-menu-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 12px;
-    width: 160px;
-    background-color: #4c4c4c;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-    z-index: 100;
-    overflow: hidden;
-
-    .menu-item {
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-
-      .menu-icon { font-size: 16px; }
-      .menu-label { font-size: 14px; color: #ffffff; font-weight: 500; }
-
-      &.menu-emergency {
-        .menu-label { color: #f87171; font-weight: 600; }
-      }
-
-      &:active {
-        background-color: #3f3f3f;
-      }
-    }
-
-    .menu-divider {
-      height: 0.5px;
-      background-color: rgba(255, 255, 255, 0.12);
-      margin: 0 12px;
-    }
-  }
 }
 
 /* 微信搜索栏 */
