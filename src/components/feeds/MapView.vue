@@ -88,7 +88,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from "vue";
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 const {
   mapCenter, mapScale, mapMarkers, mapCircles,
   onMarkerTap, onCalloutTap, onRegionChange,

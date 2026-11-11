@@ -42,24 +42,13 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
 import { useAppState } from "../../composables/useAppState";
-import WeChatTabBar from "../../components/WeChatTabBar.vue";
-import ChatsTab from "../../components/ChatsTab.vue";
-import ContactsTab from "../../components/ContactsTab.vue";
-import MeTab from "../../components/MeTab.vue";
-import TopNav from "../../components/TopNav.vue";
-import MapView from "../../components/MapView.vue";
-import RecommendView from "../../components/RecommendView.vue";
-import MomentsView from "../../components/MomentsView.vue";
-import AcgnView from "../../components/AcgnView.vue";
-import DetailSheet from "../../components/DetailSheet.vue";
-import PublishSheet from "../../components/PublishSheet.vue";
-import HelpSheet from "../../components/HelpSheet.vue";
-import MyProfileSheet from "../../components/MyProfileSheet.vue";
-import FriendsSheet from "../../components/FriendsSheet.vue";
-import ChatSheet from "../../components/ChatSheet.vue";
-import ClusterSheet from "../../components/ClusterSheet.vue";
-import UserCardModal from "../../components/UserCardModal.vue";
-import ImagePreviewModal from "../../components/ImagePreviewModal.vue";
+import {
+  TopNav, WeChatTabBar, ImagePreviewModal,
+  ContactsTab, ChatsTab, MeTab,
+  MapView, MomentsView, RecommendView, AcgnView,
+  DetailSheet, PublishSheet, HelpSheet, MyProfileSheet,
+  FriendsSheet, ChatSheet, ClusterSheet, UserCardModal
+} from "../../components";
 
 const { mainTab, mapSubTab, initApp } = useAppState();
 

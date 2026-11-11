@@ -247,7 +247,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 const {
   statusBarHeight, myProfile, sortedMomentsStatuses, activeHelpStatuses,
   openMyProfileSheet, openPublishSheet, viewAuthorProfile, viewCommenterProfile,

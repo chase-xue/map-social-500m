@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 const {
   friendsSheetVisible, friendsList,
   closeFriendsSheet, formatTime, handleAcceptFriend, openChatSheet,

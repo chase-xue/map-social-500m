@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 const {
   statusBarHeight, chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText,
   chatScrollTop, myProfile,

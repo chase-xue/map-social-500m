@@ -197,7 +197,7 @@ flowchart LR
 在对本项目进行任何代码修改与重构时，**必须无条件遵守以下工程红线**：
 
 1. **地图水印防穿透红线**：
-   - 严禁删除或弱化 `index.html`、`src/App.vue`、`src/components/MapView.vue` 中的高德地图 Logo 与版权号拦截逻辑；
+   - 严禁删除或弱化 `index.html`、`src/App.vue`、`src/components/feeds/MapView.vue` 中的高德地图 Logo 与版权号拦截逻辑；
 2. **容器边界红线**：
    - 所有全屏二级页面必须挂载在 `.container` 内部，样式遵循 `position: absolute; inset: 0; max-width: 430px;`（移动端 100% 满屏，桌面端自适应居中），严禁页面元素溢出到桌面视口外；
 3. **架构与契约红线**：

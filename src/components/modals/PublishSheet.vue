@@ -214,7 +214,8 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
+import { ACGN_TAG_CATEGORIES as ACGN_TAGS } from "../../constants/acgn";
 
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
@@ -223,14 +224,6 @@ const {
   closePublishSheet, chooseImages, removePickedImage, previewImage, addPresetSamplePhoto,
   submitNewPost, submitHelpPost, openMyProfileSheet, switchMainTab
 } = useAppState();
-
-const ACGN_TAGS = [
-  { emoji: "👗", name: "Cosplay" },
-  { emoji: "🛍️", name: "谷美/吃谷" },
-  { emoji: "🎪", name: "漫展打卡" },
-  { emoji: "📺", name: "番剧安利" },
-  { emoji: "🎮", name: "游戏同好" },
-];
 
 const canSubmit = computed(() => {
   return !!newPostContent.value.trim() || pickedImages.value.length > 0;

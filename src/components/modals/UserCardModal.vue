@@ -189,7 +189,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 
 const {
   statusBarHeight, userCardVisible, viewingProfile, viewingDistance, myProfile, allStatuses,

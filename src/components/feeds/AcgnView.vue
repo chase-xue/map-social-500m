@@ -190,7 +190,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
+import { ACGN_TAG_CATEGORIES } from "../../constants/acgn";
 
 const {
   statusBarHeight, myProfile, acgnStatuses,
@@ -198,14 +199,6 @@ const {
   formatTime, toggleActionMenu, activeActionMenuStatusId, handleLikeFromMenu,
   openInPlaceComment, openPublishSheet
 } = useAppState();
-
-const ACGN_CATEGORIES = [
-  { emoji: "👗", name: "Cosplay" },
-  { emoji: "🛍️", name: "谷美/吃谷" },
-  { emoji: "🎪", name: "漫展打卡" },
-  { emoji: "📺", name: "番剧安利" },
-  { emoji: "🎮", name: "游戏同好" },
-];
 
 const selectedCategory = ref<string>("all");
 

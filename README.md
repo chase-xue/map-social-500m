@@ -62,33 +62,25 @@
 
 ---
 
-## 🏗️ 目录结构
+## 🏗️ 领域模块化目录结构 (Domain-Driven Architecture)
 
 ```
 src/
-├── components/          # 功能组件 (已全面微信原生化)
-│   ├── WeChatTabBar.vue # 微信原生四大底部页签
-│   ├── TopNav.vue       # 顶栏胶囊 (地图/朋友圈切换)
-│   ├── MapView.vue      # 地图模式 (Zenly 围栏、无水印、35m聚合)
-│   ├── MomentsView.vue  # 朋友圈模式 (无边框极细线社交流)
-│   ├── ContactsTab.vue  # 通讯录主页面 (第2页签)
-│   ├── ChatsTab.vue     # 聊天会话列表 (第3页签)
-│   ├── MeTab.vue        # 我 (第4页签，纯净顶栏)
-│   ├── DetailSheet.vue  # 动态/求助详情 (全屏原生页)
-│   ├── ClusterSheet.vue # 地点聚合动态 (全屏原生页)
-│   ├── PublishSheet.vue # 发布动态/呼救 (全屏原生页)
-│   ├── MyProfileSheet.vue # 个人信息设置 (全屏原生页 + ActionSheet)
-│   ├── UserCardModal.vue# 他人详细资料 (全屏原生页)
-│   ├── ChatSheet.vue    # 1v1 私聊窗口 (全屏原生页)
-│   └── ImagePreviewModal.vue # 全屏大图灯箱预览
-├── composables/
-│   └── useAppState.ts   # 全局单例状态流与数据契约
-├── services/
+├── components/          # 严格模块分层的 UI 组件系统
+│   ├── index.ts         # 组件 Barrel 统一出口
+│   ├── common/          # 全局公共组件 (WeChatTabBar 底部栏, TopNav 顶栏, ImagePreviewModal 大图灯箱)
+│   ├── tabs/            # 四大底层核心主页签 (ContactsTab 通讯录, ChatsTab 消息, MeTab 更多)
+│   ├── feeds/           # 首页四大内容流视图 (MapView 地图雷达, MomentsView 关注动态, RecommendView 同城推荐, AcgnView 二次元专区)
+│   └── modals/          # 全屏二级业务抽屉 (Detail 详情, Publish 发布, Help 呼救, MyProfile 个人设置, UserCard 他人名片, Chat 1v1私聊, Friends 好友, Cluster 聚合)
+├── composables/         # 响应式状态流与组合式函数
+│   └── useAppState.ts   # 全局单例状态流与契约调度中枢
+├── constants/           # 业务字典与常量配置 (acgn 细分标签等)
+├── services/            # 底层算法与存储服务
 │   ├── geo.ts           # Haversine 500m 精确球面距离过滤
-│   └── storage.ts       # 本地双保险持久化存储
-├── types/
-│   └── index.ts         # TypeScript 数据模型定义
-└── pages/
+│   └── storage.ts       # 本地双保险持久化存储与 Mock 数据
+├── types/               # TypeScript 全局数据模型
+├── styles/              # 样式工程系统 (global.scss)
+└── pages/               # 页面容器入口
     └── index/index.vue  # 应用主容器
 docs/
 └── INTERACTION_MANUAL.md # 完整产品交互与开发设计手册

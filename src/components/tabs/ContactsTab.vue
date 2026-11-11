@@ -131,7 +131,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 
 const {
   statusBarHeight, friendsList, pendingFriendsCount, visibleStatuses,

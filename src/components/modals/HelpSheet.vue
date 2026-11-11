@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 const {
   helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,
   closeHelpSheet, chooseHelpImages, removePickedHelpImage, submitHelpPost, previewImage,

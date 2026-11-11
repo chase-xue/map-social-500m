@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { useAppState } from "../composables/useAppState";
+import { useAppState } from "../../composables/useAppState";
 const {
   statusBarHeight, mapSubTab, visibleStatuses, acgnStatuses, myProfile, openPublishSheet
 } = useAppState();
