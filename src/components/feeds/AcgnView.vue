@@ -1,10 +1,9 @@
 <template>
-  <scroll-view
-    scroll-y
+  <view
     class="acgn-view-page"
     :style="{ paddingTop: (statusBarHeight + 52) + 'px' }"
   >
-    <!-- 顶部二次元细分子标签水平滑动选择器 (吸顶) -->
+    <!-- 顶部二次元细分子标签水平滑动选择器 (独立固定在顶栏下方，永不冲突) -->
     <view class="acgn-subtabs-bar">
       <scroll-view scroll-x class="subtabs-scroll" :show-scrollbar="false">
         <view class="subtabs-inner">
@@ -32,12 +31,8 @@
       <view class="scroll-edge-fade" />
     </view>
 
-    <!-- 专区顶部标语横幅 -->
-    <view class="acgn-header-banner">
-        <text class="banner-sparkle">🌸</text>
-        <text class="banner-title">二次元同好空间 · 漫展正片 / 吃谷交流 / 番剧游戏</text>
-      </view>
-
+    <!-- 二次元专区纵向信息流滚动主体 (完全独立，零嵌套冲突) -->
+    <scroll-view scroll-y class="acgn-scroll-area">
       <view class="acgn-feed-stream">
         <template v-for="(item, index) in filteredStatuses" :key="item.id">
           <!-- 动态卡片 -->
@@ -189,7 +184,8 @@
       </view>
 
       <view class="acgn-bottom-padding" />
-  </scroll-view>
+    </scroll-view>
+  </view>
 </template>
 
 <script setup lang="ts">
@@ -231,23 +227,22 @@ const filteredStatuses = computed(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100%;
-  height: 100%;
   background-color: #ffffff;
-  -webkit-overflow-scrolling: touch;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* 顶部子标签切换器 (Sticky 吸顶) */
+/* 顶部子标签切换器 (独立固定栏，绝不参与纵向滚动，绝不发生手势冲突) */
 .acgn-subtabs-bar {
-  position: sticky;
-  top: 0;
-  z-index: 25;
-  background-color: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+  background-color: #ffffff;
   border-bottom: 0.5px solid #fbcfe8;
   padding: 8px 12px;
-  box-sizing: border-box;
+  position: relative;
+  z-index: 20;
 
   .subtabs-scroll {
     white-space: nowrap;
@@ -315,21 +310,22 @@ const filteredStatuses = computed(() => {
   }
 }
 
-.acgn-header-banner {
-  margin: 12rpx 24rpx;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  border: 1rpx solid #fbcfe8;
-  border-radius: 12rpx;
-  padding: 12rpx 20rpx;
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
+/* 纵向滚动信息流主体：独立撑满剩余高度，触控极度丝滑 */
+.acgn-scroll-area {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background-color: #ffffff;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overscroll-behavior-y: contain;
 
-  .banner-sparkle { font-size: 24rpx; }
-  .banner-title {
-    font-size: 22rpx;
-    font-weight: 600;
-    color: #9d174d;
+  :deep(.uni-scroll-view) {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
   }
 }
 
@@ -416,6 +412,7 @@ const filteredStatuses = computed(() => {
 
     .moment-media-wrap {
       margin-bottom: 16rpx;
+      touch-action: pan-y !important;
 
       .single-img-box {
         max-width: 440rpx;
@@ -423,11 +420,15 @@ const filteredStatuses = computed(() => {
         border-radius: 8rpx;
         overflow: hidden;
         background-color: #f7f7f7;
+        touch-action: pan-y !important;
 
         .single-img {
           width: 100%;
           height: 380rpx;
           display: block;
+          touch-action: pan-y !important;
+          -webkit-user-drag: none;
+          user-select: none;
         }
       }
 
@@ -436,12 +437,16 @@ const filteredStatuses = computed(() => {
         display: flex;
         flex-wrap: wrap;
         gap: 10rpx;
+        touch-action: pan-y !important;
 
         .grid-img {
           width: 190rpx;
           height: 190rpx;
           border-radius: 6rpx;
           background-color: #f7f7f7;
+          touch-action: pan-y !important;
+          -webkit-user-drag: none;
+          user-select: none;
         }
       }
 
@@ -451,12 +456,16 @@ const filteredStatuses = computed(() => {
         display: flex;
         flex-wrap: wrap;
         gap: 10rpx;
+        touch-action: pan-y !important;
 
         .grid-img {
           width: 180rpx;
           height: 180rpx;
           border-radius: 6rpx;
           background-color: #f7f7f7;
+          touch-action: pan-y !important;
+          -webkit-user-drag: none;
+          user-select: none;
         }
       }
     }
