@@ -1,158 +1,143 @@
-# 🗺️ 500米邻里社交圈 - 完整项目知识图谱与速查指引
-> **生成时间**：2026-09-22  
-> **核心枢纽节点**：301 个 Nodes · 501 条 Edges · 18 个功能社区 (Community)  
+# 🗺️ 500米地图生活圈 (Map Social 500m) - 完整项目知识图谱与架构指引
+
+> **更新时间**：2026-11-11  
+> **图谱规模**：**504 个 Nodes** · **803 条 Links** · **24 个功能社区 (Communities)**  
+> **构建基准**：Commit `f79cfce` (全量增量提取与社区聚类)  
 > **交互式可视化入口**：
-> - 🌐 **力导向拓扑全景图**：[graphify-out/graph.html](file:///Users/trovant/map/graphify-out/graph.html)
-> - 🌳 **D3 树状层级图谱**：[graphify-out/GRAPH_TREE.html](file:///Users/trovant/map/graphify-out/GRAPH_TREE.html)
-> - 📊 **社区与中心度审计报告**：[graphify-out/GRAPH_REPORT.md](file:///Users/trovant/map/graphify-out/GRAPH_REPORT.md)
+> - 🌐 **力导向拓扑全景图 (交互式)**：[`graphify-out/graph.html`](file:///Users/trovant/map/graphify-out/graph.html)
+> - 🌳 **层级结构树图谱**：[`graphify-out/GRAPH_TREE.html`](file:///Users/trovant/map/graphify-out/GRAPH_TREE.html)
+> - 📊 **Graphify 审计与社区报告**：[`graphify-out/GRAPH_REPORT.md`](file:///Users/trovant/map/graphify-out/GRAPH_REPORT.md)
 
 ---
 
-## 🎯 一、功能修改快速定位索引表 (修改需求直达指南)
+## 🎯 一、功能模块与代码修改快速检索表
 
-当未来需要新增、修复或调整功能时，按以下映射直接跳转到对应文件与代码行：
+当需要迭代、调试或扩展功能时，按照以下核心链路直达目标代码：
 
-| 需求场景 / 功能模块 | 核心处理文件 (点击直达) | 关键函数 / 响应式状态 | 调整关注点 |
+| 业务领域 / 模块 | 核心源码文件 (点击跳转) | 关键函数 / 核心响应式状态 | 架构设计与契约约束 |
 | :--- | :--- | :--- | :--- |
-| **500米范围与距离计算** | [`src/services/geo.ts`](file:///Users/trovant/map/src/services/geo.ts) | `calculateDistance`, `isWithin500Meters`, `filterStatusesWithinRange` | Haversine 地球球面坐标计算、按距离倒序过滤 |
-| **同地点多动态聚合算法** | [`src/services/geo.ts`](file:///Users/trovant/map/src/services/geo.ts) | `clusterStatusesByLocation` | 35米内聚类阈值、首发人提取与聚合数量 |
-| **坐标模拟与偏移打点** | [`src/services/geo.ts`](file:///Users/trovant/map/src/services/geo.ts) | `createOffsetCoordinates` | 发布状态时的经纬度随机方位角与半径位移 (15m) |
-| **本地存储 / 持久化** | [`src/services/storage.ts`](file:///Users/trovant/map/src/services/storage.ts) | `readLocalData`, `writeLocalData`, `getUserProfile`, `saveUserProfile` | H5 localStorage / 小程序文件系统双模存储 |
-| **好友关系与私聊存储** | [`src/services/storage.ts`](file:///Users/trovant/map/src/services/storage.ts) | `getFriendsList`, `sendFriendRequest`, `acceptFriendRequest`, `sendChatMessage` | 手机号双向互验加好友、聊天记录持久化与自动模拟回复 |
-| **全局核心状态机 (God Node)** | [`src/composables/useAppState.ts`](file:///Users/trovant/map/src/composables/useAppState.ts) | `useAppState()` (63 条依赖连线) | 统领所有数据、抽屉显示隐藏、点击防穿透、地图打点 |
-| **地图点/气泡点击与防穿透** | [`src/composables/useAppState.ts`](file:///Users/trovant/map/src/composables/useAppState.ts) | `onMarkerTap`, `onCalloutTap`, `lastModalOpenTime` | 拦截 450ms 移动端合成点击穿透闪退、优先匹配本人状态 |
-| **地图渲染与中心定位** | [`src/components/MapView.vue`](file:///Users/trovant/map/src/components/MapView.vue) | `<map>`, `myActiveHelp`, `topEmergencyHelp`, `right-controls` | 500m半透明紫圈、救命红圈、浮动控制栏、求助广播横幅 |
-| **朋友圈模式与时间倒序** | [`src/components/MomentsView.vue`](file:///Users/trovant/map/src/components/MomentsView.vue) | `sortedMomentsStatuses`, `toggleLikeStatus`, `openDetailSheet` | 倒序动态流、大图排版(单图/四宫格/九宫格)、点赞留言预览 |
-| **动态详情、评论与配图** | [`src/components/DetailSheet.vue`](file:///Users/trovant/map/src/components/DetailSheet.vue) | `activeStatus`, `handleSendComment`, `chooseCommentImage` | 底部/居中弹窗卡片、多级留言列表、作者卡片查看入口 |
-| **发布状态与拍照上传** | [`src/components/PublishSheet.vue`](file:///Users/trovant/map/src/components/PublishSheet.vue) | `newPostContent`, `pickedImages`, `submitNewPost` | 最多3张配图、相册拍照选取、自动挂载当前坐标打点 |
-| **急事 / 救命 HELP 求助** | [`src/components/HelpSheet.vue`](file:///Users/trovant/map/src/components/HelpSheet.vue) | `isEmergencyHelp`, `submitHelpPost`, `handleCloseHelp` | 双档求助切换、紧急电话直拨、2小时自动隐去、发起人关闭 |
-| **个人资料与隐私开关** | [`src/components/MyProfileSheet.vue`](file:///Users/trovant/map/src/components/MyProfileSheet.vue) | `editingProfile`, `onPhonePrivacyChange`, `myHelpHistory` | 昵称/年龄/性别/签名/手机号公开或隐藏保密、求助历史记录 |
-| **他人资料卡与加好友** | [`src/components/UserCardModal.vue`](file:///Users/trovant/map/src/components/UserCardModal.vue) | `viewingProfile`, `handleAddFriend`, `startChatFromCard` | 点击任意头像查看个人卡、展示距离、电话直拨、发起私聊 |
-| **好友列表与聊天抽屉** | [`src/components/FriendsSheet.vue`](file:///Users/trovant/map/src/components/FriendsSheet.vue)<br>[`src/components/ChatSheet.vue`](file:///Users/trovant/map/src/components/ChatSheet.vue) | `friendsList`, `currentChatFriend`, `sendCurrentChatMessage` | 申请通知红点、私聊气泡、即时消息滚动、模拟邻友回复 |
-| **响应式视口与全端自适应** | [`src/styles/global.scss`](file:///Users/trovant/map/src/styles/global.scss) | `.modal-mask`, `.app-layout`, `@media (min-width: 768px)` | `100dvh` 防浏览器工具栏遮挡、PC居中卡片、手机底部抽屉 |
+| **微信底层四大主页签** | [`src/components/common/WeChatTabBar.vue`](file:///Users/trovant/map/src/components/common/WeChatTabBar.vue)<br>[`src/pages/index/index.vue`](file:///Users/trovant/map/src/pages/index/index.vue) | `mainTab` (`map` \| `contacts` \| `chats` \| `me`), `switchMainTab` | 仿微信原生TabBar，带未读消息红点、好友申请徽标与紧急求助红色闪烁 |
+| **全局顶栏 (一级导航)** | [`src/components/common/TopNav.vue`](file:///Users/trovant/map/src/components/common/TopNav.vue) | `mapSubTab` (`map` \| `recommend` \| `moments` \| `acgn`), `openPublishSheet` | **一级固定稳重、绝不横移卷动**；右侧微信经典圆形相机 `📷` 节约 52px 空间，4 个 Tab 等宽完美展示 |
+| **🌸 二次元同好专区** | [`src/components/feeds/AcgnView.vue`](file:///Users/trovant/map/src/components/feeds/AcgnView.vue)<br>[`src/constants/acgn.ts`](file:///Users/trovant/map/src/constants/acgn.ts) | `selectedCategory`, `filteredStatuses`, `ACGN_TAG_CATEGORIES` | 顶部二级分类单行胶囊横向滑动，下方纵向流独立解耦滚动，配置 `touch-action: pan-y` 彻底杜绝手势死锁 |
+| **✨ 同城推荐流** | [`src/components/feeds/RecommendView.vue`](file:///Users/trovant/map/src/components/feeds/RecommendView.vue) | `recommendedStatuses`, `hot-badge` | 综合高赞热评与二次元同好的精选社交动态推荐流 |
+| **👥 微信朋友圈流** | [`src/components/feeds/MomentsView.vue`](file:///Users/trovant/map/src/components/feeds/MomentsView.vue) | `sortedMomentsStatuses`, `topEmergencyHelp`, `inPlaceCommentVisible` | 封面大图贴边名片、时间倒序、弹出式赞/评浮层菜单、原地评论条快速回复 |
+| **📍 500米地图视图** | [`src/components/map/MapView.vue`](file:///Users/trovant/map/src/components/map/MapView.vue) | `mapCenter`, `mapMarkers`, `mapCircles`, `onMarkerTap` | 500米半透明定位圈、同地点动态聚合点、紧急求助红圈脉冲、高德地图深度去水印 |
+| **状态中心 (God Node)** | [`src/composables/useAppState.ts`](file:///Users/trovant/map/src/composables/useAppState.ts) | `useAppState()` (拥有全网最高 83 条依赖边) | 单例状态枢纽：统管弹窗栈、地理定位、数据种子初始化、防穿透点击拦截 |
+| **500米范围与聚类算法** | [`src/services/geo.ts`](file:///Users/trovant/map/src/services/geo.ts) | `calculateDistance`, `isWithin500Meters`, `clusterStatusesByLocation` | Haversine 球面大圆距离、35 米内同地点多动态智能聚合计算 |
+| **数据持久化与初始种子** | [`src/services/storage.ts`](file:///Users/trovant/map/src/services/storage.ts) | `readLocalData`, `writeLocalData`, `getAcgnStatuses` | 同步+异步本地存储双模支持；预置 7 条真实二次元动态、初始邻居好友与聊天记录 |
+| **急事 / 救命 HELP 呼救** | [`src/components/sheets/HelpSheet.vue`](file:///Users/trovant/map/src/components/sheets/HelpSheet.vue) | `isEmergencyHelp`, `submitHelpPost`, `handleCloseHelp` | 双档紧急呼救、一键直拨电话、2 小时自动隐去、发起人结案闭环 |
+| **他人资料卡 / 邻居名片** | [`src/components/modals/UserCardModal.vue`](file:///Users/trovant/map/src/components/modals/UserCardModal.vue) | `viewingProfile`, `handleAddFriend`, `startChatFromCard` | 资料弹窗查看他人所有历史动态、直线物理距离展示、加好友与私聊入口 |
+| **微信原生全屏灯箱** | [`src/components/modals/ImagePreviewModal.vue`](file:///Users/trovant/map/src/components/modals/ImagePreviewModal.vue) | `previewImageUrls`, `previewImageCurrentIndex` | 支持单图/四宫格/九宫格大图原尺寸高保真手势缩放浏览 |
 
 ---
 
-## 🏛️ 二、系统架构依赖拓扑图 (Architecture Topology)
+## 🏛️ 二、系统全景架构依赖拓扑图 (Mermaid Architecture)
 
 ```mermaid
 graph TD
-  subgraph 入口与页面布局 [View Layer / Layout]
-    App["App.vue (100dvh 视口基座)"]
-    IndexPage["pages/index/index.vue (主容器)"]
-    TopNav["TopNav.vue (顶栏模式切换 & 个人头像)"]
-    MapView["MapView.vue (地图模式 / 500m 圈 / 控件组)"]
-    MomentsView["MomentsView.vue (朋友圈模式 / 时间倒序流)"]
+  subgraph 微信主框架基座 [Presentation Layer]
+    App["App.vue (100dvh 全局响应式基座)"]
+    Index["pages/index/index.vue (主容器路由控制器)"]
+    TabBar["WeChatTabBar.vue (微信原生四大底层标签)"]
+    TopNav["TopNav.vue (全局稳固顶栏 / 📷相机)"]
   end
 
-  subgraph 弹窗与交互卡片 [Sheets & Modals]
-    DetailSheet["DetailSheet.vue (状态详情 / 留言互动)"]
-    PublishSheet["PublishSheet.vue (发布状态 / 拍照打点)"]
-    HelpSheet["HelpSheet.vue (急事/救命 HELP 呼救中心)"]
-    MyProfileSheet["MyProfileSheet.vue (资料编辑 / 隐私 / 求助历史)"]
-    UserCardModal["UserCardModal.vue (他人资料卡 / 拨号 / 好友入口)"]
-    FriendsSheet["FriendsSheet.vue (好友申请与列表)"]
-    ChatSheet["ChatSheet.vue (私聊对话抽屉)"]
-    ClusterSheet["ClusterSheet.vue (同地点聚合状态抽屉)"]
+  subgraph 首页四大核心视图 [Home Feed Views]
+    MapView["MapView.vue<br>📍 500米物理生活圈"]
+    RecommendView["RecommendView.vue<br>✨ 同城精选推荐"]
+    MomentsView["MomentsView.vue<br>👥 微信朋友圈倒序流"]
+    AcgnView["AcgnView.vue<br>🌸 二次元同好空间"]
   end
 
-  subgraph 全局状态控制器 [State & Controller - God Node]
-    UseAppState["useAppState.ts<br>★ 状态枢纽中心 (63 edges) ★<br>• lastModalOpenTime (防点透时间戳)<br>• visibleStatuses (500m可见列表)<br>• locationClusters (地点聚合)<br>• activeHelpStatuses (活跃求助)<br>• onMarkerTap / onCalloutTap"]
+  subgraph 微信底层二级页面 [Main Tabs]
+    ContactsTab["ContactsTab.vue (通讯录与好友管理)"]
+    ChatsTab["ChatsTab.vue (微信私聊与群通知)"]
+    MeTab["MeTab.vue (个人信息与偏好设置)"]
   end
 
-  subgraph 底层服务与数据源 [Services & Data Layer]
-    GeoService["geo.ts (地理计算)<br>• calculateDistance (Haversine)<br>• filterStatusesWithinRange<br>• clusterStatusesByLocation<br>• createOffsetCoordinates"]
-    StorageService["storage.ts (本地数据与存储)<br>• readLocalData / writeLocalData<br>• addNewStatus / addCommentToStatus<br>• getUserProfile / saveUserProfile<br>• getFriendsList / sendChatMessage"]
+  subgraph 弹出交互层 [Interactive Sheets & Modals]
+    DetailSheet["DetailSheet.vue (动态详情/多级评论)"]
+    PublishSheet["PublishSheet.vue (发布动态/坐标打点)"]
+    HelpSheet["HelpSheet.vue (紧急求助/救命呼救)"]
+    UserCardModal["UserCardModal.vue (他人资料卡/加好友)"]
+    MyProfileSheet["MyProfileSheet.vue (资料编辑/隐私设置)"]
+    FriendsSheet["FriendsSheet.vue (好友申请管理)"]
+    ChatSheet["ChatSheet.vue (独立私聊对话窗)"]
+    ClusterSheet["ClusterSheet.vue (同地点聚合列表)"]
+    ImagePreviewModal["ImagePreviewModal.vue (图片全屏灯箱)"]
   end
 
-  App --> IndexPage
-  IndexPage --> TopNav
-  IndexPage --> MapView
-  IndexPage --> MomentsView
-  IndexPage --> DetailSheet
-  IndexPage --> PublishSheet
-  IndexPage --> HelpSheet
-  IndexPage --> MyProfileSheet
-  IndexPage --> UserCardModal
-  IndexPage --> FriendsSheet
-  IndexPage --> ChatSheet
-  IndexPage --> ClusterSheet
+  subgraph 全局状态中枢 [State & Business Logic - God Node]
+    UseAppState["useAppState.ts<br>★ 全局核心状态机 (83 edges) ★<br>• mainTab / mapSubTab<br>• visibleStatuses / acgnStatuses<br>• activeHelpStatuses / topEmergencyHelp<br>• openDetailSheet / openPublishSheet"]
+  end
 
-  TopNav -.-> UseAppState
-  MapView -.-> UseAppState
-  MomentsView -.-> UseAppState
-  DetailSheet -.-> UseAppState
-  PublishSheet -.-> UseAppState
-  HelpSheet -.-> UseAppState
-  MyProfileSheet -.-> UseAppState
-  UserCardModal -.-> UseAppState
-  FriendsSheet -.-> UseAppState
-  ChatSheet -.-> UseAppState
-  ClusterSheet -.-> UseAppState
+  subgraph 领域常数与服务层 [Domain & Service Layer]
+    GeoService["geo.ts (Haversine 距离 / 35m 聚合打点)"]
+    StorageService["storage.ts (本地存储 / 初始数据种子)"]
+    AcgnConstants["acgn.ts (5大分类与标签枚举)"]
+    Types["types/index.ts (TypeScript 强类型契约)"]
+  end
+
+  App --> Index
+  Index --> TabBar
+  Index --> TopNav
+  Index --> MapView
+  Index --> RecommendView
+  Index --> MomentsView
+  Index --> AcgnView
+  Index --> ContactsTab
+  Index --> ChatsTab
+  Index --> MeTab
+
+  MapView --> UseAppState
+  RecommendView --> UseAppState
+  MomentsView --> UseAppState
+  AcgnView --> UseAppState
+  TopNav --> UseAppState
+  TabBar --> UseAppState
+
+  DetailSheet --> UseAppState
+  PublishSheet --> UseAppState
+  HelpSheet --> UseAppState
+  UserCardModal --> UseAppState
 
   UseAppState --> GeoService
   UseAppState --> StorageService
+  AcgnView --> AcgnConstants
+  StorageService --> Types
 ```
 
 ---
 
-## 🔄 三、核心数据流转图 (Data Flow)
+## 🔬 三、Graphify 核心指标与知识网络分析
 
-```mermaid
-sequenceDiagram
-  autonumber
-  actor User as 用户 / 邻友
-  participant View as 视图组件 (MapView / MomentsView)
-  participant State as useAppState (状态管理)
-  participant Geo as geo.ts (地理算法)
-  participant Storage as storage.ts (本地持久化)
-
-  User->>View: 1. 发布状态 / 发起 HELP 求助
-  View->>State: submitNewPost() / submitHelpPost()
-  State->>Geo: createOffsetCoordinates(userPos, 15m)
-  Geo-->>State: 返回偏移经纬度 (lat, lng)
-  State->>Storage: addNewStatus(newStatus)
-  Storage-->>Storage: 写入 localStorage / statuses.json
-  State->>Storage: readLocalData() 重新读取最新全量
-  State->>Geo: filterStatusesWithinRange(userPos, 500)
-  Geo-->>State: 得到周边 500m 内可见状态
-  State->>Geo: clusterStatusesByLocation(35m 阈值)
-  Geo-->>State: 得到地点聚合簇 locationClusters
-  State-->>View: 响应式触发地图 Marker 打点 & 朋友圈重绘
-  State->>State: lastModalOpenTime = Date.now() (设置防点透守护)
-  State-->>View: 自动展开 DetailSheet 查看新发表动态
-```
+1. **核心中枢节点 (Top God Nodes)**：
+   - `useAppState()`：拥有 **83 条外部依赖边**，作为系统绝对的状态控制中心，连接了所有 View、Sheet 与底层 Storage。
+   - `readLocalData()`：拥有 **20 条调用边**，负责 H5 / 小程序双端数据一致性读取。
+   - `compilerOptions` & `manifest.json`：支撑跨端 Uni-app 运行基座。
+   - `getFriendsList()`：11 条连接边，负责构建邻里关系网。
+2. **社区聚类划分 (24 Communities)**：
+   - **Community 0 (`useAppState.ts`)**：全局响应式状态集群（67 节点）。
+   - **Community 1 (`storage.ts`)**：存储与数据通信网（46 节点）。
+   - **Community 16 (`AcgnView.vue` & `acgn.ts`)**：二次元细分流派与专区生态。
+   - **Community 20 (`RecommendView.vue`)**：同城推荐过滤与算法排序。
+   - **Community 4 (`index.vue`)**：主界面四层挂载拓扑。
+3. **依赖闭环与无环断言 (Cycle-Free)**：
+   - 全图检测到 **0 个循环依赖 (0 Import Cycles)**，分层遵循单向流动原则（Presentation $\rightarrow$ Composable $\rightarrow$ Service $\rightarrow$ Types）。
 
 ---
 
-## 🛠️ 四、本地图谱维护与查询命令 (CLI Cheatsheet)
+## 🛠️ 四、后续图谱更新指引
 
-项目中已完整配置 `graphify` 引擎，支持在终端通过以下命令随时进行增量更新或关系查询：
+若在后续开发中修改了代码或新增了文件，可随时通过本地命令极速同步图谱：
 
-### 1. 代码修改后增量更新图谱
 ```bash
-graphify extract . --code-only
-graphify cluster-only .
+# 增量代码更新 (无需消耗 Token，1秒极速重聚类)
+graphify update .
+
+# 查询两模块间调用链路 (示例)
+graphify path "AcgnView.vue" "useAppState"
+
+# 查看核心架构中枢
+graphify god-nodes
 ```
-
-### 2. 探查最核心枢纽函数 (God Nodes)
-```bash
-graphify god-nodes --top 10
-```
-
-### 3. 自然语言查询架构与调用路径
-```bash
-# 查询两个函数之间的调用关系
-graphify path "onMarkerTap" "openDetailSheet"
-
-# 查询特定函数的技术解释
-graphify explain "useAppState"
-
-# 查询广度上下文
-graphify query "如何修改求助帖的自动消失时间？"
-```
-
-### 4. 生成与查看全景 HTML 图谱
-- 双击或在浏览器中打开：[`graphify-out/graph.html`](file:///Users/trovant/map/graphify-out/graph.html)
-  - 支持按节点度数大小缩放、鼠标拖拽物理力导向模拟、节点检索与连线高亮。
-- 树形折叠结构：[`graphify-out/GRAPH_TREE.html`](file:///Users/trovant/map/graphify-out/GRAPH_TREE.html)
