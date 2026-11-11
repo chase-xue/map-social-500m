@@ -24,36 +24,7 @@
       <text class="tab-label">地图</text>
     </view>
 
-    <!-- 2. 聊天 (微信) -->
-    <view
-      class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'chats' }"
-      @tap="switchMainTab('chats')"
-    >
-      <view class="icon-box">
-        <!-- 聊天 Active 选中态: 高清实色圆润对话气泡带 3 点 -->
-        <svg v-if="mainTab === 'chats'" class="tab-svg" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z" fill="currentColor"/>
-          <circle cx="8" cy="11" r="1.3" fill="white"/>
-          <circle cx="12" cy="11" r="1.3" fill="white"/>
-          <circle cx="16" cy="11" r="1.3" fill="white"/>
-        </svg>
-        <!-- 聊天 Inactive 未选中态: 极简线性圆润对话气泡 -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
-          <circle cx="8" cy="11" r="1" fill="currentColor"/>
-          <circle cx="12" cy="11" r="1" fill="currentColor"/>
-          <circle cx="16" cy="11" r="1" fill="currentColor"/>
-        </svg>
-
-        <view v-if="unreadChatsCount > 0" class="wechat-badge">
-          {{ unreadChatsCount > 99 ? '99+' : unreadChatsCount }}
-        </view>
-      </view>
-      <text class="tab-label">聊天</text>
-    </view>
-
-    <!-- 3. 通讯录 -->
+    <!-- 2. 通讯录 -->
     <view
       class="tab-bar-item"
       :class="{ 'item-active': mainTab === 'contacts' }"
@@ -85,6 +56,35 @@
         </view>
       </view>
       <text class="tab-label">通讯录</text>
+    </view>
+
+    <!-- 3. 聊天 (微信) -->
+    <view
+      class="tab-bar-item"
+      :class="{ 'item-active': mainTab === 'chats' }"
+      @tap="switchMainTab('chats')"
+    >
+      <view class="icon-box">
+        <!-- 聊天 Active 选中态: 高清实色圆润对话气泡带 3 点 -->
+        <svg v-if="mainTab === 'chats'" class="tab-svg" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z" fill="currentColor"/>
+          <circle cx="8" cy="11" r="1.3" fill="white"/>
+          <circle cx="12" cy="11" r="1.3" fill="white"/>
+          <circle cx="16" cy="11" r="1.3" fill="white"/>
+        </svg>
+        <!-- 聊天 Inactive 未选中态: 极简线性圆润对话气泡 -->
+        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
+          <circle cx="8" cy="11" r="1" fill="currentColor"/>
+          <circle cx="12" cy="11" r="1" fill="currentColor"/>
+          <circle cx="16" cy="11" r="1" fill="currentColor"/>
+        </svg>
+
+        <view v-if="unreadChatsCount > 0" class="wechat-badge">
+          {{ unreadChatsCount > 99 ? '99+' : unreadChatsCount }}
+        </view>
+      </view>
+      <text class="tab-label">聊天</text>
     </view>
 
     <!-- 4. 我 -->

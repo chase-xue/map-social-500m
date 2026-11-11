@@ -10,11 +10,11 @@
         <MomentsView v-if="mapSubTab === 'moments'" />
       </view>
 
-      <!-- 2. 聊天 (微信) -->
-      <ChatsTab v-show="mainTab === 'chats'" />
-
-      <!-- 3. 通讯录 -->
+      <!-- 2. 通讯录 -->
       <ContactsTab v-show="mainTab === 'contacts'" />
+
+      <!-- 3. 聊天 (微信) -->
+      <ChatsTab v-show="mainTab === 'chats'" />
 
       <!-- 4. 我 -->
       <MeTab v-show="mainTab === 'me'" />
