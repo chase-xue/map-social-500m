@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { useAppState } from "../composables/useAppState";
 const {
   mapCenter, mapScale, mapMarkers, mapCircles,
@@ -101,6 +101,36 @@ const topEmergencyHelp = computed(() => {
   if (!activeHelpStatuses.value.length) return null;
   const emergency = activeHelpStatuses.value.find((s) => s.isEmergency);
   return emergency || activeHelpStatuses.value[0];
+});
+
+let logoClearTimer: any = null;
+
+onMounted(() => {
+  const purgeAMapWatermark = () => {
+    if (typeof document === "undefined") return;
+    const selectors = [
+      ".amap-logo", ".amap-copyright", ".amap-mcode",
+      "div[class*='amap-logo']", "div[class*='amap-copyright']", "a[class*='amap-logo']"
+    ];
+    selectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => {
+        (el as HTMLElement).style.setProperty("display", "none", "important");
+        (el as HTMLElement).style.setProperty("visibility", "hidden", "important");
+        (el as HTMLElement).style.setProperty("opacity", "0", "important");
+        (el as HTMLElement).style.setProperty("pointer-events", "none", "important");
+      });
+    });
+  };
+
+  purgeAMapWatermark();
+  logoClearTimer = setInterval(purgeAMapWatermark, 400);
+  setTimeout(() => {
+    if (logoClearTimer) clearInterval(logoClearTimer);
+  }, 12000);
+});
+
+onUnmounted(() => {
+  if (logoClearTimer) clearInterval(logoClearTimer);
 });
 </script>
 

@@ -40,4 +40,27 @@ view, text, image, input, textarea, button {
   -webkit-appearance: none;
   background: transparent;
 }
+
+/* 彻底移除高德地图 Logo、水印与版权号标记 */
+.amap-logo,
+.amap-copyright,
+.amap-mcode,
+div[class*="amap-logo"],
+div[class*="amap-copyright"],
+a[class*="amap-logo"],
+.amap-maps .amap-logo,
+.amap-maps .amap-copyright,
+uni-map .amap-logo,
+uni-map .amap-copyright {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  bottom: -9999px !important;
+  overflow: hidden !important;
+}
 </style>
