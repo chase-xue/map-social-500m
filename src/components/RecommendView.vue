@@ -23,6 +23,10 @@
               <view class="author-row">
                 <view class="author-name-box" @tap.stop="viewAuthorProfile(item)">
                   <text class="author-name">{{ item.userName }}</text>
+                  <!-- 二次元同好标签 -->
+                  <text v-if="item.isAcgn" class="acgn-badge">
+                    🌸 二次元 · {{ item.acgnTag || '同好' }}
+                  </text>
                   <!-- 热门高赞标签 -->
                   <text v-if="item.likes && item.likes.length >= 2" class="hot-badge">
                     🔥 热门高赞
@@ -273,6 +277,18 @@ function handleAdClick(ad: SponsoredAdItem) {
           font-weight: 600;
           color: #576b95;
           cursor: pointer;
+        }
+
+        .acgn-badge {
+          font-size: 20rpx;
+          color: #db2777;
+          background-color: #fdf2f8;
+          border: 1rpx solid #fbcfe8;
+          padding: 2rpx 12rpx;
+          border-radius: 9999rpx;
+          font-weight: 500;
+          display: inline-flex;
+          align-items: center;
         }
 
         .hot-badge {

@@ -1962,6 +1962,18 @@ uni-scroll-view,
               color: #576b95;
             }
 
+            .acgn-badge {
+              font-size: 20rpx;
+              color: #db2777;
+              background-color: #fdf2f8;
+              border: 1rpx solid #fbcfe8;
+              padding: 2rpx 12rpx;
+              border-radius: 9999rpx;
+              font-weight: 500;
+              display: inline-flex;
+              align-items: center;
+            }
+
             .help-mini-tag {
               font-size: 20rpx;
               padding: 2rpx 10rpx;

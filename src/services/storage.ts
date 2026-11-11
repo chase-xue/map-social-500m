@@ -504,6 +504,43 @@ export function ensureInitialMockData(currentPos: Coordinates): StatusItem[] {
       },
       comments: [],
       likes: ["小夏 (精品咖啡师)"]
+    },
+    {
+      id: "mock_acgn_1",
+      userId: "user_coser",
+      userName: "荧光喵喵 (Coser)",
+      userAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+      latitude: pos220m.latitude - 0.0001,
+      longitude: pos220m.longitude + 0.0001,
+      content: "周末漫展正片返图出炉啦！今天出的魔法少女，周边有没有二次元同好一起吃谷或者约下次CP展出？🌸✨",
+      images: [
+        "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80"
+      ],
+      createdAt: Date.now() - 1000 * 60 * 18,
+      isAcgn: true,
+      acgnTag: "Cosplay",
+      authorProfile: {
+        id: "user_coser",
+        name: "荧光喵喵",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+        gender: "女",
+        age: 21,
+        bio: "二次元重度同好 / 漫展常驻 / 谷美手作 ✨",
+        phone: "13800009999",
+        showPhone: true
+      },
+      comments: [
+        {
+          id: "c_acgn_1",
+          statusId: "mock_acgn_1",
+          userId: "user_mike",
+          userName: "阿泽",
+          userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+          content: "返图好棒！下次同城漫展一起去打卡呀～🌸",
+          createdAt: Date.now() - 1000 * 60 * 10
+        }
+      ],
+      likes: ["小夏 (精品咖啡师)", "阿泽", "夜跑阿健"]
     }
   ];
 

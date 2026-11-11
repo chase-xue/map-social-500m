@@ -62,6 +62,7 @@
             <view class="cell-top-row">
               <view class="cell-name-box">
                 <text class="cell-user-name">{{ st.userName }}</text>
+                <text v-if="st.isAcgn" class="tag-acgn">🌸 {{ st.acgnTag || '二次元' }}</text>
                 <text v-if="sIdx === 0" class="tag-first">首发者</text>
                 <text v-if="st.isEmergency" class="tag-sos">🚨 救命呼救</text>
                 <text v-else-if="st.isHelp" class="tag-help">🆘 急事求助</text>
@@ -304,6 +305,16 @@ const {
           font-size: 30rpx;
           font-weight: 600;
           color: #576b95;
+        }
+
+        .tag-acgn {
+          font-size: 18rpx;
+          color: #db2777;
+          background-color: #fdf2f8;
+          border: 1rpx solid #fbcfe8;
+          padding: 2rpx 8rpx;
+          border-radius: 6rpx;
+          font-weight: 500;
         }
 
         .tag-first {

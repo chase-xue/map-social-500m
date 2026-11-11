@@ -157,6 +157,8 @@ const publishVisible = ref(false);
 const newPostContent = ref("");
 const pickedImages = ref<string[]>([]);
 const isPublishing = ref(false);
+const isAcgnPost = ref(false);
+const acgnTag = ref("Cosplay");
 
 // ============ HELP 求助 ============
 const helpSheetVisible = ref(false);
@@ -306,6 +308,13 @@ const mapMarkers = computed<MapMarker[]>(() => {
       calloutBg = "#EEF2FFEE";
       calloutColor = "#4338CA";
       calloutContent = `🔥 [首图] ${firstItem.userName}等 · 共${cluster.count}条状态\n📍 ${brief} (点击查看)`;
+    } else if (firstItem.isAcgn) {
+      const cmtCount = firstItem.comments?.length ? ` [💬${firstItem.comments.length}]` : "";
+      calloutBg = "#FDF2F8EE";
+      calloutColor = "#9D174D";
+      const tagText = firstItem.acgnTag ? `·${firstItem.acgnTag}` : "";
+      const myTag = isMyStatus ? "⭐我发的 " : "";
+      calloutContent = `🌸 [二次元${tagText}] ${myTag}${firstItem.userName} (${firstItem.distance}m)${hasImg}${cmtCount}\n${brief}`;
     } else {
       const cmtCount = firstItem.comments?.length ? ` [💬${firstItem.comments.length}]` : "";
       calloutBg = isMyStatus ? "#FFFBEBEE" : "#FFFFFFEE";
@@ -768,6 +777,8 @@ function openPublishSheet(mode: PublishMode = "moments") {
   pickedImages.value = [];
   helpContactPhone.value = myProfile.value.phone || "";
   isEmergencyHelp.value = mode === "emergency";
+  isAcgnPost.value = false;
+  acgnTag.value = "Cosplay";
 }
 
 function closePublishSheet(force = false) {
@@ -836,6 +847,8 @@ async function submitNewPost() {
       content: content || "分享了此地的风景",
       images: savedPaths,
       authorProfile: { ...myProfile.value },
+      isAcgn: isAcgnPost.value,
+      acgnTag: isAcgnPost.value ? acgnTag.value : undefined,
     });
     allStatuses.value = readLocalData();
     closePublishSheet(true);
@@ -1000,6 +1013,7 @@ export function useAppState() {
     chooseCommentImage, removeCommentImage, handleSendComment,
     // 发布
     currentPublishMode, publishVisible, newPostContent, pickedImages, isPublishing,
+    isAcgnPost, acgnTag,
     openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost, addPresetSamplePhoto,
     // HELP 求助
     helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,

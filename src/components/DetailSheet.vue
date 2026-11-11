@@ -44,6 +44,7 @@
           <view class="author-info-col" @tap="viewAuthorProfile(activeStatus)">
             <view class="author-name-row">
               <text class="author-name">{{ activeStatus?.userName }}</text>
+              <text v-if="activeStatus?.isAcgn" class="acgn-badge">🌸 二次元 · {{ activeStatus.acgnTag || '同好' }}</text>
               <text v-if="activeStatus?.userId === myProfile.id" class="author-badge-me">我</text>
               <text
                 v-if="activeStatus?.authorProfile?.gender"
@@ -451,6 +452,18 @@ function handleToggleLike() {
         font-size: 32rpx;
         font-weight: 600;
         color: #576b95;
+      }
+
+      .acgn-badge {
+        font-size: 20rpx;
+        color: #db2777;
+        background-color: #fdf2f8;
+        border: 1rpx solid #fbcfe8;
+        padding: 2rpx 12rpx;
+        border-radius: 9999rpx;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
       }
 
       .author-badge-me {

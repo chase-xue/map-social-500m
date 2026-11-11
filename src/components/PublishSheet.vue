@@ -116,6 +116,44 @@
           </view>
         </view>
 
+        <!-- 行 1.5: 标注为二次元动态 -->
+        <view v-if="currentPublishMode !== 'emergency'" class="wechat-cell-row acgn-toggle-row">
+          <view class="row-left">
+            <text class="cell-icon">🌸</text>
+            <view class="acgn-label-col">
+              <text class="cell-label">标注为二次元动态</text>
+              <text class="acgn-sub-tip">Cosplay · 漫展 · 吃谷 · 番剧同好</text>
+            </view>
+          </view>
+          <view class="row-right">
+            <switch
+              :checked="isAcgnPost"
+              @change="isAcgnPost = $event.detail.value"
+              color="#ec4899"
+              class="wechat-switch"
+            />
+          </view>
+        </view>
+
+        <!-- 二次元细分标签选择区 -->
+        <view v-if="currentPublishMode !== 'emergency' && isAcgnPost" class="acgn-subtags-section">
+          <view class="subtags-heading">
+            <text class="subtags-title">选择二次元细分同好标签：</text>
+          </view>
+          <view class="subtags-pills-wrap">
+            <view
+              v-for="tag in ACGN_TAGS"
+              :key="tag.name"
+              class="acgn-pill"
+              :class="{ 'acgn-pill-active': acgnTag === tag.name }"
+              @tap="acgnTag = tag.name"
+            >
+              <text class="pill-emoji">{{ tag.emoji }}</text>
+              <text class="pill-label">{{ tag.name }}</text>
+            </view>
+          </view>
+        </view>
+
         <!-- 行 2: 救命求助专属 - 紧急联系电话 -->
         <view v-if="currentPublishMode === 'emergency'" class="wechat-cell-row">
           <view class="row-left">
@@ -181,9 +219,18 @@ import { useAppState } from "../composables/useAppState";
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
   isPublishing, myProfile, helpContactPhone,
+  isAcgnPost, acgnTag,
   closePublishSheet, chooseImages, removePickedImage, previewImage, addPresetSamplePhoto,
   submitNewPost, submitHelpPost, openMyProfileSheet, switchMainTab
 } = useAppState();
+
+const ACGN_TAGS = [
+  { emoji: "👗", name: "Cosplay" },
+  { emoji: "🛍️", name: "谷美/吃谷" },
+  { emoji: "🎪", name: "漫展打卡" },
+  { emoji: "📺", name: "番剧安利" },
+  { emoji: "🎮", name: "游戏同好" },
+];
 
 const canSubmit = computed(() => {
   return !!newPostContent.value.trim() || pickedImages.value.length > 0;
@@ -490,6 +537,78 @@ async function handlePublish() {
             &.pill-emergency.pill-active {
               background-color: #fa5151;
               border-color: #fa5151;
+            }
+          }
+        }
+      }
+
+      &.acgn-toggle-row {
+        .acgn-label-col {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+
+          .acgn-sub-tip {
+            font-size: 11px;
+            color: #ec4899;
+          }
+        }
+
+        .wechat-switch {
+          transform: scale(0.85);
+          transform-origin: right center;
+        }
+      }
+    }
+
+    .acgn-subtags-section {
+      background-color: #fdf2f8;
+      border-bottom: 0.5px solid #fbcfe8;
+      padding: 10px 20px 14px;
+
+      .subtags-heading {
+        margin-bottom: 8px;
+
+        .subtags-title {
+          font-size: 12px;
+          color: #be185d;
+          font-weight: 500;
+        }
+      }
+
+      .subtags-pills-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .acgn-pill {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 12px;
+          border-radius: 16px;
+          background-color: #ffffff;
+          border: 1px solid #f472b6;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          .pill-emoji {
+            font-size: 13px;
+          }
+
+          .pill-label {
+            font-size: 12px;
+            color: #9d174d;
+            font-weight: 500;
+          }
+
+          &.acgn-pill-active {
+            background-color: #ec4899;
+            border-color: #db2777;
+
+            .pill-label {
+              color: #ffffff;
+              font-weight: 600;
             }
           }
         }

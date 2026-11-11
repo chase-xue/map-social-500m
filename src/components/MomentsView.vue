@@ -75,6 +75,7 @@
             <view class="author-row">
               <view class="author-name-box" @tap.stop="viewAuthorProfile(item)">
                 <text class="author-name">{{ item.userName }}</text>
+                <text v-if="item.isAcgn" class="acgn-badge">🌸 二次元 · {{ item.acgnTag || '同好' }}</text>
                 <text v-if="item.isHelp && isHelpResolvedPromptVisible(item)" class="help-mini-tag" :class="{ emergency: item.isEmergency && !item.helpResolved, resolved: item.helpResolved }">
                   {{ item.helpResolved ? '✅已解决' : item.isEmergency ? '🚨救命求助' : '🆘急事求助' }}
                 </text>

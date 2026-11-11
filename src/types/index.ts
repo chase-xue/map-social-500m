@@ -80,6 +80,8 @@ export interface StatusItem {
   helpResolved?: boolean;            // 问题是否已解决 (由发起人关闭)
   helpResolvedTime?: number;         // 解决关闭时间戳 (用于2小时后提示自动消失)
   helpContactPhone?: string;         // 紧急求助联系电话
+  isAcgn?: boolean;                  // 是否标注为二次元动态 (ACGN / 二次元同好)
+  acgnTag?: string;                  // 二次元细分子标签 (如 Cosplay / 谷子市集 / 漫展打卡 / 番剧安利)
 }
 
 export interface MapMarker {
