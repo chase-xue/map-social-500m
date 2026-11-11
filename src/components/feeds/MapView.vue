@@ -71,15 +71,8 @@
         <text class="help-btn-label">HELP</text>
       </view>
 
-      <view class="control-btn" @tap="recenterToUser" hover-class="btn-hover" title="我的位置">
-        <text class="btn-icon">🎯</text>
-      </view>
       <view class="control-btn" @tap="refreshNearbyStatuses" hover-class="btn-hover" title="刷新">
         <text class="btn-icon">🔄</text>
-      </view>
-      <view class="control-btn debug-btn" @tap="simulateUserMove" hover-class="btn-hover" title="模拟走动">
-        <text class="btn-icon">🚶</text>
-        <text class="debug-text">走动</text>
       </view>
     </view>
 
