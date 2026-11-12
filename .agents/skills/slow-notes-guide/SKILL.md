@@ -61,17 +61,30 @@ description: >-
 1. **❌ 绝对严禁调用原生未经封装的 `uni.showActionSheet` 或原生居中白底 `uni.showModal`**：
    * 原生控件在 Web H5 上是生硬冰冷的黑白弹窗，直接打破用户的沉浸感。
    * **✅ 必须使用全局统一的「拟物手账抽屉 (Bottom Drawer)」**，底部带提手小把手、毛玻璃遮罩、信纸卡片色块与火漆实物浮雕微章！
-2. **❌ 绝对严禁使用“说明书式”长句子作为界面 Label**：
+2. **❌ 绝对严禁信息重复堆砌与卡片头部臃肿**：
+   * 动态卡片与详情页作者栏必须保持极致纯净呼吸感：仅保留「头像 + 昵称 + 勋章」以及时间行。
+   * **严禁在卡片/详情页作者栏塞入年龄胶囊或“进TA桌洞”按钮**！年龄与“进TA桌洞”入口一律收归在**点击作者头像后弹出的【详细资料名片 (UserCardModal)】**中。
+   * **严禁重复曝光距离**：动态卡片仅在底部位置条展示模糊距离，严禁右上角与底部重复出现两遍定位。
+3. **❌ 绝对严禁使用“说明书式”长句子作为界面 Label**：
    * 杜绝诸如“便签贴纸色彩挑选属于此地心情的彩纸底色”、“想要亲手写字？点击进入真迹手写绘板”这类啰嗦口号把界面撑爆折行。
    * 保持克制、优雅、留白。
-3. **❌ 绝对严禁 Emoji 满屏泛滥堆砌**：
+4. **❌ 绝对严禁 Emoji 满屏泛滥堆砌**：
    * 保持单屏 Emoji 数量克制，不搞十几个花里胡哨的大图标，突出主要操作。
 
 ---
 
 ## 三、 各核心页面交互规范 (Screen Specifications)
 
-### 1. 慢纸条聊天会话页 (ChatSheet)
+### 1. 动态信息流与详情页 (Moments & DetailSheet)
+* **作者行规范**：
+  * 左侧头像（点击进入名片），中间作者名 + 二次元/身份勋章，下方发布时间 + 模糊生活圈；
+  * 不堆砌冗余按钮，点击作者头像即可进入个人名片查看年龄与进入桌洞。
+* **详情页点赞交互**：
+  * 右上角手账米金药丸点赞胶囊，未赞显示 `🤍 点赞`，点赞后响应为 `❤️ 已赞`，下方点赞名单实时双向绑定更新。
+* **底部拟物留言簿**：
+  * `#FAF6F0` 温暖和纸底栏，圆角胶囊输入框搭配复古相机与陶土暖橙发送按钮。
+
+### 2. 慢纸条聊天会话页 (ChatSheet)
 * **顶栏**：
   * 左侧 `‹ 返回`；居中好友名 + `📍 {{ formatDistance }} · 慢纸条互传`；右侧木质温润小胶囊 `🪟 进TA桌洞`。
 * **消息气泡**：
@@ -84,28 +97,46 @@ description: >-
   * 中层：微暖和纸自适应多行输入台。
   * 右侧：实体微悬浮 `🕊️ 寄出` 按键，输入字后激活为陶土深褐色，伴随纸飞机起飞动画。
 
-### 2. 贴便签发布页 (PublishSheet)
-* **顶栏**：极简 `取消` | `贴便签` | `贴上`（激活时深木褐高亮）。
-* **便签纸画布**：顶部贴和纸胶带，便签底色动态随选（黄、粉、蓝、绿、牛皮），内嵌底部色盘与字数 `0/500`，杜绝冗余重复跳转。
-* **场景与属性卡片**：分组卡片容纳分段器（关注动态/地图便签/求助）、二次元同好、500米位置、可见度。
-* **提交动效**：拟物刷浆糊动效，丝滑贴上地图。
-
 ### 3. 写字台桌洞主页 (DeskHoleTab)
 * **全景视口**：面对窗户的实木写字台，白纱窗帘随风轻动，窗外呈现实时/切换天气（晴空光晕、雨天雨丝、静夜星月）。
+* **客座书桌模式**：从名片或会话点击进入TA人桌洞时，顶栏切换为「客座桌洞 · XX 的书桌」，右上角呈现「‹ 回我桌洞」，底部切换为「✍️ 在TA窗台写便签」与「✉️ 给TA塞小纸条」。
 * **回忆录日记本**：复古线装翻页、侧边做旧多层纸张。
 * **桌洞抽屉**：拉开抽屉查看收到的秘密纸条，支持一键回信。
 
 ---
 
-## 四、 工程与发布标准 (Engineering Standards)
+## 四、 代码生命周期与工程时序安全准则 (Code Lifecycle Safety)
 
-1. **框架与语法**：
+1. **弹窗关闭与跨页跳转时序安全**：
+   * 在通过点击事件关闭当前弹窗（例如 `closeDetailSheet(true)` / `closeChatSheet(true)`）并导航到其他页面（如 `visitDesk(...)`）时，**必须先解构缓存目标实体数据，再执行关闭**！
+   ```typescript
+   // ❌ 错误示范：关闭弹窗将 activeStatus 置为 null 后引发 TypeError 空指针崩溃
+   closeDetailSheet(true);
+   visitDesk(activeStatus.value.userId, ...);
+
+   // ✅ 严格标准：提前解构
+   if (!activeStatus.value) return;
+   const { userId, userName, userAvatar } = activeStatus.value;
+   closeDetailSheet(true);
+   visitDesk(userId, userName, userAvatar);
+   ```
+
+2. **框架与语法**：
    * Uni-App Vue 3 `<script setup lang="ts">` + SCSS 模块化样式。
    * 状态管理通过 `useAppState.ts` 与 `services/storage.ts`、`services/slowNotesService.ts` 保持纯粹契约。
-2. **构建与自测**：
+
+3. **全项目知识图谱维护 (Graphify Knowledge Graph)**：
+   * 知识图谱产物存储于 `graphify-out/`：
+     * `graph.html`：项目交互式架构与调用全景图谱
+     * `graph.json`：GraphRAG 拓扑结构数据
+     * `GRAPH_REPORT.md`：架构社区与核心 Hub 执行报告
+   * 运行 `/graphify` 或 `graphify /Users/trovant/map --code-only && graphify cluster-only /Users/trovant/map` 自动增量热同步。
+
+4. **构建与自测**：
    * 修改后必须运行 `npm run build:h5`，保证 0 编译警告与 0 错误。
    * 必须通过浏览器 QA 智能体真机走查截图回验。
-3. **双分支发布闭环**：
+
+5. **双分支发布闭环**：
    * 提交源码：`git -c http.proxy="" -c https.proxy="" push origin master`
    * 部署在线：`npm run deploy:h5`（或将 `dist/build/h5` 强推至 `gh-pages` 分支）
    * 确保用户在 [https://chase-xue.github.io/map-social-500m/](https://chase-xue.github.io/map-social-500m/) 随时获得最新体验。
