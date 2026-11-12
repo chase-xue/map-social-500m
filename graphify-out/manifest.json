@@ -10,9 +10,9 @@
     "semantic_hash": "a003298f749af16a46f45501bb3415e7"
   },
   "src/composables/useAppState.ts": {
-    "mtime": 1794462839.341659,
-    "ast_hash": "ea220e0d096c6d7f38800f7a17cbf41d",
-    "semantic_hash": "ea220e0d096c6d7f38800f7a17cbf41d"
+    "mtime": 1794465452.4657075,
+    "ast_hash": "4361f5a18f6d5ce47db37f12285e7d9c",
+    "semantic_hash": "4361f5a18f6d5ce47db37f12285e7d9c"
   },
   "src/main.ts": {
     "mtime": 1794389359.65895,
@@ -165,9 +165,9 @@
     "semantic_hash": "151509474c3676a01ccd750bb4411ff0"
   },
   "src/components/modals/UserCardModal.vue": {
-    "mtime": 1794464607.6645808,
-    "ast_hash": "76a3996ceb8205a2e5cf9e14ad5484f1",
-    "semantic_hash": "76a3996ceb8205a2e5cf9e14ad5484f1"
+    "mtime": 1794465147.9846733,
+    "ast_hash": "ec82544fc274c65afa8282c3d8e1232a",
+    "semantic_hash": "ec82544fc274c65afa8282c3d8e1232a"
   },
   "src/components/tabs/ChatsTab.vue": {
     "mtime": 1794392896.9588668,
@@ -265,9 +265,9 @@
     "semantic_hash": "6e5815c0c2682d544d66d6f78b5ab1a2"
   },
   "src/components/tabs/DeskHoleTab.vue": {
-    "mtime": 1794462872.5020301,
-    "ast_hash": "19bed4606824ca0304ed38de0014ff5a",
-    "semantic_hash": "19bed4606824ca0304ed38de0014ff5a"
+    "mtime": 1794465654.5485282,
+    "ast_hash": "913dcf93270b3dd685330e12cc90091b",
+    "semantic_hash": "913dcf93270b3dd685330e12cc90091b"
   },
   "src/components/tabs/GrowthSettingsTab.vue": {
     "mtime": 1794463727.0126748,

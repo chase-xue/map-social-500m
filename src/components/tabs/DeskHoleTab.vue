@@ -2,7 +2,7 @@
   <view class="desk-hole-container" :class="'theme-' + currentDesk.theme">
     <!-- 顶部状态与访客信息栏 -->
     <view class="desk-top-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="desk-user-info">
+      <view class="desk-user-info" @tap="handleViewOwnerProfile" title="点击查看资料">
         <image class="owner-avatar" :src="currentDesk.ownerAvatar" mode="aspectFill" />
         <view class="owner-meta">
           <view class="owner-name-row">
@@ -278,7 +278,7 @@
 
         <!-- 便签头部：作者信息与发布时间 -->
         <view class="inspect-header">
-          <view class="inspect-author-info">
+          <view class="inspect-author-info clickable" @tap="handleViewNoteAuthorProfile" title="点击查看作者资料">
             <image class="inspect-avatar" :src="inspectingNote.authorAvatar" mode="aspectFill" />
             <view class="inspect-meta">
               <text class="inspect-author-name">{{ inspectingNote.authorName }}</text>
@@ -329,7 +329,7 @@
       <view class="secret-letter-card">
         <!-- 信封顶部火漆封口 / 邮戳 -->
         <view class="letter-top-row">
-          <view class="letter-sender-info">
+          <view class="letter-sender-info clickable" @tap="handleViewSecretSenderProfile" title="点击查看资料">
             <image class="letter-modal-avatar" :src="activeSecretNote.senderAvatar" mode="aspectFill" />
             <view class="letter-sender-meta">
               <text class="letter-sender-name">{{ activeSecretNote.senderName }}</text>
@@ -379,7 +379,14 @@ import {
 import { useAppState } from "../../composables/useAppState";
 import HandwritingPad from "../common/HandwritingPad.vue";
 
-const { statusBarHeight, openChatWithFriend, getFriendsList, targetVisitingDesk } = useAppState();
+const {
+  statusBarHeight,
+  openChatWithFriend,
+  getFriendsList,
+  targetVisitingDesk,
+  openProfileByUserId,
+  openMyProfileSheet
+} = useAppState();
 
 const currentDesk = ref<DeskHoleData>(getMyDeskData());
 const isVisitingOther = ref(false);
@@ -634,6 +641,24 @@ function visitUserDesk(userId: string, name: string, avatar: string) {
   isVisitingOther.value = true;
 }
 
+function handleViewOwnerProfile() {
+  if (isVisitingOther.value) {
+    openProfileByUserId(currentDesk.value.ownerId, currentDesk.value.ownerName, currentDesk.value.ownerAvatar);
+  } else {
+    openMyProfileSheet();
+  }
+}
+
+function handleViewNoteAuthorProfile() {
+  if (!inspectingNote.value) return;
+  openProfileByUserId(inspectingNote.value.authorId, inspectingNote.value.authorName, inspectingNote.value.authorAvatar);
+}
+
+function handleViewSecretSenderProfile() {
+  if (!activeSecretNote.value) return;
+  openProfileByUserId(activeSecretNote.value.senderId, activeSecretNote.value.senderName, activeSecretNote.value.senderAvatar);
+}
+
 defineExpose({
   visitUserDesk
 });
@@ -675,6 +700,14 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+
+  &:active {
+    transform: scale(0.97);
+    opacity: 0.88;
+  }
 }
 
 .owner-avatar {
@@ -1757,6 +1790,12 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:active {
+    opacity: 0.8;
+  }
 }
 
 .inspect-avatar {
@@ -1930,6 +1969,12 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:active {
+    opacity: 0.8;
+  }
 }
 
 .letter-modal-avatar {

@@ -666,6 +666,23 @@ function openUserProfileCard(profile: UserProfile, distance?: number) {
   userCardVisible.value = true;
 }
 
+function openProfileByUserId(userId: string, name?: string, avatar?: string) {
+  if (!userId || userId === myProfile.value.id) {
+    openMyProfileSheet();
+    return;
+  }
+  const statusMatch = allStatuses.value.find((s) => s.userId === userId);
+  const profile: UserProfile = statusMatch?.authorProfile || {
+    id: userId,
+    name: name || statusMatch?.userName || "邻友",
+    avatar: avatar || statusMatch?.userAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+    gender: "保密",
+    age: 24,
+    bio: "慢下来，在500米的生活圈里写下真实的自己～",
+  };
+  openUserProfileCard(profile, statusMatch?.distance || 300);
+}
+
 function closeUserCard(force = false) {
   if (!force && Date.now() - lastModalOpenTime < 450) return;
   userCardVisible.value = false;
@@ -1202,7 +1219,7 @@ export function useAppState() {
     openMyProfileSheet, closeMyProfileSheet, chooseNewAvatar, saveMyProfile, onPhonePrivacyChange,
     // 他人资料卡
     userCardVisible, viewingProfile, viewingDistance,
-    openUserProfileCard, closeUserCard, viewAuthorProfile, viewCommenterProfile, makePhoneCall,
+    openUserProfileCard, openProfileByUserId, closeUserCard, viewAuthorProfile, viewCommenterProfile, makePhoneCall,
     // 状态
     allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses, recommendedStatuses, acgnStatuses, dailySponsoredAd,
     searchRadius, mapSearchKeyword, toggleSearchRadius,
