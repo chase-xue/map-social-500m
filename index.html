@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <link rel="stylesheet" href="/map-social-500m/assets/uni.c3a4c6eb.css">
+
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <script>
+      var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(safe-area-inset-top)') || CSS.supports('top: constant(safe-area-inset-top)'))
+      document.write('<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' + (coverSupport ? ', viewport-fit=cover' : '') + '" />')
+    </script>
+    <title>500米地图生活圈</title>
+    <!-- 高德地图 JS API 2.0 SDK -->
+    <script type="text/javascript">
+      window._AMapSecurityConfig = {
+        securityJsCode: '30e981d321c13aaf1f650681f7dd28ac',
+      }
+    </script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=c346b4d9093870f67631b4686ceccd1e"></script>
+    <style>
+      /* 彻底移除高德地图 Logo、水印与版权号，打造极致纯净的 Zenly 级地图体验 */
+      .amap-logo,
+      .amap-copyright,
+      .amap-mcode,
+      div[class*="amap-logo"],
+      div[class*="amap-copyright"],
+      a[class*="amap-logo"],
+      .amap-maps .amap-logo,
+      .amap-maps .amap-copyright,
+      uni-map .amap-logo,
+      uni-map .amap-copyright {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        bottom: -9999px !important;
+        overflow: hidden !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/map-social-500m/assets/index-h5k9pWjL.js"></script>
+    <link rel="stylesheet" crossorigin href="/map-social-500m/assets/index-D4-wXIj0.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
