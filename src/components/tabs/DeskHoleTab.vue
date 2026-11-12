@@ -269,6 +269,60 @@
         </scroll-view>
       </view>
     </view>
+
+    <!-- 🔍 窗台便签放大展开检视弹窗 (支持查看手写真迹、撕下带走、点赞) -->
+    <view v-if="inspectModalVisible && inspectingNote" class="note-inspect-overlay" @tap.self="closeInspectModal">
+      <view class="note-inspect-modal" :class="['paper-' + inspectingNote.color]">
+        <!-- 和纸胶带 -->
+        <view class="inspect-washi-tape" />
+
+        <!-- 便签头部：作者信息与发布时间 -->
+        <view class="inspect-header">
+          <view class="inspect-author-info">
+            <image class="inspect-avatar" :src="inspectingNote.authorAvatar" mode="aspectFill" />
+            <view class="inspect-meta">
+              <text class="inspect-author-name">{{ inspectingNote.authorName }}</text>
+              <text class="inspect-time">{{ formatRelativeTime(inspectingNote.createdAt) }} 贴在窗台上</text>
+            </view>
+          </view>
+          <text class="inspect-close-btn" @tap="closeInspectModal">✕</text>
+        </view>
+
+        <!-- 便签主体：手写真迹大图 或 规整纸张手写文本 -->
+        <view class="inspect-body">
+          <!-- 如果是真迹手写图片 -->
+          <view v-if="isHandwritingImg(inspectingNote.content)" class="inspect-handwriting-wrapper">
+            <image
+              class="inspect-full-hw-img"
+              :src="inspectingNote.content"
+              mode="widthFix"
+            />
+          </view>
+          <!-- 如果是纯文字便签 -->
+          <view v-else class="inspect-text-wrapper">
+            <text class="inspect-full-text">{{ inspectingNote.content }}</text>
+          </view>
+        </view>
+
+        <!-- 便签底部操作栏：点赞 ❤️、撕下带走/删除 🗑️、贴回窗台 📌 -->
+        <view class="inspect-footer">
+          <view class="inspect-action-btn like-btn" @tap="likeInspectingNote">
+            <text class="action-icon">❤️</text>
+            <text class="action-label">{{ inspectingNote.likes }} 喜欢</text>
+          </view>
+
+          <view v-if="inspectingNote.isMine" class="inspect-action-btn delete-btn" @tap="removeInspectingNote">
+            <text class="action-icon">🗑️</text>
+            <text class="action-label">撕下带走</text>
+          </view>
+
+          <view class="inspect-action-btn close-btn" @tap="closeInspectModal">
+            <text class="action-icon">📌</text>
+            <text class="action-label">贴回窗台</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -280,6 +334,7 @@ import {
   saveMyDeskData,
   getOtherUserDeskData,
   postWindowNote,
+  removeWindowNote,
   DeskHoleData,
   WindowNoteItem,
   DrawerSecretNote
@@ -302,6 +357,10 @@ const diaryModalVisible = ref(false);
 const handwritingPadVisible = ref(false);
 const isFoldingFlying = ref(false);
 const peelingNoteId = ref<string | null>(null);
+
+// 窗台便签放大展开检视弹窗状态
+const inspectModalVisible = ref(false);
+const inspectingNote = ref<WindowNoteItem | null>(null);
 
 const themeList = [
   { key: "wood" as DeskTheme, name: "温暖橡木", icon: "🪵" },
@@ -426,19 +485,48 @@ function closeDrawer() {
   drawerDragY.value = 0;
 }
 
-// 撕取并检视便签 (带物理剥离微翘动画)
+// 撕取并打开便签检视弹窗 (带物理微翘动效)
 function peelAndInspectNote(note: WindowNoteItem) {
   peelingNoteId.value = note.id;
   setTimeout(() => {
     peelingNoteId.value = null;
-  }, 400);
+    inspectingNote.value = note;
+    inspectModalVisible.value = true;
+  }, 220);
+}
 
-  note.likes += 1;
-  uni.showToast({ title: "轻轻撕角揭开 · 为便签点赞 ❤️", icon: "none" });
+function closeInspectModal() {
+  inspectModalVisible.value = false;
+  inspectingNote.value = null;
+}
+
+function likeInspectingNote() {
+  if (!inspectingNote.value) return;
+  inspectingNote.value.likes += 1;
   saveMyDeskData(currentDesk.value);
+  uni.showToast({ title: "已为便签点赞 ❤️", icon: "none" });
+}
+
+function removeInspectingNote() {
+  if (!inspectingNote.value) return;
+  const idToRemove = inspectingNote.value.id;
+  removeWindowNote(idToRemove);
+  currentDesk.value = getMyDeskData();
+  closeInspectModal();
+  uni.showToast({ title: "已撕下窗台便签 🗑️", icon: "success" });
+}
+
+function formatRelativeTime(ts: number): string {
+  if (!ts) return "刚刚";
+  const diff = Date.now() - ts;
+  if (diff < 60000) return "刚刚";
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+  return `${Math.floor(diff / 86400000)}天前`;
 }
 
 function isHandwritingImg(content: string): boolean {
+  if (!content) return false;
   return content.startsWith("data:image/") || content.startsWith("http");
 }
 
@@ -454,8 +542,8 @@ function onHandwritingConfirmed(dataUrl: string) {
   // 播放折纸飞机飞向窗台动画
   setTimeout(() => {
     isFoldingFlying.value = false;
-    const note = postWindowNote(currentDesk.value.ownerId, dataUrl, "yellow");
-    currentDesk.value.windowNotes.unshift(note);
+    postWindowNote(currentDesk.value.ownerId, dataUrl, "yellow");
+    currentDesk.value = getMyDeskData();
     uni.showToast({ title: "手写纸条已折起，贴上窗台！✨", icon: "success" });
   }, 1000);
 }
@@ -828,16 +916,21 @@ defineExpose({
 }
 
 .washi-sticky-note {
-  width: 96px;
-  min-height: 76px;
+  width: 102px;
+  min-height: 82px;
   border-radius: 4px;
-  padding: 8px;
+  padding: 8px 7px 6px;
   box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.22);
   display: flex;
   flex-direction: column;
   position: relative;
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
 .note-peeling {
@@ -883,9 +976,12 @@ defineExpose({
 
 .handwritten-note-img {
   width: 100%;
-  height: 44px;
+  height: 48px;
   margin-top: 4px;
-  border-radius: 2px;
+  border-radius: 3px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .note-body-txt {
@@ -1534,5 +1630,190 @@ defineExpose({
   background: #fff3e0;
   color: #e65100;
   font-weight: 700;
+}
+
+/* 🔍 便签放大展开检视弹窗 */
+.note-inspect-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: inspect-fade-in 0.2s ease-out;
+}
+
+@keyframes inspect-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.note-inspect-modal {
+  width: 100%;
+  max-width: 340px;
+  border-radius: 8px;
+  padding: 20px 16px 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: inspect-scale-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes inspect-scale-up {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.inspect-washi-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border-left: 1.5px dashed rgba(0, 0, 0, 0.25);
+  border-right: 1.5px dashed rgba(0, 0, 0, 0.25);
+}
+
+.inspect-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 0.5px dashed rgba(0, 0, 0, 0.15);
+}
+
+.inspect-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspect-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.inspect-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.inspect-author-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3e2723;
+}
+
+.inspect-time {
+  font-size: 10px;
+  color: #8d6e63;
+  margin-top: 1px;
+}
+
+.inspect-close-btn {
+  font-size: 16px;
+  color: #8d6e63;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+}
+
+.inspect-body {
+  margin: 14px 0;
+  min-height: 120px;
+  max-height: 55vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.inspect-handwriting-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  padding: 8px;
+  box-sizing: border-box;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.inspect-full-hw-img {
+  width: 100%;
+  max-height: 48vh;
+  object-fit: contain;
+}
+
+.inspect-text-wrapper {
+  padding: 6px 4px;
+}
+
+.inspect-full-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #3e2723;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.inspect-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-top: 10px;
+  border-top: 0.5px dashed rgba(0, 0, 0, 0.15);
+  gap: 8px;
+}
+
+.inspect-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  .action-icon {
+    font-size: 14px;
+  }
+
+  .action-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4e342e;
+  }
+
+  &.like-btn .action-label {
+    color: #c62828;
+  }
+
+  &.delete-btn .action-label {
+    color: #d32f2f;
+  }
 }
 </style>

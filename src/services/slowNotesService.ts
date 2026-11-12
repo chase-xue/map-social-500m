@@ -81,12 +81,13 @@ export function sendSlowPaperNote(
   const deliveredAt = createdAt + durationSeconds * 1000;
   const isDelivered = durationSeconds === 0;
 
+  const isImage = !!options.imageUri || content.startsWith("data:image/");
   const newMsg: ChatMessage = {
     id: "note_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
     senderId: me.id,
     receiverId,
-    content: content.slice(0, 70), // 严格限制70字
-    contentType: options.imageUri ? "image" : "text",
+    content: isImage ? (options.imageUri || content) : content.slice(0, 300),
+    contentType: isImage ? "image" : "text",
     createdAt,
     isSealed: options.isSealed ?? false,
     isAccelerated: false,
@@ -117,7 +118,9 @@ export function sendSlowPaperNote(
   const friends = getFriendsList();
   const f = friends.find(item => item.userId === receiverId);
   if (f) {
-    f.lastMessage = isDelivered ? content : `✈️ [纸条传递中] ${content.slice(0, 18)}...`;
+    f.lastMessage = isDelivered
+      ? (isImage ? "✍️ [手写真迹小纸条]" : content)
+      : `✈️ [纸条传递中] ${isImage ? "手写纸条" : content.slice(0, 18)}...`;
     f.lastMessageTime = createdAt;
     f.distanceMeters = distance;
     saveFriendsList(friends);

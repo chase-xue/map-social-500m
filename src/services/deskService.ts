@@ -53,7 +53,17 @@ export function getMyDeskData(): DeskHoleData {
   const raw = uni.getStorageSync(DESK_STORAGE_KEY);
   if (raw) {
     try {
-      return JSON.parse(raw);
+      const parsed: DeskHoleData = JSON.parse(raw);
+      // 清理之前因 slice 截断产生的损坏 base64 纸条
+      if (parsed.windowNotes) {
+        parsed.windowNotes = parsed.windowNotes.filter(n => {
+          if (n.content.startsWith("data:image/") && n.content.length < 200) {
+            return false;
+          }
+          return true;
+        });
+      }
+      return parsed;
     } catch (e) {}
   }
 
@@ -222,12 +232,14 @@ export function postWindowNote(
     } catch (e) {}
   }
 
+  const isImage = content.startsWith("data:image/") || content.startsWith("http");
+
   const newNote: WindowNoteItem = {
     id: "wn_" + Date.now(),
     authorId: "my_user_id",
     authorName: myName,
     authorAvatar: myAvatar,
-    content: content.slice(0, 70),
+    content: isImage ? content : content.slice(0, 300),
     color,
     createdAt: Date.now(),
     rotationDeg: Math.floor(Math.random() * 8) - 4,
@@ -240,4 +252,10 @@ export function postWindowNote(
   saveMyDeskData(desk);
 
   return newNote;
+}
+
+export function removeWindowNote(noteId: string): void {
+  const desk = getMyDeskData();
+  desk.windowNotes = desk.windowNotes.filter(n => n.id !== noteId);
+  saveMyDeskData(desk);
 }
