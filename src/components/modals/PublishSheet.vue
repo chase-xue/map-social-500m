@@ -1,6 +1,6 @@
 <template>
   <view v-if="publishVisible" class="wechat-publish-page" :style="{ paddingTop: statusBarHeight + 'px' }">
-    <!-- 1. 微信朋友圈标准顶栏: 取消 (左) | 居中标题 | 发表 (右) -->
+    <!-- 1. 极简优雅顶栏: 取消 (左) | 居中标题 | 贴上 (右) -->
     <view class="wechat-pub-header">
       <view class="pub-cancel-btn" @tap="closePublishSheet(true)">
         <text class="cancel-text">取消</text>
@@ -8,7 +8,7 @@
 
       <view class="pub-title-box">
         <text class="pub-title">
-          {{ currentPublishMode === 'emergency' ? '🚨 救命/急事呼救' : '🖌️ 小刷子刷浆糊 · 贴便签' }}
+          {{ currentPublishMode === 'emergency' ? '🚨 救命求助' : '贴便签' }}
         </text>
       </view>
 
@@ -23,28 +23,28 @@
           :loading="isPublishing"
           @tap="handlePublish"
         >
-          {{ currentPublishMode === 'emergency' ? '发送呼救' : '🖌️ 刷浆糊，贴上地图' }}
+          {{ currentPublishMode === 'emergency' ? '发送求助' : '贴上' }}
         </button>
       </view>
     </view>
 
-    <!-- 2. 救命呼救模式醒目提示条 -->
+    <!-- 2. 救命呼救模式警示横幅 -->
     <view v-if="currentPublishMode === 'emergency'" class="emergency-notice-banner">
       <text class="notice-icon">⚡</text>
-      <text class="notice-text">救命求助将在 500m 地图打上特大红色警报，并向周边邻友全站闪烁广播！</text>
+      <text class="notice-text">紧急求助将在周边 500 米地图标红，并向附近邻友广播！</text>
     </view>
 
     <!-- 3. 滚动输入与选项区 -->
     <scroll-view scroll-y class="pub-scroll-area">
-      <!-- 手写真迹 / 键盘文字便签模式快速切换栏 -->
+      <!-- 模式切换：键盘打字 / 真迹手写 -->
       <view v-if="currentPublishMode !== 'emergency'" class="pub-type-switcher-bar">
         <view
           class="pub-switch-pill"
           :class="{ 'pill-selected': !handwritingImg }"
           @tap="handwritingImg = ''"
         >
-          <text class="pill-ico">⌨️</text>
-          <text class="pill-txt">键盘文字便签</text>
+          <text class="pill-ico">📝</text>
+          <text class="pill-txt">键盘便签</text>
         </view>
         <view
           class="pub-switch-pill"
@@ -52,147 +52,152 @@
           @tap="showHandwritingPad = true"
         >
           <text class="pill-ico">✍️</text>
-          <text class="pill-txt">真迹手写纸条</text>
+          <text class="pill-txt">真迹手写</text>
         </view>
       </view>
 
-      <!-- 如果已手写，展示真迹纸条与和纸胶带预览 -->
-      <view v-if="handwritingImg" class="hw-preview-box" :class="'paper-' + selectedPaperColor">
+      <!-- 核心便签纸编辑卡片 (真实拟物纸张质感) -->
+      <view class="note-canvas-card" :class="'paper-' + selectedPaperColor">
+        <!-- 拟物和纸胶带 -->
         <view class="washi-tape-strip" />
-        <image class="hw-preview-img" :src="handwritingImg" mode="widthFix" />
-        <view class="hw-preview-actions">
-          <text class="hw-action-btn redo-btn" @tap="showHandwritingPad = true">✏️ 重新手写</text>
-          <text class="hw-action-btn del-btn" @tap="handwritingImg = ''">✕ 清除真迹</text>
-        </view>
-      </view>
 
-      <!-- 键盘普通文字输入区 -->
-      <view v-else class="wechat-textarea-box">
-        <textarea
-          class="wechat-textarea"
-          v-model="newPostContent"
-          :placeholder="placeholderText"
-          placeholder-class="wechat-pub-placeholder"
-          maxlength="500"
-          :auto-height="true"
-        />
-        <view class="quick-hw-trigger-row" @tap="showHandwritingPad = true">
-          <text class="quick-hw-link">✍️ 想要亲手写字？点击进入真迹手写绘板 ›</text>
-        </view>
-      </view>
-
-      <!-- 微信标准九宫格图片选择器 -->
-      <view class="wechat-grid-media">
-        <view
-          v-for="(img, index) in pickedImages"
-          :key="index"
-          class="media-grid-item"
-        >
-          <image
-            class="media-preview-img"
-            :src="img"
-            mode="aspectFill"
-            @tap="previewImage(img, pickedImages)"
-          />
-          <view class="media-delete-btn" @tap.stop="removePickedImage(index)">✕</view>
-        </view>
-
-        <!-- 添加图片方块 (+) -->
-        <view
-          v-if="pickedImages.length < 9"
-          class="media-grid-item add-box"
-          @tap="chooseImages"
-          hover-class="add-box-hover"
-        >
-          <svg class="plus-svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-        </view>
-      </view>
-
-      <!-- 快速填入精选街景配图 (方便免选图快捷测试与发布) -->
-      <view v-if="pickedImages.length < 9" class="quick-sample-row">
-        <text class="quick-sample-btn" @tap="addPresetSamplePhoto">📸 快捷添加街景美图</text>
-        <text class="quick-sample-tip">(已选 {{ pickedImages.length }}/9，点击图片可放大预览)</text>
-      </view>
-
-      <!-- 微信朋友圈经典列表功能行 (Hairline 分割线) -->
-      <view class="wechat-meta-rows">
-        <!-- 行 1: 发布类型三档切换 (发朋友圈 / 发状态 / 救命呼救) -->
-        <view class="wechat-cell-row">
-          <view class="row-left">
-            <text class="cell-icon">🏷️</text>
-            <text class="cell-label">发布类型</text>
+        <!-- 手写真迹模式 -->
+        <view v-if="handwritingImg" class="hw-preview-inner">
+          <image class="hw-preview-img" :src="handwritingImg" mode="widthFix" />
+          <view class="hw-preview-actions">
+            <text class="hw-action-btn redo-btn" @tap="showHandwritingPad = true">✏️ 重新手写</text>
+            <text class="hw-action-btn del-btn" @tap="handwritingImg = ''">✕ 清除</text>
           </view>
-          <view class="row-right mode-switcher-box">
+        </view>
+
+        <!-- 普通文字输入模式 -->
+        <view v-else class="note-input-inner">
+          <textarea
+            class="note-textarea"
+            v-model="newPostContent"
+            :placeholder="placeholderText"
+            placeholder-class="note-placeholder"
+            maxlength="500"
+            :auto-height="true"
+          />
+        </view>
+
+        <!-- 便签底色内嵌选择条 (告别占整行大表格的说明文字) -->
+        <view class="note-card-toolbar">
+          <view class="palette-group">
+            <text class="palette-label">底色</text>
+            <view class="palette-dots">
+              <view
+                v-for="c in paperColorList"
+                :key="c.key"
+                class="palette-dot"
+                :class="['dot-' + c.key, { 'dot-active': selectedPaperColor === c.key }]"
+                @tap="selectedPaperColor = c.key"
+              />
+            </view>
+          </view>
+          <text v-if="!handwritingImg" class="word-counter">{{ newPostContent.length }}/500</text>
+        </view>
+      </view>
+
+      <!-- 街景与配图选择区 (九宫格) -->
+      <view class="media-section">
+        <view class="media-header">
+          <text class="media-title">添加配图</text>
+          <text class="media-sub">{{ pickedImages.length }}/9</text>
+        </view>
+
+        <view class="wechat-grid-media">
+          <view
+            v-for="(img, index) in pickedImages"
+            :key="index"
+            class="media-grid-item"
+          >
+            <image
+              class="media-preview-img"
+              :src="img"
+              mode="aspectFill"
+              @tap="previewImage(img, pickedImages)"
+            />
+            <view class="media-delete-btn" @tap.stop="removePickedImage(index)">✕</view>
+          </view>
+
+          <!-- 添加图片方块 (+) -->
+          <view
+            v-if="pickedImages.length < 9"
+            class="media-grid-item add-box"
+            @tap="chooseImages"
+            hover-class="add-box-hover"
+          >
+            <text class="plus-icon">+</text>
+          </view>
+        </view>
+
+        <!-- 极简快捷配图引导 -->
+        <view v-if="pickedImages.length < 9" class="quick-sample-row">
+          <view class="quick-sample-btn" @tap="addPresetSamplePhoto">
+            <text class="sample-btn-txt">📸 快捷选用街景样例图</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 便签属性设置卡片 (精致分组列表) -->
+      <view class="settings-card">
+        <!-- 发布场景选择 -->
+        <view class="settings-row">
+          <text class="settings-label">发布场景</text>
+          <view class="scene-segmented">
             <view
-              class="mode-pill"
-              :class="{ 'pill-active': currentPublishMode === 'moments' }"
+              class="scene-seg-item"
+              :class="{ 'seg-active': currentPublishMode === 'moments' }"
               @tap="currentPublishMode = 'moments'"
             >
-              <text class="pill-text">📷 关注动态</text>
+              <text>关注动态</text>
             </view>
             <view
-              class="mode-pill"
-              :class="{ 'pill-active': currentPublishMode === 'status' }"
+              class="scene-seg-item"
+              :class="{ 'seg-active': currentPublishMode === 'status' }"
               @tap="currentPublishMode = 'status'"
             >
-              <text class="pill-text">📍 地图动态</text>
+              <text>地图便签</text>
             </view>
             <view
-              class="mode-pill pill-emergency"
-              :class="{ 'pill-active': currentPublishMode === 'emergency' }"
+              class="scene-seg-item seg-emergency"
+              :class="{ 'seg-active': currentPublishMode === 'emergency' }"
               @tap="currentPublishMode = 'emergency'"
             >
-              <text class="pill-text">🚨 救命呼救</text>
+              <text>求助</text>
             </view>
           </view>
         </view>
 
-        <!-- 便签底色选择 (小纸条/小便签拟物风格) -->
-        <view class="wechat-cell-row">
-          <view class="row-left">
-            <text class="cell-icon">🎨</text>
-            <view class="acgn-label-col">
-              <text class="cell-label">便签贴纸色彩</text>
-              <text class="acgn-sub-tip">挑选属于此地心情的彩纸底色</text>
-            </view>
-          </view>
-          <view class="row-right color-palette-chips">
-            <view
-              v-for="c in paperColorList"
-              :key="c.key"
-              class="paper-dot"
-              :class="['dot-' + c.key, { 'dot-active': selectedPaperColor === c.key }]"
-              @tap="selectedPaperColor = c.key"
-            />
-          </view>
+        <!-- 紧急联系电话 (求助模式专属) -->
+        <view v-if="currentPublishMode === 'emergency'" class="settings-row">
+          <text class="settings-label">紧急电话</text>
+          <input
+            class="phone-input"
+            v-model="helpContactPhone"
+            placeholder="方便邻友联系的手机号"
+            maxlength="11"
+          />
         </view>
 
-        <!-- 行 1.5: 标注为二次元动态 -->
-        <view v-if="currentPublishMode !== 'emergency'" class="wechat-cell-row acgn-toggle-row">
-          <view class="row-left">
-            <text class="cell-icon">🌸</text>
-            <view class="acgn-label-col">
-              <text class="cell-label">标注为二次元动态</text>
-              <text class="acgn-sub-tip">Cosplay · 漫展 · 吃谷 · 番剧同好</text>
-            </view>
+        <!-- 二次元动态开关 -->
+        <view v-if="currentPublishMode !== 'emergency'" class="settings-row">
+          <view class="label-with-hint">
+            <text class="settings-label">🌸 二次元同好</text>
+            <text class="settings-hint">漫展 / 吃谷 / 痛包 / 番剧</text>
           </view>
-          <view class="row-right">
-            <switch
-              :checked="isAcgnPost"
-              @change="isAcgnPost = $event.detail.value"
-              color="#ec4899"
-              class="wechat-switch"
-            />
-          </view>
+          <switch
+            :checked="isAcgnPost"
+            @change="isAcgnPost = $event.detail.value"
+            color="#ec4899"
+            class="compact-switch"
+          />
         </view>
 
-        <!-- 二次元细分标签选择区 -->
+        <!-- 二次元细分标签展开区 -->
         <view v-if="currentPublishMode !== 'emergency' && isAcgnPost" class="acgn-subtags-section">
-          <view class="subtags-heading">
-            <text class="subtags-title">选择二次元细分同好标签：</text>
-          </view>
           <view class="subtags-pills-wrap">
             <view
               v-for="tag in ACGN_TAGS"
@@ -207,55 +212,31 @@
           </view>
         </view>
 
-        <!-- 行 2: 救命求助专属 - 紧急联系电话 -->
-        <view v-if="currentPublishMode === 'emergency'" class="wechat-cell-row">
-          <view class="row-left">
-            <text class="cell-icon">📱</text>
-            <text class="cell-label">紧急联系电话</text>
-          </view>
-          <view class="row-right">
-            <input
-              class="phone-input"
-              v-model="helpContactPhone"
-              placeholder="请输入方便联系的手机号..."
-              maxlength="11"
-            />
+        <!-- 所在位置 -->
+        <view class="settings-row cell-clickable">
+          <text class="settings-label">所在位置</text>
+          <view class="settings-value-box">
+            <text class="settings-value">北京 · 500m 生活圈内</text>
+            <text class="settings-arrow">›</text>
           </view>
         </view>
 
-        <!-- 行 3: 所在位置 (显示当前 500m 中心点与地理标记) -->
-        <view class="wechat-cell-row">
-          <view class="row-left">
-            <text class="cell-icon">📍</text>
-            <text class="cell-label">所在位置</text>
-          </view>
-          <view class="row-right">
-            <text class="cell-value">北京 · 当前中心点 500m 内</text>
-            <text class="cell-arrow">›</text>
+        <!-- 谁可以看 -->
+        <view class="settings-row cell-clickable">
+          <text class="settings-label">谁可以看</text>
+          <view class="settings-value-box">
+            <text class="settings-value">公开（周边 500 米内可见）</text>
+            <text class="settings-arrow">›</text>
           </view>
         </view>
 
-        <!-- 行 4: 谁可以看 -->
-        <view class="wechat-cell-row">
-          <view class="row-left">
-            <text class="cell-icon">👥</text>
-            <text class="cell-label">谁可以看</text>
-          </view>
-          <view class="row-right">
-            <text class="cell-value">公开（周边500米邻友可见）</text>
-            <text class="cell-arrow">›</text>
-          </view>
-        </view>
-
-        <!-- 行 5: 发布身份 -->
-        <view class="wechat-cell-row" @tap="openMyProfileSheet">
-          <view class="row-left">
+        <!-- 发布身份 -->
+        <view class="settings-row cell-clickable" @tap="openMyProfileSheet">
+          <text class="settings-label">发布身份</text>
+          <view class="settings-value-box">
             <image class="author-mini-avatar" :src="myProfile.avatar" mode="aspectFill" />
-            <text class="cell-label">以我的身份发布</text>
-          </view>
-          <view class="row-right">
-            <text class="cell-value">{{ myProfile.name }}</text>
-            <text class="cell-arrow">›</text>
+            <text class="settings-value">{{ myProfile.name }}</text>
+            <text class="settings-arrow">›</text>
           </view>
         </view>
       </view>
@@ -267,7 +248,7 @@
     <view v-if="isBrushingGlue" class="brush-glue-overlay">
       <view class="brush-hand-icon">🖌️</view>
       <view class="glue-streak" />
-      <text class="brush-hint-text">小刷子正在刷胶水粘贴便签...</text>
+      <text class="brush-hint-text">正在粘贴便签...</text>
     </view>
 
     <!-- 真迹手写画板组件 -->
@@ -319,12 +300,12 @@ const canSubmit = computed(() => {
 
 const placeholderText = computed(() => {
   if (currentPublishMode.value === "emergency") {
-    return "请详细描述您遇到的紧急危急情况、具体位置及所需救助，周边 500 米邻友将第一时间收到全站警报广播...";
+    return "请详细描述您遇到的紧急求助情况及位置，周边 500 米邻友将收到广播警报...";
   }
   if (currentPublishMode.value === "status") {
-    return "写下此刻周边的风景、心情或新鲜事... (发布后将在 500 米地图自动打点)";
+    return "写下此刻周边的风景、心情或新鲜事，贴在 500 米地图上...";
   }
-  return "这一刻的想法...";
+  return "这一刻在想什么，或是周围的新鲜事...";
 });
 
 async function handlePublish() {
@@ -368,7 +349,7 @@ async function handlePublish() {
   inset: 0;
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
+  background-color: #f7f6f2;
   z-index: 120;
   display: flex;
   flex-direction: column;
@@ -376,24 +357,24 @@ async function handlePublish() {
   box-sizing: border-box;
 }
 
-/* 微信顶栏 */
+/* 极简顶栏 */
 .wechat-pub-header {
-  height: 44px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
   background-color: #ffffff;
-  border-bottom: 0.5px solid #ededed;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 
   .pub-cancel-btn {
     cursor: pointer;
-    padding: 6px 0;
+    padding: 6px 4px;
 
     .cancel-text {
-      font-size: 16px;
-      color: #191919;
+      font-size: 15px;
+      color: #666666;
     }
   }
 
@@ -401,7 +382,7 @@ async function handlePublish() {
     .pub-title {
       font-size: 16px;
       font-weight: 600;
-      color: #191919;
+      color: #2c2c2c;
     }
   }
 
@@ -411,23 +392,24 @@ async function handlePublish() {
       padding: 0 16px;
       height: 32px;
       line-height: 32px;
-      background-color: #e2e8f0;
-      color: #94a3b8;
-      border-radius: 4px;
+      background-color: #eae8e3;
+      color: #b0aba4;
+      border-radius: 16px;
       font-size: 14px;
       font-weight: 600;
       border: none;
       transition: all 0.2s ease;
 
       &.btn-active {
-        background-color: #07c160;
+        background-color: #3e2723;
         color: #ffffff;
+        box-shadow: 0 2px 8px rgba(62, 39, 35, 0.2);
       }
 
       &.btn-emergency.btn-active {
-        background-color: #fa5151;
+        background-color: #e53e3e;
         color: #ffffff;
-        box-shadow: 0 2px 8px rgba(250, 81, 81, 0.35);
+        box-shadow: 0 2px 8px rgba(229, 62, 62, 0.35);
       }
     }
   }
@@ -450,356 +432,401 @@ async function handlePublish() {
 /* 滚动区域 */
 .pub-scroll-area {
   flex: 1;
-  background-color: #ffffff;
+  background-color: #f7f6f2;
 
-  /* 手写 / 打字模式切换 */
+  /* 模式切换胶囊 */
   .pub-type-switcher-bar {
     display: flex;
-    gap: 10px;
-    padding: 12px 20px 4px;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px 4px;
 
     .pub-switch-pill {
       display: flex;
       align-items: center;
       gap: 5px;
-      padding: 6px 14px;
+      padding: 5px 16px;
       border-radius: 16px;
-      background: #f1f5f9;
-      color: #64748b;
+      background: #eae7e0;
+      color: #7a736a;
       font-size: 13px;
       cursor: pointer;
-      border: 1px solid transparent;
       transition: all 0.2s;
 
       &.pill-selected {
-        background: #fff8e1;
-        color: #d97706;
-        border-color: #ffd54f;
-        font-weight: 700;
-        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+        background: #ffffff;
+        color: #3e2723;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
       }
     }
   }
 
-  /* 真迹手写纸条预览卡片 */
-  .hw-preview-box {
-    margin: 14px 20px 16px;
-    border-radius: 8px;
-    padding: 20px 14px 12px;
+  /* 真实拟物便签纸卡片 */
+  .note-canvas-card {
+    margin: 10px 14px 14px;
+    border-radius: 12px;
+    padding: 18px 16px 12px;
     position: relative;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    box-shadow: 0 3px 12px rgba(62, 39, 35, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.25s ease, border-color 0.25s ease;
 
+    &.paper-yellow { background-color: #fffdec; border-color: #faecc0; }
+    &.paper-pink   { background-color: #fef2f4; border-color: #fad2dc; }
+    &.paper-blue   { background-color: #f0f7fe; border-color: #cde4fa; }
+    &.paper-green  { background-color: #f1f9f2; border-color: #d1ebd5; }
+    &.paper-kraft  { background-color: #f5efe6; border-color: #ded1c1; }
+
+    /* 拟物和纸胶带 */
     .washi-tape-strip {
       position: absolute;
-      top: -10px;
+      top: -8px;
       left: 50%;
       transform: translateX(-50%);
-      width: 50px;
-      height: 14px;
+      width: 54px;
+      height: 15px;
       background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-      border-left: 1.5px dashed rgba(0, 0, 0, 0.2);
-      border-right: 1.5px dashed rgba(0, 0, 0, 0.2);
+      border-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+      border-left: 2px dashed rgba(0, 0, 0, 0.15);
+      border-right: 2px dashed rgba(0, 0, 0, 0.15);
     }
 
-    .hw-preview-img {
-      width: 100%;
-      border-radius: 4px;
-      object-fit: contain;
-    }
-
-    .hw-preview-actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 10px;
-
-      .hw-action-btn {
-        font-size: 12px;
-        padding: 4px 12px;
-        border-radius: 12px;
-        background: rgba(0, 0, 0, 0.08);
-        color: #4e342e;
-        font-weight: 600;
-        cursor: pointer;
-
-        &.del-btn {
-          color: #d32f2f;
-          background: #ffebee;
-        }
-      }
-    }
-  }
-
-  .quick-hw-trigger-row {
-    padding: 8px 0;
-    cursor: pointer;
-
-    .quick-hw-link {
-      font-size: 12px;
-      color: #d97706;
-      font-weight: 600;
-    }
-  }
-
-  /* 微信大输入框 */
-  .wechat-textarea-box {
-    padding: 16px 20px 8px;
-
-    .wechat-textarea {
-      width: 100%;
-      min-height: 120px;
-      font-size: 16px;
-      line-height: 1.5;
-      color: #191919;
-      border: none;
-      box-sizing: border-box;
-    }
-
-    .wechat-pub-placeholder {
-      color: #b2b2b2;
-      font-size: 16px;
-    }
-  }
-
-  /* 微信九宫格媒体 */
-  .wechat-grid-media {
-    padding: 8px 20px 24px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-
-    .media-grid-item {
-      width: calc((100% - 20px) / 3);
-      aspect-ratio: 1 / 1;
-      position: relative;
-      border-radius: 6px;
-      overflow: hidden;
-      background-color: #f7f7f7;
-
-      .media-preview-img {
+    .note-input-inner {
+      .note-textarea {
         width: 100%;
-        height: 100%;
-        object-fit: cover;
+        min-height: 110px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #2c2420;
+        border: none;
+        background: transparent;
+        box-sizing: border-box;
       }
 
-      .media-delete-btn {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        background-color: rgba(0, 0, 0, 0.6);
-        color: #ffffff;
-        font-size: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
+      .note-placeholder {
+        color: #aba29a;
+        font-size: 15px;
+      }
+    }
+
+    /* 真迹预览 */
+    .hw-preview-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .hw-preview-img {
+        width: 100%;
+        border-radius: 4px;
+        object-fit: contain;
       }
 
-      &.add-box {
+      .hw-preview-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 10px;
+
+        .hw-action-btn {
+          font-size: 12px;
+          padding: 4px 12px;
+          border-radius: 12px;
+          background: rgba(0, 0, 0, 0.06);
+          color: #4e342e;
+          font-weight: 500;
+          cursor: pointer;
+
+          &.del-btn {
+            color: #d32f2f;
+            background: #ffebee;
+          }
+        }
+      }
+    }
+
+    /* 便签卡片底部内嵌工具条 */
+    .note-card-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+
+      .palette-group {
         display: flex;
         align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        border: 1px dashed #dcdcdc;
+        gap: 8px;
 
-        .plus-svg {
-          width: 36px;
-          height: 36px;
-          color: #b2b2b2;
+        .palette-label {
+          font-size: 12px;
+          color: #8c827a;
         }
 
-        &.add-box-hover {
-          background-color: #ececec;
+        .palette-dots {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .palette-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-sizing: border-box;
+            border: 1.5px solid transparent;
+            transition: all 0.15s ease;
+
+            &.dot-active {
+              border-color: #3e2723;
+              transform: scale(1.15);
+              box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+            }
+
+            &.dot-yellow { background-color: #fde047; }
+            &.dot-pink   { background-color: #f472b6; }
+            &.dot-blue   { background-color: #60a5fa; }
+            &.dot-green  { background-color: #4ade80; }
+            &.dot-kraft  { background-color: #d4a373; }
+          }
+        }
+      }
+
+      .word-counter {
+        font-size: 11px;
+        color: #aba29a;
+      }
+    }
+  }
+
+  /* 配图区域 */
+  .media-section {
+    background: #ffffff;
+    margin: 0 14px 12px;
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+
+    .media-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+
+      .media-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333333;
+      }
+
+      .media-sub {
+        font-size: 12px;
+        color: #999999;
+      }
+    }
+
+    .wechat-grid-media {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .media-grid-item {
+        width: calc((100% - 16px) / 3);
+        aspect-ratio: 1 / 1;
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #f5f5f5;
+
+        .media-preview-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .media-delete-btn {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background-color: rgba(0, 0, 0, 0.55);
+          color: #ffffff;
+          font-size: 11px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        &.add-box {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          border: 1.5px dashed #d5d5d5;
+          background: #fafafa;
+
+          .plus-icon {
+            font-size: 28px;
+            color: #b0b0b0;
+            font-weight: 300;
+          }
+
+          &.add-box-hover {
+            background-color: #f0f0f0;
+          }
         }
       }
     }
 
     .quick-sample-row {
       margin-top: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
 
       .quick-sample-btn {
-        font-size: 12px;
-        color: #576B95;
-        background: #f2f5f9;
-        padding: 4px 10px;
-        border-radius: 12px;
+        display: inline-flex;
+        padding: 5px 12px;
+        border-radius: 14px;
+        background: #f4f6f9;
         cursor: pointer;
-        transition: background 0.15s ease;
 
-        &:active {
-          background: #e2eaf5;
+        .sample-btn-txt {
+          font-size: 12px;
+          color: #576b95;
         }
-      }
-
-      .quick-sample-tip {
-        font-size: 11px;
-        color: #999999;
       }
     }
   }
 
-  /* 微信朋友圈功能列表行 */
-  .wechat-meta-rows {
-    border-top: 8px solid #f7f7f7;
-    background-color: #ffffff;
+  /* 设置列表卡片 */
+  .settings-card {
+    background: #ffffff;
+    margin: 0 14px 16px;
+    border-radius: 12px;
+    padding: 2px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
 
-    .wechat-cell-row {
+    .settings-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 20px;
-      border-bottom: 0.5px solid #ededed;
-      cursor: pointer;
+      padding: 13px 0;
+      border-bottom: 0.5px solid #f2f2f2;
 
-      &:active {
-        background-color: #fcfcfc;
+      &:last-child {
+        border-bottom: none;
       }
 
-      .row-left {
+      &.cell-clickable {
+        cursor: pointer;
+      }
+
+      .settings-label {
+        font-size: 14px;
+        color: #333333;
+        font-weight: 500;
+      }
+
+      .label-with-hint {
         display: flex;
-        align-items: center;
-        gap: 10px;
+        flex-direction: column;
+        gap: 2px;
 
-        .cell-icon { font-size: 18px; }
-        .cell-label { font-size: 15px; color: #191919; font-weight: 500; }
-
-        .author-mini-avatar {
-          width: 24px;
-          height: 24px;
-          border-radius: 4px;
+        .settings-hint {
+          font-size: 11px;
+          color: #ec4899;
         }
       }
 
-      .row-right {
+      .compact-switch {
+        transform: scale(0.8);
+        transform-origin: right center;
+      }
+
+      .phone-input {
+        font-size: 13px;
+        text-align: right;
+        color: #333333;
+        width: 170px;
+      }
+
+      .settings-value-box {
         display: flex;
         align-items: center;
         gap: 6px;
 
-        .cell-value {
+        .author-mini-avatar {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+        }
+
+        .settings-value {
           font-size: 13px;
-          color: #7f7f7f;
+          color: #888888;
         }
 
-        .cell-arrow {
-          font-size: 18px;
-          color: #b2b2b2;
-        }
-
-        .phone-input {
-          font-size: 14px;
-          color: #191919;
-          text-align: right;
-          width: 180px;
-        }
-
-        &.mode-switcher-box {
-          display: flex;
-          gap: 6px;
-
-          .mode-pill {
-            padding: 4px 10px;
-            border-radius: 14px;
-            background-color: #f1f5f9;
-            border: 0.5px solid #e2e8f0;
-            cursor: pointer;
-
-            .pill-text {
-              font-size: 11px;
-              color: #64748b;
-              font-weight: 500;
-            }
-
-            &.pill-active {
-              background-color: #07c160;
-              border-color: #07c160;
-              .pill-text { color: #ffffff; font-weight: 600; }
-            }
-
-            &.pill-emergency.pill-active {
-              background-color: #fa5151;
-              border-color: #fa5151;
-            }
-          }
+        .settings-arrow {
+          font-size: 16px;
+          color: #cccccc;
         }
       }
 
-      &.acgn-toggle-row {
-        .acgn-label-col {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
+      .scene-segmented {
+        display: flex;
+        gap: 6px;
 
-          .acgn-sub-tip {
-            font-size: 11px;
-            color: #ec4899;
+        .scene-seg-item {
+          padding: 4px 10px;
+          border-radius: 12px;
+          background: #f3f3f3;
+          font-size: 12px;
+          color: #666666;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &.seg-active {
+            background: #3e2723;
+            color: #ffffff;
+            font-weight: 500;
           }
-        }
 
-        .wechat-switch {
-          transform: scale(0.85);
-          transform-origin: right center;
+          &.seg-emergency.seg-active {
+            background: #e53e3e;
+            color: #ffffff;
+          }
         }
       }
     }
 
     .acgn-subtags-section {
-      background-color: #fdf2f8;
-      border-bottom: 0.5px solid #fbcfe8;
-      padding: 10px 20px 14px;
-
-      .subtags-heading {
-        margin-bottom: 8px;
-
-        .subtags-title {
-          font-size: 12px;
-          color: #be185d;
-          font-weight: 500;
-        }
-      }
+      padding: 6px 0 12px;
+      border-bottom: 0.5px solid #f2f2f2;
 
       .subtags-pills-wrap {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
 
         .acgn-pill {
           display: flex;
           align-items: center;
           gap: 4px;
-          padding: 6px 12px;
-          border-radius: 16px;
-          background-color: #ffffff;
-          border: 1px solid #f472b6;
+          padding: 4px 10px;
+          border-radius: 12px;
+          background-color: #fdf2f8;
+          border: 1px solid #fbcfe8;
           cursor: pointer;
-          transition: all 0.15s ease;
 
-          .pill-emoji {
-            font-size: 13px;
-          }
-
-          .pill-label {
-            font-size: 12px;
-            color: #9d174d;
-            font-weight: 500;
-          }
+          .pill-emoji { font-size: 12px; }
+          .pill-label { font-size: 11px; color: #be185d; }
 
           &.acgn-pill-active {
             background-color: #ec4899;
             border-color: #db2777;
-
-            .pill-label {
-              color: #ffffff;
-              font-weight: 600;
-            }
+            .pill-label { color: #ffffff; font-weight: 600; }
           }
         }
       }
@@ -811,66 +838,42 @@ async function handlePublish() {
   }
 }
 
-.color-palette-chips {
-  display: flex;
-  gap: 10px;
-}
-
-.paper-dot {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s;
-}
-
-.dot-active {
-  border-color: #3e2723;
-  transform: scale(1.2);
-}
-
-.dot-yellow { background-color: #fff59d; }
-.dot-pink   { background-color: #f8bbd0; }
-.dot-blue   { background-color: #b3e5fc; }
-.dot-green  { background-color: #c8e6c9; }
-.dot-kraft  { background-color: #d7ccc8; }
-
+/* 刷浆糊拟物动效遮罩 */
 .brush-glue-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.65);
   z-index: 200;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(4px);
-}
 
-.brush-hand-icon {
-  font-size: 48px;
-  animation: brush-stroke 0.6s ease-in-out infinite alternate;
-}
+  .brush-hand-icon {
+    font-size: 44px;
+    animation: brush-stroke 0.6s ease-in-out infinite alternate;
+  }
 
-.glue-streak {
-  width: 160px;
-  height: 12px;
-  background: linear-gradient(90deg, rgba(255, 235, 59, 0.8), rgba(255, 152, 0, 0.8));
-  border-radius: 6px;
-  margin-top: 14px;
-  box-shadow: 0 0 16px rgba(255, 193, 7, 0.6);
-}
+  .glue-streak {
+    width: 140px;
+    height: 10px;
+    background: linear-gradient(90deg, rgba(255, 235, 59, 0.8), rgba(255, 152, 0, 0.8));
+    border-radius: 5px;
+    margin-top: 12px;
+    box-shadow: 0 0 14px rgba(255, 193, 7, 0.6);
+  }
 
-.brush-hint-text {
-  font-size: 14px;
-  color: #fff;
-  font-weight: bold;
-  margin-top: 16px;
+  .brush-hint-text {
+    font-size: 14px;
+    color: #fff;
+    font-weight: 600;
+    margin-top: 14px;
+  }
 }
 
 @keyframes brush-stroke {
-  0% { transform: translate(-20px, 0) rotate(-15deg); }
-  100% { transform: translate(20px, 0) rotate(15deg); }
+  0% { transform: translate(-18px, 0) rotate(-15deg); }
+  100% { transform: translate(18px, 0) rotate(15deg); }
 }
 </style>
