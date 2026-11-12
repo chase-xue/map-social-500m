@@ -142,17 +142,13 @@
             </view>
           </view>
 
-          <!-- 🗄️ 真实跟手拖拽物理抽屉 (支持上下按住拖动 + 点击切换) -->
-          <view class="physical-drawer-unit" :class="{ 'drawer-is-pulled': isDrawerPulled || drawerDragY > 30 }">
-            <!-- 抽屉外部实木面板与黄铜拉手 (支持 Touch/Mouse 拖拽手势) -->
+          <!-- 🗄️ 实木拟物抽屉 (点击拉开 / 推回闭合，直观物理手账交互) -->
+          <view class="physical-drawer-unit" :class="{ 'drawer-is-pulled': isDrawerPulled }">
+            <!-- 1. 抽屉闭合状态下的面板：实木面板与黄铜拉手 -->
             <view
-              class="drawer-face-panel"
-              :style="{ transform: `translateY(${drawerDragY}px)` }"
-              @touchstart="onDrawerTouchStart"
-              @touchmove="onDrawerTouchMove"
-              @touchend="onDrawerTouchEnd"
-              @mousedown="onDrawerMouseDown"
-              @tap="toggleDrawerPull"
+              v-if="!isDrawerPulled"
+              class="drawer-face-panel drawer-closed-face"
+              @tap="openDrawer"
             >
               <view class="brass-handle-box">
                 <view class="brass-curved-pull" />
@@ -161,45 +157,68 @@
                   <text class="drawer-count-badge">{{ currentDesk.drawerNotes.length }} 封信</text>
                 </view>
               </view>
-              <view class="drawer-pull-hint">
-                <text class="hint-arrow">{{ isDrawerPulled ? '▲ 轻推闭合' : '▼ 按住下拉抽屉' }}</text>
+              <view class="drawer-action-pill open-pill">
+                <text class="action-pill-icon">📂</text>
+                <text class="action-pill-text">点击拉开 ›</text>
               </view>
             </view>
 
-            <!-- 抽屉拉出后露出的内部暗格绒布收纳箱 -->
-            <view v-if="isDrawerPulled || drawerDragY > 30" class="drawer-inner-compartment">
-              <view class="compartment-header">
-                <text class="comp-title">🕯️ 抽屉暗格收纳的小纸条信物</text>
-                <text class="comp-close" @tap.stop="closeDrawer">✕ 推回</text>
+            <!-- 2. 抽屉拉开后：露出的暗红丝绒暗格与内部信物 -->
+            <view v-else class="drawer-open-wrapper">
+              <view class="drawer-inner-compartment">
+                <view class="compartment-header">
+                  <view class="comp-title-box">
+                    <text class="comp-icon">🕯️</text>
+                    <text class="comp-title">桌洞暗格 · 私密小纸条信物</text>
+                    <text class="comp-badge">{{ currentDesk.drawerNotes.length }} 封</text>
+                  </view>
+                  <view class="comp-close-pill" @tap.stop="closeDrawer">
+                    <text class="close-pill-text">✕ 推回收起</text>
+                  </view>
+                </view>
+
+                <scroll-view scroll-y class="drawer-letters-scroll">
+                  <view v-if="currentDesk.drawerNotes.length === 0" class="drawer-empty-state">
+                    <text class="empty-icon">📮</text>
+                    <text class="empty-txt">抽屉内铺着柔软毛毡，等待朋友塞进第一封手写纸条～</text>
+                  </view>
+
+                  <view
+                    v-for="dn in currentDesk.drawerNotes"
+                    :key="dn.id"
+                    class="drawer-letter-envelope"
+                    :class="{ 'wax-sealed': dn.isSealed }"
+                    @tap="openDrawerNoteDetail(dn)"
+                  >
+                    <view class="envelope-stamp-box">
+                      <image class="letter-avatar" :src="dn.senderAvatar" mode="aspectFill" />
+                      <view v-if="dn.isSealed" class="real-wax-seal">印</view>
+                    </view>
+                    <view class="envelope-body">
+                      <view class="env-top">
+                        <text class="env-sender">{{ dn.senderName }}</text>
+                        <text class="env-time">{{ dn.receivedTime }}</text>
+                      </view>
+                      <text class="env-preview">{{ dn.preview }}</text>
+                    </view>
+                    <view class="env-open-arrow">›</view>
+                  </view>
+                </scroll-view>
               </view>
 
-              <scroll-view scroll-y class="drawer-letters-scroll">
-                <view v-if="currentDesk.drawerNotes.length === 0" class="drawer-empty-state">
-                  <text class="empty-icon">📮</text>
-                  <text class="empty-txt">抽屉内铺着柔软毛毡，等待朋友塞进第一封手写纸条～</text>
-                </view>
-
-                <view
-                  v-for="dn in currentDesk.drawerNotes"
-                  :key="dn.id"
-                  class="drawer-letter-envelope"
-                  :class="{ 'wax-sealed': dn.isSealed }"
-                  @tap="openDrawerNoteDetail(dn)"
-                >
-                  <view class="envelope-stamp-box">
-                    <image class="letter-avatar" :src="dn.senderAvatar" mode="aspectFill" />
-                    <view v-if="dn.isSealed" class="real-wax-seal">印</view>
+              <!-- 拉出状态下的底部抽屉前面板 (点击同样可推回闭合) -->
+              <view class="drawer-face-panel drawer-opened-face" @tap="closeDrawer">
+                <view class="brass-handle-box">
+                  <view class="brass-curved-pull" />
+                  <view class="brass-label-plate">
+                    <text class="drawer-plate-text">📥 桌洞抽屉已拉开</text>
                   </view>
-                  <view class="envelope-body">
-                    <view class="env-top">
-                      <text class="env-sender">{{ dn.senderName }}</text>
-                      <text class="env-time">{{ dn.receivedTime }}</text>
-                    </view>
-                    <text class="env-preview">{{ dn.preview }}</text>
-                  </view>
-                  <view class="env-open-arrow">›</view>
                 </view>
-              </scroll-view>
+                <view class="drawer-action-pill close-pill">
+                  <text class="action-pill-icon">▲</text>
+                  <text class="action-pill-text">点击推回抽屉</text>
+                </view>
+              </view>
             </view>
           </view>
 
@@ -452,9 +471,6 @@ watch(targetVisitingDesk, (target) => {
 }, { immediate: true });
 
 const isDrawerPulled = ref(false);
-const drawerDragY = ref(0);
-let isDraggingDrawer = false;
-let startDragY = 0;
 
 const themeSelectorVisible = ref(false);
 const diaryModalVisible = ref(false);
@@ -514,83 +530,22 @@ function exitVisiting() {
   isVisitingOther.value = false;
 }
 
-// 触摸/拖拽抽屉物理机制
-function onDrawerTouchStart(e: any) {
-  isDraggingDrawer = true;
-  startDragY = e.touches[0].clientY;
-}
-
-function onDrawerTouchMove(e: any) {
-  if (!isDraggingDrawer) return;
-  const currentY = e.touches[0].clientY;
-  const diff = currentY - startDragY;
-  if (!isDrawerPulled.value) {
-    drawerDragY.value = Math.max(0, Math.min(80, diff));
-  } else {
-    drawerDragY.value = Math.max(-80, Math.min(0, diff));
-  }
-}
-
-function onDrawerTouchEnd() {
-  if (!isDraggingDrawer) return;
-  isDraggingDrawer = false;
-  if (!isDrawerPulled.value) {
-    if (drawerDragY.value > 25) {
-      isDrawerPulled.value = true;
-      uni.showToast({ title: "抽屉已滑开 📬", icon: "none" });
-    }
-  } else {
-    if (drawerDragY.value < -25) {
-      isDrawerPulled.value = false;
-    }
-  }
-  drawerDragY.value = 0;
-}
-
-// 电脑端鼠标拖拽支持
-function onDrawerMouseDown(e: MouseEvent) {
-  isDraggingDrawer = true;
-  startDragY = e.clientY;
-  const onMouseMove = (ev: MouseEvent) => {
-    if (!isDraggingDrawer) return;
-    const diff = ev.clientY - startDragY;
-    if (!isDrawerPulled.value) {
-      drawerDragY.value = Math.max(0, Math.min(80, diff));
-    } else {
-      drawerDragY.value = Math.max(-80, Math.min(0, diff));
-    }
-  };
-  const onMouseUp = () => {
-    isDraggingDrawer = false;
-    if (!isDrawerPulled.value) {
-      if (drawerDragY.value > 25) {
-        isDrawerPulled.value = true;
-        uni.showToast({ title: "抽屉已滑开 📬", icon: "none" });
-      }
-    } else {
-      if (drawerDragY.value < -25) {
-        isDrawerPulled.value = false;
-      }
-    }
-    drawerDragY.value = 0;
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
-  };
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("mouseup", onMouseUp);
-}
-
-function toggleDrawerPull() {
-  isDrawerPulled.value = !isDrawerPulled.value;
-  drawerDragY.value = 0;
-  if (isDrawerPulled.value) {
-    uni.showToast({ title: "抽屉已滑开 📬", icon: "none" });
-  }
+// 🗄️ 实木抽屉物理交互：点击拉开 / 推回闭合
+function openDrawer() {
+  isDrawerPulled.value = true;
+  uni.showToast({ title: "咔嗒 · 抽屉滑开 📬", icon: "none" });
 }
 
 function closeDrawer() {
   isDrawerPulled.value = false;
-  drawerDragY.value = 0;
+}
+
+function toggleDrawerPull() {
+  if (isDrawerPulled.value) {
+    closeDrawer();
+  } else {
+    openDrawer();
+  }
 }
 
 // 撕取并打开便签检视弹窗 (带物理微翘动效)
@@ -1395,33 +1350,83 @@ defineExpose({
   margin-top: 1px;
 }
 
-/* 🗄️ 方式一：跟手拖拽物理抽屉 */
+/* 🗄️ 实木拟物抽屉 (点击拉开 / 推回收起) */
 .physical-drawer-unit {
-  margin-top: 8px;
-  border-radius: 10px;
-  background: #5d4037;
-  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
-  padding: 5px;
-  transition: background 0.3s;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #3e2723;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  border: 1px solid #5d4037;
 }
 
 .drawer-face-panel {
-  background: linear-gradient(180deg, #8d6e63 0%, #795548 50%, #5d4037 100%);
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 50%, #4e342e 100%);
   border-radius: 8px;
-  padding: 8px 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.35);
   border: 1px solid #a1887f;
-  cursor: grab;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   user-select: none;
-  touch-action: none;
-  transition: transform 0.1s ease-out;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 
   &:active {
-    cursor: grabbing;
+    transform: scale(0.985);
+    background: linear-gradient(180deg, #795548 0%, #5d4037 50%, #3e2723 100%);
   }
+}
+
+.drawer-closed-face {
+  /* 闭合状态：正面展示黄铜把手与拉开按钮 */
+}
+
+.drawer-opened-face {
+  /* 拉开状态：作为抽屉滑出后的底缘面板，提供推回操作 */
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, #6d4c41 0%, #5d4037 100%);
+  opacity: 0.95;
+}
+
+.drawer-action-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.drawer-action-pill.open-pill {
+  background: linear-gradient(135deg, rgba(255, 213, 79, 0.28), rgba(255, 179, 0, 0.18));
+  border: 1px solid rgba(255, 213, 79, 0.55);
+  color: #fff9c4;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(255, 213, 79, 0.38), rgba(255, 179, 0, 0.28));
+  }
+}
+
+.drawer-action-pill.close-pill {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #efebe9;
+}
+
+.action-pill-icon {
+  font-size: 12px;
+}
+
+.drawer-open-wrapper {
+  animation: drawer-slide-down 0.28s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .brass-handle-box {
@@ -1483,25 +1488,16 @@ defineExpose({
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.drawer-pull-hint .hint-arrow {
-  font-size: 10px;
-  color: #ffe082;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
 .drawer-inner-compartment {
-  margin-top: 6px;
-  background: #2e151b; /* 暗红色复古丝绒内衬 */
-  border-radius: 6px;
-  padding: 8px 10px;
-  box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.7);
-  animation: drawer-slide-down 0.25s ease-out;
-  border: 1px solid rgba(255, 213, 79, 0.15);
+  background: #2b1117; /* 暗红色复古丝绒内衬 */
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 213, 79, 0.2);
 }
 
 @keyframes drawer-slide-down {
-  from { opacity: 0; transform: translateY(-10px); }
+  from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -1509,26 +1505,59 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.15);
 }
 
-.comp-title {
-  font-size: 11px;
-  color: #ffe082;
-  font-weight: 600;
+.comp-title-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.comp-close {
-  font-size: 10px;
-  color: #bcaaa4;
-  padding: 2px 6px;
+.comp-icon {
+  font-size: 13px;
+}
+
+.comp-title {
+  font-size: 12px;
+  color: #ffe082;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.comp-badge {
+  font-size: 9px;
+  background: rgba(255, 213, 79, 0.2);
+  color: #ffe082;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(255, 213, 79, 0.4);
+}
+
+.comp-close-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255, 213, 79, 0.15);
+  border: 0.5px solid rgba(255, 213, 79, 0.4);
+  color: #ffe082;
   cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+    background: rgba(255, 213, 79, 0.3);
+  }
+}
+
+.close-pill-text {
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .drawer-letters-scroll {
-  max-height: 120px;
-  margin-top: 6px;
+  max-height: 220px;
+  margin-top: 8px;
 }
 
 .drawer-empty-state {
