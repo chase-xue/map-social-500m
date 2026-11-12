@@ -309,7 +309,7 @@ onUnmounted(() => {
 .right-vertical-dock {
   position: absolute;
   right: 14px;
-  bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(156px + env(safe-area-inset-bottom, 0px));
   z-index: 45;
   display: flex;
   flex-direction: column;
