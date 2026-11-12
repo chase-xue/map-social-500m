@@ -1,84 +1,93 @@
 <template>
-  <view class="handwriting-pad-mask" @tap.self="closePad">
-    <view class="pad-container" :class="'paper-bg-' + paperPattern">
-      <!-- 顶栏：纸张材质切换与关闭 -->
-      <view class="pad-header">
-        <view class="paper-patterns">
-          <text class="pattern-label">信纸底纹：</text>
-          <view
-            v-for="p in patterns"
-            :key="p.key"
-            class="pattern-chip"
-            :class="{ 'chip-selected': paperPattern === p.key }"
-            @tap="paperPattern = p.key"
-          >
-            {{ p.name }}
-          </view>
-        </view>
-        <view class="pad-close-btn" @tap="closePad">✕</view>
+  <view class="handwriting-full-page" :class="'paper-bg-' + paperPattern">
+    <!-- 顶栏：返回、纸张材质切换与关闭 -->
+    <view class="pad-top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="pad-nav-back" @tap="closePad">
+        <text class="back-arrow">‹</text>
+        <text class="back-text">返回</text>
       </view>
 
-      <!-- 真实手写画布区域 -->
-      <view class="canvas-wrapper" :class="'pattern-' + paperPattern">
-        <!-- 方格/横线底纹网格层 -->
-        <view class="paper-grid-lines" v-if="paperPattern === 'grid'" />
-        <view class="paper-ruled-lines" v-if="paperPattern === 'lined'" />
-
-        <!-- 真实 HTML5 手写 Canvas -->
-        <canvas
-          id="handwritingCanvas"
-          canvas-id="handwritingCanvas"
-          class="hw-canvas"
-          @touchstart="onTouchStart"
-          @touchmove="onTouchMove"
-          @touchend="onTouchEnd"
-          @mousedown="onMouseDown"
-          @mousemove="onMouseMove"
-          @mouseup="onMouseUp"
-          @mouseleave="onMouseLeave"
-        />
-
-        <!-- 空白时的手写提示手势 -->
-        <view v-if="isCanvasEmpty" class="canvas-empty-hint" pointer-events="none">
-          <text class="hint-hand">✍️</text>
-          <text class="hint-text">用手指或鼠标在纸上写字、画小涂鸦...</text>
+      <view class="paper-patterns-bar">
+        <text class="pattern-label">信纸底纹：</text>
+        <view
+          v-for="p in patterns"
+          :key="p.key"
+          class="pattern-chip"
+          :class="{ 'chip-selected': paperPattern === p.key }"
+          @tap="paperPattern = p.key"
+        >
+          {{ p.name }}
         </view>
       </view>
 
-      <!-- 工具栏：画笔类型选择（钢笔/铅笔/红圆珠笔/橡皮擦） -->
-      <view class="pad-toolbar">
-        <view class="pen-tools-row">
-          <view
-            v-for="pen in penList"
-            :key="pen.key"
-            class="pen-btn"
-            :class="{ 'pen-active': activePen === pen.key }"
-            @tap="selectPen(pen.key)"
-          >
-            <text class="pen-icon">{{ pen.icon }}</text>
-            <text class="pen-name">{{ pen.name }}</text>
-          </view>
+      <view class="pad-nav-close" @tap="closePad">
+        <text class="close-icon">✕</text>
+      </view>
+    </view>
 
-          <!-- 橡皮擦 -->
-          <view
-            class="pen-btn eraser-btn"
-            :class="{ 'pen-active': isEraser }"
-            @tap="toggleEraser"
-          >
-            <text class="pen-icon">🧹</text>
-            <text class="pen-name">橡皮擦</text>
-          </view>
+    <!-- 真实手写全屏画布区域 (flex: 1 撑满剩余全屏) -->
+    <view class="canvas-wrapper" :class="'pattern-' + paperPattern">
+      <!-- 方格/横线底纹网格层 -->
+      <view class="paper-grid-lines" v-if="paperPattern === 'grid'" />
+      <view class="paper-ruled-lines" v-if="paperPattern === 'lined'" />
+
+      <!-- 真实 HTML5 手写 Canvas -->
+      <canvas
+        id="handwritingCanvas"
+        canvas-id="handwritingCanvas"
+        class="hw-canvas"
+        @touchstart="onTouchStart"
+        @touchmove="onTouchMove"
+        @touchend="onTouchEnd"
+        @mousedown="onMouseDown"
+        @mousemove="onMouseMove"
+        @mouseup="onMouseUp"
+        @mouseleave="onMouseLeave"
+      />
+
+      <!-- 空白时的手写提示手势 -->
+      <view v-if="isCanvasEmpty" class="canvas-empty-hint" pointer-events="none">
+        <text class="hint-hand">✍️</text>
+        <text class="hint-title">手写与涂鸦真迹信纸</text>
+        <text class="hint-text">在信纸上随意手写文字、签名或画一幅治愈小插画吧～</text>
+      </view>
+    </view>
+
+    <!-- 底部拟物文具工具栏 -->
+    <view class="pad-bottom-toolbar">
+      <view class="pen-tools-row">
+        <view
+          v-for="pen in penList"
+          :key="pen.key"
+          class="pen-btn"
+          :class="{ 'pen-active': activePen === pen.key && !isEraser }"
+          @tap="selectPen(pen.key)"
+        >
+          <text class="pen-icon">{{ pen.icon }}</text>
+          <text class="pen-name">{{ pen.name }}</text>
         </view>
 
-        <!-- 底部操作：清空重写 / 切换打字 / 折起寄出 -->
-        <view class="pad-footer-actions">
-          <button class="action-btn clear-btn" @tap="clearCanvas">
-            清空重写
-          </button>
-          <button class="action-btn send-btn" :disabled="isCanvasEmpty" @tap="confirmHandwriting">
-            {{ actionConfirmText || '💌 贴上窗台' }}
-          </button>
+        <!-- 橡皮擦 -->
+        <view
+          class="pen-btn eraser-btn"
+          :class="{ 'pen-active': isEraser }"
+          @tap="toggleEraser"
+        >
+          <text class="pen-icon">🧹</text>
+          <text class="pen-name">橡皮擦</text>
         </view>
+      </view>
+
+      <!-- 底部操作：清空重写 / 折起贴上窗台 -->
+      <view class="pad-footer-actions">
+        <button class="action-btn clear-btn" @tap="clearCanvas">
+          <text class="btn-icon">↺</text>
+          <text>清空重写</text>
+        </button>
+        <button class="action-btn send-btn" :disabled="isCanvasEmpty" @tap="confirmHandwriting">
+          <text class="btn-icon">💌</text>
+          <text>{{ actionConfirmText || '折起贴上窗台' }}</text>
+        </button>
       </view>
     </view>
   </view>
@@ -86,6 +95,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue";
+import { useAppState } from "../../composables/useAppState";
+
+const { statusBarHeight } = useAppState();
 
 const props = defineProps<{
   actionConfirmText?: string;
@@ -312,47 +324,74 @@ function closePad() {
 </script>
 
 <style lang="scss" scoped>
-.handwriting-pad-mask {
-  position: absolute;
+/* ==================== ✍️ 全窗口手写与真迹涂鸦画板 ==================== */
+.handwriting-full-page {
+  position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
   z-index: 300;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-.pad-container {
-  width: 100%;
-  max-width: 380px;
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
-  display: flex;
   flex-direction: column;
-  border: 1px solid #d7ccc8;
-  animation: pad-appear 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  background: #fff9c4;
+  overflow: hidden;
+  animation: pad-slide-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes pad-appear {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+@keyframes pad-slide-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.pad-header {
-  padding: 10px 14px;
-  background: #f7f3ee;
-  border-bottom: 1px solid #ebd9c5;
+.pad-top-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(215, 204, 200, 0.8);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  z-index: 20;
 }
 
-.paper-patterns {
+.pad-nav-back {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  background: rgba(62, 39, 35, 0.06);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.95);
+    background: rgba(62, 39, 35, 0.12);
+  }
+
+  .back-arrow {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4e342e;
+    line-height: 1;
+  }
+  .back-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4e342e;
+  }
+}
+
+.paper-patterns-bar {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -365,13 +404,18 @@ function closePad() {
 }
 
 .pattern-chip {
-  font-size: 10px;
-  padding: 2px 7px;
+  font-size: 11px;
+  padding: 3px 9px;
   border-radius: 12px;
-  background: #fff;
+  background: #f7f5f0;
   border: 1px solid #d7ccc8;
   color: #5d4037;
   cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .chip-selected {
@@ -379,20 +423,38 @@ function closePad() {
   border-color: #e67e22;
   color: #fff;
   font-weight: 700;
+  box-shadow: 0 2px 6px rgba(230, 126, 34, 0.3);
 }
 
-.pad-close-btn {
-  font-size: 16px;
-  color: #8d6e63;
-  padding: 4px 8px;
+.pad-nav-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(62, 39, 35, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.92);
+    background: rgba(62, 39, 35, 0.12);
+  }
+
+  .close-icon {
+    font-size: 14px;
+    color: #5d4037;
+    font-weight: 700;
+  }
 }
 
-/* 画布区域与纸张纹理 */
+/* 画布区域与纸张纹理 (撑满剩余视口) */
 .canvas-wrapper {
   position: relative;
+  flex: 1;
+  height: 0;
   width: 100%;
-  height: 230px;
   background: #fff9c4;
   overflow: hidden;
 }
@@ -405,7 +467,7 @@ function closePad() {
 .paper-grid-lines {
   position: absolute;
   inset: 0;
-  background-size: 18px 18px;
+  background-size: 20px 20px;
   background-image: 
     linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
@@ -415,8 +477,8 @@ function closePad() {
 .paper-ruled-lines {
   position: absolute;
   inset: 0;
-  background-size: 100% 24px;
-  background-image: linear-gradient(to bottom, transparent 23px, rgba(141, 110, 99, 0.2) 24px);
+  background-size: 100% 28px;
+  background-image: linear-gradient(to bottom, transparent 27px, rgba(141, 110, 99, 0.2) 28px);
   pointer-events: none;
 }
 
@@ -436,17 +498,26 @@ function closePad() {
   justify-content: center;
   pointer-events: none;
   opacity: 0.45;
+  padding: 20px;
+  text-align: center;
 }
 
 .hint-hand {
-  font-size: 32px;
+  font-size: 40px;
   animation: write-shake 1.5s infinite ease-in-out;
+}
+
+.hint-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #5d4037;
+  margin-top: 10px;
 }
 
 .hint-text {
   font-size: 12px;
-  color: #5d4037;
-  margin-top: 6px;
+  color: #795548;
+  margin-top: 4px;
 }
 
 @keyframes write-shake {
@@ -454,17 +525,22 @@ function closePad() {
   50% { transform: translateY(-4px) rotate(6deg); }
 }
 
-/* 工具栏 */
-.pad-toolbar {
-  background: #fff;
-  padding: 10px 14px 14px;
-  border-top: 1px solid #ebd9c5;
+/* 底部工具栏 */
+.pad-bottom-toolbar {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  padding: 12px 16px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 10px));
+  border-top: 1px solid rgba(215, 204, 200, 0.8);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .pen-tools-row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .pen-btn {
@@ -472,21 +548,25 @@ function closePad() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 4px;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 10px;
   background: #f7f5f0;
   border: 1px solid #ebd9c5;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
 .pen-icon {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .pen-name {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: #4e342e;
 }
@@ -494,7 +574,7 @@ function closePad() {
 .pen-active {
   background: #fff3e0;
   border-color: #e67e22;
-  box-shadow: 0 2px 6px rgba(230, 126, 34, 0.25);
+  box-shadow: 0 2px 8px rgba(230, 126, 34, 0.25);
 
   .pen-name {
     color: #e67e22;
@@ -508,20 +588,30 @@ function closePad() {
 
 .pad-footer-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .action-btn {
   flex: 1;
-  height: 38px;
-  border-radius: 20px;
-  font-size: 13px;
+  height: 42px;
+  border-radius: 21px;
+  font-size: 13.5px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   border: none;
   cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  .btn-icon {
+    font-size: 14px;
+  }
 }
 
 .clear-btn {
@@ -533,7 +623,7 @@ function closePad() {
 .send-btn {
   background: linear-gradient(135deg, #ff9800 0%, #e65100 100%);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(230, 81, 0, 0.35);
 
   &:disabled {
     background: #e0e0e0;
