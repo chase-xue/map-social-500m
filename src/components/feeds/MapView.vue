@@ -53,23 +53,9 @@
       @regionchange="onRegionChange"
     />
 
-    <!-- 右侧极简毛玻璃控制组 (Apple / Zenly 级垂直坞) -->
+    <!-- 右侧极简刷新按钮 -->
     <view class="right-vertical-dock">
-      <view class="dock-circle-btn" @tap="recenterToUser" hover-class="btn-hover" title="定位回当前位置">
-        <text class="dock-btn-icon">🎯</text>
-      </view>
-
-      <view
-        class="dock-circle-btn help-dock-btn"
-        :class="{ 'emergency-pulsing': hasActiveEmergency }"
-        @tap="openHelpSheet(false)"
-        hover-class="btn-hover"
-        title="急事/求助便签"
-      >
-        <text class="dock-btn-icon">🆘</text>
-      </view>
-
-      <view class="dock-circle-btn" @tap="refreshNearbyStatuses" hover-class="btn-hover" title="刷新便签">
+      <view class="dock-circle-btn" @tap="refreshNearbyStatuses" hover-class="btn-hover" title="刷新周边便签">
         <text class="dock-btn-icon">🔄</text>
       </view>
     </view>
@@ -323,44 +309,32 @@ onUnmounted(() => {
 .right-vertical-dock {
   position: absolute;
   right: 14px;
-  bottom: 84px;
+  bottom: calc(130px + env(safe-area-inset-bottom, 0px));
   z-index: 45;
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .dock-circle-btn {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
-  border: 0.5px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border: 0.5px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 
   .dock-btn-icon {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   &:active {
     transform: scale(0.92);
-  }
-}
-
-.help-dock-btn {
-  background: linear-gradient(135deg, #ffa726, #fb8c00);
-  border-color: #ffe082;
-  box-shadow: 0 4px 14px rgba(251, 140, 0, 0.35);
-
-  &.emergency-pulsing {
-    background: linear-gradient(135deg, #ef5350, #c62828);
-    animation: help-pulse 1.5s infinite ease-in-out;
   }
 }
 </style>
