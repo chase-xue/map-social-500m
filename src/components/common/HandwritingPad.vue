@@ -132,18 +132,17 @@ onMounted(() => {
 
 function initCanvas() {
   // #ifdef H5
-  canvasEl = document.querySelector("#handwritingCanvas") as HTMLCanvasElement;
+  const uniCanvas = document.querySelector("#handwritingCanvas") || document.querySelector("uni-canvas");
+  if (uniCanvas) {
+    canvasEl = uniCanvas.tagName.toLowerCase() === "canvas"
+      ? (uniCanvas as HTMLCanvasElement)
+      : (uniCanvas.querySelector("canvas") as HTMLCanvasElement);
+  }
   if (!canvasEl) {
-    const list = document.querySelectorAll("canvas");
-    for (let i = 0; i < list.length; i++) {
-      if (list[i].classList.contains("hw-canvas") || list[i].getAttribute("canvas-id") === "handwritingCanvas") {
-        canvasEl = list[i];
-        break;
-      }
-    }
+    canvasEl = document.querySelector(".hw-canvas canvas") as HTMLCanvasElement || document.querySelector("canvas") as HTMLCanvasElement;
   }
 
-  if (canvasEl) {
+  if (canvasEl && typeof canvasEl.getContext === "function") {
     const rect = canvasEl.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvasEl.width = rect.width * dpr;
@@ -284,9 +283,27 @@ function clearCanvas() {
 
 function confirmHandwriting() {
   if (!canvasEl) return;
-  // 导出高质量图片 base64
-  const dataUrl = canvasEl.toDataURL("image/png");
-  emit("confirm", dataUrl);
+  try {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = canvasEl.width;
+    exportCanvas.height = canvasEl.height;
+    const expCtx = exportCanvas.getContext("2d");
+    if (expCtx) {
+      // 填充纸张底色
+      expCtx.fillStyle = getEraserBgColor();
+      expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      // 绘制纸张手写字迹
+      expCtx.drawImage(canvasEl, 0, 0);
+      const dataUrl = exportCanvas.toDataURL("image/png");
+      emit("confirm", dataUrl);
+      return;
+    }
+    const dataUrl = canvasEl.toDataURL("image/png");
+    emit("confirm", dataUrl);
+  } catch (err) {
+    console.warn("手写导出提示:", err);
+    emit("confirm", canvasEl.toDataURL("image/png"));
+  }
 }
 
 function closePad() {

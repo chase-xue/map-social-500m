@@ -159,5 +159,16 @@ export function accelerateSlowNote(receiverId: string, messageId: string): boole
   target.currentFlyLocation = "🚀 已通过1元极速特权加速送达！";
 
   uni.setStorageSync("LOCAL_MAP_CHATS_V1", JSON.stringify(allChats));
+
+  // 同步刷新好友列表最后一条状态为「已送达」
+  const friends = getFriendsList();
+  const f = friends.find(item => item.userId === receiverId);
+  if (f) {
+    const textPreview = target.contentType === 'image' ? '[手写真迹纸条]' : target.content;
+    f.lastMessage = `📬 [纸条已送达] ${textPreview.slice(0, 18)}`;
+    f.lastMessageTime = Date.now();
+    saveFriendsList(friends);
+  }
+
   return true;
 }
