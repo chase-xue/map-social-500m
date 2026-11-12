@@ -135,18 +135,18 @@ let ctx: CanvasRenderingContext2D | null = null;
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
+let isCanvasInitialized = false;
 
 onMounted(() => {
   nextTick(() => {
     initCanvas();
-    // 动画入场阶段与入场完毕后多次核验，确保尺寸绝对准确
-    setTimeout(initCanvas, 60);
-    setTimeout(initCanvas, 320);
   });
 });
 
 function initCanvas() {
   // #ifdef H5
+  if (isCanvasInitialized && canvasEl && ctx) return;
+
   const uniCanvas = document.querySelector("#handwritingCanvas") || document.querySelector("uni-canvas");
   if (uniCanvas) {
     canvasEl = uniCanvas.tagName.toLowerCase() === "canvas"
@@ -161,7 +161,6 @@ function initCanvas() {
   const rect = wrapper ? wrapper.getBoundingClientRect() : (canvasEl ? canvasEl.parentElement?.getBoundingClientRect() || canvasEl.getBoundingClientRect() : null);
 
   if (canvasEl && rect && rect.width > 0 && rect.height > 0) {
-    const dpr = window.devicePixelRatio || 1;
     // 1. 强制覆盖 uni-app 内联注入的 width: 300px; height: 150px 样式，与外层容器严格 1:1 对齐
     canvasEl.style.setProperty("width", `${rect.width}px`, "important");
     canvasEl.style.setProperty("height", `${rect.height}px`, "important");
@@ -169,14 +168,14 @@ function initCanvas() {
     canvasEl.style.setProperty("left", "0px", "important");
     canvasEl.style.setProperty("top", "0px", "important");
 
-    // 2. 设置与实际像素精准对齐的高清物理像素画布缓冲区
-    canvasEl.width = Math.round(rect.width * dpr);
-    canvasEl.height = Math.round(rect.height * dpr);
+    // 2. 严格 1:1 坐标系绑定，杜绝 dpr 与 CSS 缩放产生 2x 偏移与笔画位移
+    canvasEl.width = Math.round(rect.width);
+    canvasEl.height = Math.round(rect.height);
 
     ctx = canvasEl.getContext("2d");
     if (ctx) {
-      ctx.scale(dpr, dpr);
       applyPenStyle();
+      isCanvasInitialized = true;
     }
   }
   // #endif
