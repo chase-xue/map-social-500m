@@ -7,9 +7,9 @@
         <text class="sub-title">慢节奏社交 · 距离换算传递延迟</text>
       </view>
       <view class="header-right-badges">
-        <view class="speed-ticket-badge" @tap="openGrowthMall">
-          <text class="ticket-icon">🚀</text>
-          <text class="ticket-count">{{ myProfile.growth?.speedTickets || 0 }} 张极速券</text>
+        <view class="speed-ticket-badge seal-mall-badge" @tap="openGrowthMall">
+          <text class="ticket-icon">🔏</text>
+          <text class="ticket-count">火漆印章 & 信纸库 ›</text>
         </view>
       </view>
     </view>
@@ -34,9 +34,9 @@
               <text class="flying-step">{{ fn.currentDesc }}</text>
             </view>
           </view>
-          <button class="fast-speed-btn" @tap.stop="triggerAccelerate(fn)">
-            🚀 1元加速送达
-          </button>
+          <view class="slow-flight-badge">
+            <text class="badge-txt">🕊️ 纸飞机慢翔中</text>
+          </view>
         </view>
         <!-- 飞行进度条 -->
         <view class="flight-progress-bar">
@@ -91,7 +91,8 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { FriendItem, ChatMessage } from "../../types";
 import { useAppState } from "../../composables/useAppState";
-import { computeFlightProgress, accelerateSlowNote } from "../../services/slowNotesService";
+import { computeFlightProgress } from "../../services/slowNotesService";
+import { formatDistance } from "../../services/geo";
 
 const {
   statusBarHeight,
@@ -168,24 +169,11 @@ function isMsgInFlight(friend: FriendItem): boolean {
   return !!(friend.lastMessage && friend.lastMessage.includes("[纸条传递中]"));
 }
 
-function formatDistance(meters: number): string {
-  if (meters < 1000) {
-    return `${Math.round(meters)}m`;
-  }
-  return `${(meters / 1000).toFixed(1)}km`;
-}
-
 function openChatFromFlyingNote(fn: FlyingCardItem) {
   const f = friends.value.find(item => item.userId === fn.targetId);
   if (f) {
     openChatWithFriend(f);
   }
-}
-
-function triggerAccelerate(fn: FlyingCardItem) {
-  accelerateSlowNote(fn.targetId, fn.id);
-  uni.showToast({ title: "🚀 极速加速成功，纸条已送达！", icon: "success" });
-  loadFriends();
 }
 
 function openGrowthMall() {
@@ -313,14 +301,20 @@ function openGrowthMall() {
   margin-top: 1px;
 }
 
-.fast-speed-btn {
-  background: #ff9800;
-  color: #fff;
+.slow-flight-badge {
+  background: rgba(33, 150, 243, 0.12);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  color: #1976d2;
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 600;
   border-radius: 12px;
   padding: 3px 8px;
-  border: none;
+}
+
+.seal-mall-badge {
+  background: #fff8e1 !important;
+  border-color: #ffd54f !important;
+  color: #b45309 !important;
 }
 
 .flight-progress-bar {

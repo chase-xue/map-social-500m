@@ -29,7 +29,10 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
     title: '传纸条课代表',
     experience: 860,
     coins: 66,
-    speedTickets: 3,
+    ownedSeals: ['古铜月相印', '玫瑰金猫爪印'],
+    activeSeal: '古铜月相印',
+    ownedPapers: ['京都和纸', '星空流光纸'],
+    activePaper: '京都和纸',
     charExpandCards: 2,
     activeTheme: 'wood',
     ownedThemes: ['wood', 'cherry', 'retro']

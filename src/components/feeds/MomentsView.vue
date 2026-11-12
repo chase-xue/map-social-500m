@@ -72,7 +72,7 @@
                   {{ item.authorProfile.gender === '女' ? '♀' : '♂' }}{{ item.authorProfile.age }}岁
                 </text>
               </view>
-              <text class="dist-badge">📍 距离 {{ item.distance }}m</text>
+              <text class="dist-badge">📍 {{ formatDistance(item.distance) }}</text>
             </view>
 
             <!-- 动态正文 (深炭灰 #191919，行高 1.55，点击支持进入详情) -->
@@ -119,7 +119,7 @@
 
             <!-- 位置标签 (微信经典板岩蓝 #576B95) -->
             <view class="location-link" @tap.stop="openDetailSheet(item)">
-              <text>📍 附近空间 (距你 {{ item.distance }}m)</text>
+              <text>📍 附近空间 ({{ formatDistance(item.distance) }})</text>
             </view>
 
             <!-- 元信息与经典右侧 "··" 操作入口 -->
@@ -236,6 +236,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useAppState } from "../../composables/useAppState";
+import { formatDistance } from "../../services/geo";
 const {
   statusBarHeight, myProfile, sortedMomentsStatuses, activeHelpStatuses,
   openMyProfileSheet, openPublishSheet, viewAuthorProfile, viewCommenterProfile,

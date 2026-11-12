@@ -81,16 +81,30 @@ export function filterStatusesWithinRange(
 }
 
 /**
- * 格式化距离文案展示
+ * 前置地理隐私保护：强制实行模糊距离展示
+ * 仅显示“在 100 米内”、“在 300 米内”、“在 500 米生活圈内”等区间，
+ * 绝不标定具体米数与具体建筑物坐标，既保留“同在一处”的浪漫情调，又杜绝线下人身追踪隐患。
  */
-export function formatDistance(meters: number): string {
-  if (meters < 10) {
-    return "就在你身旁";
+export function formatDistance(meters?: number | null): string {
+  if (meters == null || isNaN(meters)) {
+    return "在 500 米内";
   }
-  if (meters < 1000) {
-    return `${meters}米处`;
+  if (meters <= 50) {
+    return "在身边 50 米内";
   }
-  return `${(meters / 1000).toFixed(1)}公里处`;
+  if (meters <= 100) {
+    return "在 100 米内";
+  }
+  if (meters <= 300) {
+    return "在 300 米内";
+  }
+  if (meters <= 500) {
+    return "在 500 米内";
+  }
+  if (meters <= 1000) {
+    return "在 1 公里内";
+  }
+  return "在 1 公里外";
 }
 
 /**

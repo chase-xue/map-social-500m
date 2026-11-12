@@ -14,10 +14,14 @@ export interface UserGrowth {
   title: string;           // 如 "课堂捣蛋鬼", "传纸条课代表"
   experience: number;
   coins: number;           // 慢纸条慢币
-  speedTickets: number;    // 极速加速券数量 (1元会员特权)
-  charExpandCards: number; // 70字扩充卡
+  ownedSeals: string[];    // 拥有的特权火漆印章外观 (如 "古铜月相印", "玫瑰金猫爪印", "欧式皇家徽印")
+  activeSeal: string;      // 当前佩戴印章
+  ownedPapers: string[];   // 拥有的特权信纸外观 (如 "京都和纸", "星空流光纸", "羊皮手账卷")
+  activePaper: string;     // 当前使用信纸
+  charExpandCards: number; // 70字长信纸扩充包
   activeTheme: DeskTheme;
   ownedThemes: DeskTheme[];
+  speedTickets?: number;   // 已彻底废弃(砍掉反人类提速，坚守纯粹慢节奏)
 }
 
 export interface UserProfile {

@@ -43,7 +43,7 @@
           <text class="hero-sub-text">地区：北京 · 500米生活圈</text>
           <view class="hero-distance-pill">
             <text class="pill-dot">📍</text>
-            <text class="pill-text">距你当前位置约 {{ viewingDistance ? viewingDistance + '米' : '500米以内' }}</text>
+            <text class="pill-text">{{ formatDistance(viewingDistance) }}</text>
           </view>
         </view>
       </view>
@@ -199,6 +199,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useAppState } from "../../composables/useAppState";
+import { formatDistance } from "../../services/geo";
 
 const {
   statusBarHeight, userCardVisible, viewingProfile, viewingDistance, myProfile, allStatuses,

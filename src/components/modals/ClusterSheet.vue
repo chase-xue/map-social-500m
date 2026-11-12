@@ -84,7 +84,7 @@
             </view>
 
             <view class="cell-bottom-meta">
-              <text class="meta-dist">📍 距离你约 {{ st.distance != null ? st.distance + 'm' : '500m以内' }}</text>
+              <text class="meta-dist">📍 {{ formatDistance(st.distance) }}</text>
               <text class="meta-comments-count">💬 {{ st.comments?.length || 0 }} 条互动</text>
             </view>
           </view>
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { useAppState } from "../../composables/useAppState";
+import { formatDistance } from "../../services/geo";
 
 const {
   clusterVisible,

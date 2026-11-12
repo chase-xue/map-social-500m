@@ -129,49 +129,10 @@ export function sendSlowPaperNote(
   return newMsg;
 }
 
+/**
+ * 坚定践行慢生活理念：彻底砍掉“1 元提速”，杜绝付费破坏慢社交沉浸感
+ */
 export function accelerateSlowNote(receiverId: string, messageId: string): boolean {
-  const rawChats = uni.getStorageSync("LOCAL_MAP_CHATS_V1") || "{}";
-  let allChats: Record<string, ChatMessage[]> = {};
-  try {
-    allChats = JSON.parse(rawChats);
-  } catch (e) {
-    return false;
-  }
-
-  const list = allChats[receiverId];
-  if (!list) return false;
-
-  const target = list.find(m => m.id === messageId);
-  if (!target) return false;
-
-  // 消耗 1 张极速加速券
-  const profile = getUserProfile();
-  if (profile.growth) {
-    if (profile.growth.speedTickets > 0) {
-      profile.growth.speedTickets -= 1;
-    } else if (profile.growth.coins >= 10) {
-      profile.growth.coins -= 10;
-    }
-    saveUserProfile(profile);
-  }
-
-  target.isAccelerated = true;
-  target.isDelivered = true;
-  target.flightProgress = 100;
-  target.deliveredAt = Date.now();
-  target.currentFlyLocation = "🚀 已通过1元极速特权加速送达！";
-
-  uni.setStorageSync("LOCAL_MAP_CHATS_V1", JSON.stringify(allChats));
-
-  // 同步刷新好友列表最后一条状态为「已送达」
-  const friends = getFriendsList();
-  const f = friends.find(item => item.userId === receiverId);
-  if (f) {
-    const textPreview = target.contentType === 'image' ? '[手写真迹纸条]' : target.content;
-    f.lastMessage = `📬 [纸条已送达] ${textPreview.slice(0, 18)}`;
-    f.lastMessageTime = Date.now();
-    saveFriendsList(friends);
-  }
-
-  return true;
+  uni.showToast({ title: "小纸条慢社交：让文字在空气中多飞一会儿～🕊️", icon: "none" });
+  return false;
 }

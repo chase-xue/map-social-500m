@@ -206,7 +206,7 @@
         </view>
 
         <view class="letter-meta-row">
-          <text class="meta-item">📍 距你约 {{ fishedBottle.distanceMeters }} 米</text>
+          <text class="meta-item">📍 {{ formatDistance(fishedBottle.distanceMeters) }}</text>
           <text class="meta-item">🌊 刚刚漂流过海域</text>
         </view>
 
@@ -264,6 +264,7 @@
 import { ref } from 'vue';
 import { useAppState } from '../../composables/useAppState';
 import { DriftBottleItem } from '../../types';
+import { formatDistance } from '../../services/geo';
 
 const {
   statusBarHeight,

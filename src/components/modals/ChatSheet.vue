@@ -10,7 +10,7 @@
 
         <view class="chat-header-center" @tap="openUserProfileCard(currentChatFriend, undefined)">
           <text class="chat-header-name">{{ currentChatFriend?.name }}</text>
-          <text class="online-tag">📍 距离 {{ formatDistance(currentChatFriend?.distanceMeters || 780) }} · 慢纸条互传</text>
+          <text class="online-tag">📍 {{ formatDistance(currentChatFriend?.distanceMeters || 320) }} · 慢纸条互传</text>
         </view>
 
         <view class="chat-desk-btn" @tap="goToFriendDesk">
@@ -25,9 +25,9 @@
             <text class="airplane-spin">✈️</text>
             <text class="radar-text">{{ flyingNoteInfo.desc }}</text>
           </view>
-          <button class="fast-speed-action" @tap="accelerateCurrentNote">
-            🚀 1元极速送达
-          </button>
+          <view class="slow-flight-pill">
+            <text class="flight-pill-txt">🕊️ 慢纸条穿行中</text>
+          </view>
         </view>
         <view class="radar-progress-track">
           <view class="track-fill" :style="{ width: flyingNoteInfo.progress + '%' }" />
@@ -148,9 +148,9 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAppState } from "../../composables/useAppState";
 import {
   sendSlowPaperNote,
-  computeFlightProgress,
-  accelerateSlowNote
+  computeFlightProgress
 } from "../../services/slowNotesService";
+import { formatDistance } from "../../services/geo";
 import HandwritingPad from "../common/HandwritingPad.vue";
 
 const showHwPad = ref(false);
@@ -185,11 +185,6 @@ onMounted(() => {
 onUnmounted(() => {
   if (progressTimer) clearInterval(progressTimer);
 });
-
-function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)}m`;
-  return `${(meters / 1000).toFixed(1)}km`;
-}
 
 const flyingMsg = ref<any>(null);
 
@@ -241,14 +236,6 @@ function onHwConfirmed(dataUrl: string) {
   currentChatMessages.value.push(newMsg);
   updateFlyingStatus();
   uni.showToast({ title: "手写纸条已折起，起飞寄出！✈️", icon: "success" });
-}
-
-function accelerateCurrentNote() {
-  if (!flyingMsg.value || !currentChatFriend.value) return;
-  accelerateSlowNote(currentChatFriend.value.userId, flyingMsg.value.id);
-  flyingMsg.value.isDelivered = true;
-  flyingMsg.value.flightProgress = 100;
-  uni.showToast({ title: "🚀 极速送达成功！已落入对方桌洞", icon: "success" });
 }
 
 function goToFriendDesk() {
@@ -364,14 +351,17 @@ function goToFriendDesk() {
   color: #795548;
 }
 
-.fast-speed-action {
-  background: #ff9800;
-  color: #fff;
-  font-size: 10px;
-  font-weight: bold;
+.slow-flight-pill {
+  background: rgba(121, 85, 72, 0.15);
+  border: 1px solid rgba(121, 85, 72, 0.3);
   padding: 2px 8px;
   border-radius: 12px;
-  border: none;
+}
+
+.flight-pill-txt {
+  font-size: 10px;
+  font-weight: 600;
+  color: #5d4037;
 }
 
 .radar-progress-track {

@@ -216,7 +216,7 @@
                 <view class="constellation-row">
                   <text class="meta-tag">{{ item.constellation }}</text>
                   <text class="meta-tag tag-mbti">{{ item.mbti }}</text>
-                  <text class="meta-dist">📍 距离 {{ item.distance }}m</text>
+                  <text class="meta-dist">📍 {{ formatDistance(item.distance) }}</text>
                 </view>
               </view>
             </view>
@@ -272,6 +272,7 @@
 import { ref, reactive } from 'vue';
 import { useAppState } from '../../composables/useAppState';
 import { AiMatchFilter, AiMatchUserResult } from '../../types';
+import { formatDistance } from '../../services/geo';
 
 const {
   aiMatchSheetVisible,

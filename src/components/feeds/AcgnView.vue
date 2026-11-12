@@ -53,7 +53,7 @@
                   </text>
                   <text v-if="item.userId === myProfile.id" class="author-my-tag">我</text>
                 </view>
-                <text class="dist-badge">📍 距离 {{ item.distance || '500' }}m</text>
+                <text class="dist-badge">📍 {{ formatDistance(item.distance) }}</text>
               </view>
 
               <!-- 动态正文 -->
@@ -192,6 +192,7 @@
 import { ref, computed } from "vue";
 import { useAppState } from "../../composables/useAppState";
 import { ACGN_TAG_CATEGORIES } from "../../constants/acgn";
+import { formatDistance } from "../../services/geo";
 
 const ACGN_CATEGORIES = ACGN_TAG_CATEGORIES;
 

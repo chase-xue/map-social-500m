@@ -43,19 +43,19 @@
         </view>
       </view>
 
-      <!-- 钱包与纸条道具资产区 -->
+      <!-- 钱包与纸条文创资产区 -->
       <view class="assets-grid-box">
         <view class="asset-item" @tap="buyCoins">
           <text class="asset-num">{{ myGrowth.coins }}</text>
           <text class="asset-label">🪙 慢币余额</text>
         </view>
-        <view class="asset-item" @tap="buySpeedTicket">
-          <text class="asset-num">{{ myGrowth.speedTickets }}</text>
-          <text class="asset-label">🚀 极速加速券</text>
+        <view class="asset-item" @tap="openSealsMall">
+          <text class="asset-num">{{ myGrowth.ownedSeals?.length || 2 }} 款</text>
+          <text class="asset-label">🔏 火漆印章库</text>
         </view>
-        <view class="asset-item" @tap="buyCharCard">
-          <text class="asset-num">{{ myGrowth.charExpandCards }}</text>
-          <text class="asset-label">📝 字数扩充包</text>
+        <view class="asset-item" @tap="openPapersMall">
+          <text class="asset-num">{{ myGrowth.ownedPapers?.length || 2 }} 款</text>
+          <text class="asset-label">📜 典藏特权信纸</text>
         </view>
       </view>
 
@@ -78,34 +78,53 @@
         </view>
       </view>
 
-      <!-- 商业化与增值特权商城 -->
+      <!-- 🏮 小纸条情怀文创小铺 & 拟物空间馆 (皮肤经济) -->
       <view class="section-card">
         <view class="section-header">
-          <text class="section-title">💎 慢纸条会员中心 & 增值特权</text>
+          <text class="section-title">🏮 小纸条情怀文创小铺 & 拟物空间馆</text>
+          <text class="section-sub">坚守慢节奏纯粹性 · 拒绝破坏慢社交的提速特权</text>
         </view>
         <view class="privilege-list">
-          <view class="privilege-item" @tap="buySpeedTicket">
-            <view class="privilege-icon">🚀</view>
+          <view class="privilege-item" @tap="openSealsMall">
+            <view class="privilege-icon">🔏</view>
             <view class="privilege-desc">
-              <text class="p-title">1 元纸条极速加速包</text>
-              <text class="p-sub">远距离纸条免等待，立即闪速滑入对方桌洞</text>
+              <text class="p-title">珍藏特权火漆印章外观包</text>
+              <text class="p-sub">古铜月相印、玫瑰金猫爪印、欧式皇家徽印（永久个性盖章）</text>
             </view>
-            <button class="buy-btn">¥1 / 3张</button>
+            <button class="buy-btn">¥6 / 永久拥有</button>
           </view>
 
-          <view class="privilege-item" @tap="buyCharCard">
-            <view class="privilege-icon">📝</view>
+          <view class="privilege-item" @tap="openPapersMall">
+            <view class="privilege-icon">📜</view>
             <view class="privilege-desc">
-              <text class="p-title">便签字数扩充卡</text>
-              <text class="p-sub">解除 70 字限制，单张便签支持书写 300 字长文</text>
+              <text class="p-title">典藏和纸与星空信笺套装</text>
+              <text class="p-sub">京都古法和纸、星空流光纸、午后羊皮卷信纸（信纸皮肤外观）</text>
             </view>
-            <button class="buy-btn">¥3 / 张</button>
+            <button class="buy-btn">¥9 / 永久解锁</button>
+          </view>
+
+          <view class="privilege-item" @tap="openThemesMall">
+            <view class="privilege-icon">🪵</view>
+            <view class="privilege-desc">
+              <text class="p-title">治愈桌洞拟物化装扮皮肤</text>
+              <text class="p-sub">雨夜咖啡馆、京都老书屋、温室花房花草写字台（沉浸书桌皮肤）</text>
+            </view>
+            <button class="buy-btn">¥12 / 沉浸装扮</button>
+          </view>
+
+          <view class="privilege-item" @tap="openMerchOrder">
+            <view class="privilege-icon">🎁</view>
+            <view class="privilege-desc">
+              <text class="p-title">《小纸条》实体文创慢寄礼盒</text>
+              <text class="p-sub">手工黄铜折纸飞机书签 + 手账和纸胶带盲盒 + 慢递信笺</text>
+            </view>
+            <button class="buy-btn merch-btn">¥39 / 慢递包邮</button>
           </view>
 
           <view class="privilege-item" @tap="openMerchantPublishModal">
             <view class="privilege-icon">🏪</view>
             <view class="privilege-desc">
-              <text class="p-title">本地商户 500m 定向便签投放</text>
+              <text class="p-title">本地小店 500m 生活圈便签定向投放</text>
               <text class="p-sub">面向周边500米生活圈定向发布优惠打卡便签</text>
             </view>
             <button class="buy-btn merchant-btn">商户入驻</button>
@@ -181,16 +200,22 @@ const titlesList = [
 ];
 
 const myGrowth = computed(() => {
-  return myProfile.value.growth || {
-    grade: "大学生" as GradeLevel,
-    title: "传纸条课代表",
-    experience: 860,
-    coins: 66,
-    speedTickets: 3,
-    charExpandCards: 2,
-    activeTheme: "wood",
-    ownedThemes: ["wood", "cherry", "retro"]
-  };
+  if (!myProfile.value.growth) {
+    myProfile.value.growth = {
+      grade: "大学生" as GradeLevel,
+      title: "传纸条课代表",
+      experience: 860,
+      coins: 66,
+      ownedSeals: ["古铜月相印", "玫瑰金猫爪印"],
+      activeSeal: "古铜月相印",
+      ownedPapers: ["京都古法和纸", "星空流光纸"],
+      activePaper: "京都古法和纸",
+      charExpandCards: 2,
+      activeTheme: "wood",
+      ownedThemes: ["wood", "cherry", "retro"]
+    };
+  }
+  return myProfile.value.growth;
 });
 
 function switchGrade(grade: GradeLevel) {
@@ -214,18 +239,154 @@ function buyCoins() {
   uni.showToast({ title: "每日签到成功，慢币 +20 🪙", icon: "success" });
 }
 
-function buySpeedTicket() {
-  if (!myProfile.value.growth) return;
-  myProfile.value.growth.speedTickets += 3;
-  saveUserProfile(myProfile.value);
-  uni.showToast({ title: "已成功获得 3 张极速加速券 🚀", icon: "success" });
+function openSealsMall() {
+  const g = myProfile.value.growth;
+  if (!g) return;
+  const seals = [
+    { name: "古铜月相印", desc: "复古慢调，手工压印质感" },
+    { name: "玫瑰金猫爪印", desc: "温暖治愈，猫爪肉垫浮雕" },
+    { name: "欧式皇家徽印", desc: "典雅贵气，双狮展翼纹章", price: 30 }
+  ];
+  const itemList = seals.map(s => {
+    const isOwned = g.ownedSeals?.includes(s.name);
+    const isActive = g.activeSeal === s.name;
+    return `${s.name}${isActive ? ' (当前佩戴)' : isOwned ? ' (已拥有·点击更换)' : ' (¥6 / 30慢币解锁)'}`;
+  });
+
+  uni.showActionSheet({
+    itemList,
+    success: (res) => {
+      const selected = seals[res.tapIndex];
+      if (!selected) return;
+      if (!g.ownedSeals) g.ownedSeals = ["古铜月相印", "玫瑰金猫爪印"];
+      if (g.ownedSeals.includes(selected.name)) {
+        g.activeSeal = selected.name;
+        saveUserProfile(myProfile.value);
+        uni.showToast({ title: `已佩戴火漆印章：${selected.name}`, icon: "success" });
+      } else {
+        uni.showModal({
+          title: `解锁「${selected.name}」`,
+          content: `${selected.desc}\n需消耗 30 慢币（或特权外观 ¥6），是否立即解锁？`,
+          confirmText: "解锁",
+          success: (m) => {
+            if (m.confirm) {
+              if (g.coins >= 30) {
+                g.coins -= 30;
+              }
+              g.ownedSeals.push(selected.name);
+              g.activeSeal = selected.name;
+              saveUserProfile(myProfile.value);
+              uni.showToast({ title: `成功解锁并佩戴 ${selected.name} 🔏`, icon: "success" });
+            }
+          }
+        });
+      }
+    }
+  });
 }
 
-function buyCharCard() {
-  if (!myProfile.value.growth) return;
-  myProfile.value.growth.charExpandCards += 1;
-  saveUserProfile(myProfile.value);
-  uni.showToast({ title: "已领取便签字数扩充卡 📝", icon: "success" });
+function openPapersMall() {
+  const g = myProfile.value.growth;
+  if (!g) return;
+  const papers = [
+    { name: "京都古法和纸", desc: "温润纤维手感，水墨晕染底纹" },
+    { name: "星空流光纸", desc: "深蓝渐变微光，适合夜读纸条" },
+    { name: "午后羊皮卷信纸", desc: "怀旧中世纪泛黄卷边，手感厚重", price: 40 }
+  ];
+  const itemList = papers.map(p => {
+    const isOwned = g.ownedPapers?.includes(p.name);
+    const isActive = g.activePaper === p.name;
+    return `${p.name}${isActive ? ' (当前使用)' : isOwned ? ' (已拥有·点击更换)' : ' (¥9 / 40慢币解锁)'}`;
+  });
+
+  uni.showActionSheet({
+    itemList,
+    success: (res) => {
+      const selected = papers[res.tapIndex];
+      if (!selected) return;
+      if (!g.ownedPapers) g.ownedPapers = ["京都古法和纸", "星空流光纸"];
+      if (g.ownedPapers.includes(selected.name)) {
+        g.activePaper = selected.name;
+        saveUserProfile(myProfile.value);
+        uni.showToast({ title: `已换上信笺：${selected.name}`, icon: "success" });
+      } else {
+        uni.showModal({
+          title: `解锁「${selected.name}」`,
+          content: `${selected.desc}\n需消耗 40 慢币（或典藏套装 ¥9），是否立即解锁？`,
+          confirmText: "解锁",
+          success: (m) => {
+            if (m.confirm) {
+              if (g.coins >= 40) {
+                g.coins -= 40;
+              }
+              g.ownedPapers.push(selected.name);
+              g.activePaper = selected.name;
+              saveUserProfile(myProfile.value);
+              uni.showToast({ title: `已解锁特权信笺 ${selected.name} 📜`, icon: "success" });
+            }
+          }
+        });
+      }
+    }
+  });
+}
+
+function openThemesMall() {
+  const g = myProfile.value.growth;
+  if (!g) return;
+  const themes: { id: DeskTheme; name: string; desc: string }[] = [
+    { id: "wood", name: "温暖原木书桌", desc: "怀旧学生课桌，温暖木质纹理" },
+    { id: "cherry", name: "樱花漫舞台", desc: "清爽微粉调，落樱时光" },
+    { id: "retro", name: "雨夜复古咖啡馆", desc: "深色红木，微暗暖光雨声" },
+    { id: "modern", name: "温室花房透光台", desc: "绿色植物环绕，玻璃天窗阳光" }
+  ];
+  const itemList = themes.map(t => {
+    const isOwned = g.ownedThemes?.includes(t.id);
+    const isActive = g.activeTheme === t.id;
+    return `${t.name}${isActive ? ' (当前装扮)' : isOwned ? ' (已拥有·点击切换)' : ' (¥12 / 沉浸装扮)'}`;
+  });
+
+  uni.showActionSheet({
+    itemList,
+    success: (res) => {
+      const selected = themes[res.tapIndex];
+      if (!selected) return;
+      if (!g.ownedThemes) g.ownedThemes = ["wood", "cherry", "retro"];
+      if (g.ownedThemes.includes(selected.id)) {
+        g.activeTheme = selected.id;
+        saveUserProfile(myProfile.value);
+        uni.showToast({ title: `已应用桌洞皮肤：${selected.name}`, icon: "success" });
+      } else {
+        uni.showModal({
+          title: `装扮「${selected.name}」`,
+          content: `${selected.desc}\n是否立即解锁并应用该沉浸书桌装扮？`,
+          confirmText: "立即装扮",
+          success: (m) => {
+            if (m.confirm) {
+              g.ownedThemes.push(selected.id);
+              g.activeTheme = selected.id;
+              saveUserProfile(myProfile.value);
+              uni.showToast({ title: `已装扮 ${selected.name} 🪵`, icon: "success" });
+            }
+          }
+        });
+      }
+    }
+  });
+}
+
+function openMerchOrder() {
+  uni.showModal({
+    title: "🎁 《小纸条》实体文创慢寄礼盒",
+    content: "内含：\n1. 手工黄铜折纸飞机金属书签\n2. 500米慢生活原创和纸胶带盲盒\n3. 纯棉质感慢递信纸信封套装\n\n¥39 包邮 · 预计 3-5 天慢递送到您的案头。",
+    confirmText: "慢递预订",
+    cancelText: "再看看",
+    success: (res) => {
+      if (res.confirm) {
+        uni.showToast({ title: "已加入慢递清单，感谢支持纯粹情怀！", icon: "success" });
+      }
+    }
+  });
 }
 
 function openMerchantPublishModal() {

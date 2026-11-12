@@ -57,7 +57,7 @@
             <view class="author-meta-row">
               <text class="meta-time">{{ activeStatus?.createdAt ? formatTime(activeStatus.createdAt) : '' }}</text>
               <text class="meta-dot">·</text>
-              <text class="meta-dist">📍 距离你 {{ distanceText }}</text>
+              <text class="meta-dist">📍 {{ distanceText }}</text>
             </view>
           </view>
 
@@ -281,6 +281,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useAppState } from "../../composables/useAppState";
+import { formatDistance } from "../../services/geo";
 
 const {
   detailVisible,
@@ -321,9 +322,7 @@ const isLiked = computed(() => {
 });
 
 const distanceText = computed(() => {
-  const d = activeStatus.value?.distance;
-  if (d === undefined || d === null) return "500米以内";
-  return `${d} 米`;
+  return formatDistance(activeStatus.value?.distance);
 });
 
 const likesSummaryText = computed(() => {
