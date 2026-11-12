@@ -247,27 +247,80 @@
       </view>
     </view>
 
-    <!-- 弹窗：生活回忆录日记本 (Diary Book Modal) -->
-    <view v-if="diaryModalVisible" class="desk-modal-mask" @tap.self="diaryModalVisible = false">
-      <view class="diary-book-wrapper">
-        <view class="diary-header">
-          <text class="diary-book-title">📖 生活回忆录 · 手账足迹</text>
-          <text class="modal-close-btn" @tap="diaryModalVisible = false">✕</text>
+    <!-- 📖 全窗口手账阅读器：生活回忆录 (Full Window Diary Memory Book) -->
+    <view v-if="diaryModalVisible" class="diary-full-page">
+      <!-- 顶部手账书脊导航栏 -->
+      <view class="diary-full-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
+        <view class="diary-nav-back" @tap="diaryModalVisible = false">
+          <text class="back-arrow">‹</text>
+          <text class="back-text">返回桌洞</text>
         </view>
-        <scroll-view scroll-y class="diary-scroll">
-          <view v-for="d in currentDesk.diaryEntries" :key="d.id" class="diary-entry-card" :class="'paper-' + d.color">
-            <view class="diary-date-row">
-              <text class="diary-date">{{ d.dateStr }}</text>
-              <text class="diary-loc">📍 {{ d.locationName }}</text>
+        <view class="diary-nav-title-box">
+          <text class="diary-nav-title">📖 生活回忆录</text>
+          <text class="diary-nav-sub">手账足迹 · {{ currentDesk.diaryEntries.length }} 篇</text>
+        </view>
+        <view class="diary-nav-close" @tap="diaryModalVisible = false">
+          <text class="close-icon">✕</text>
+        </view>
+      </view>
+
+      <!-- 全窗口手账滚卷内容区 -->
+      <scroll-view scroll-y class="diary-full-scroll">
+        <view class="diary-scroll-content">
+          <!-- 顶部序言和纸卡片 -->
+          <view class="diary-intro-card">
+            <view class="washi-tape-strip" />
+            <view class="intro-quote">
+              <text class="quote-mark">“</text>
+              <text class="quote-text">生活慢下来，在500米圈里收集温暖随笔与手写信物。每一张翻过的纸条，都是真实的邻里慢时光。</text>
+              <text class="quote-mark right-mark">”</text>
             </view>
-            <text class="diary-title">{{ d.title }}</text>
-            <text class="diary-body">{{ d.content }}</text>
-            <view class="diary-tag-box">
-              <text class="diary-tag"># {{ d.tag }}</text>
+            <view class="intro-author-row">
+              <image class="intro-avatar" :src="currentDesk.ownerAvatar" mode="aspectFill" />
+              <text class="intro-author-name">来自 {{ currentDesk.ownerName }} 的随身手账</text>
             </view>
           </view>
-        </scroll-view>
-      </view>
+
+          <!-- 便签足迹列表 -->
+          <view class="diary-entries-flow">
+            <view
+              v-for="d in currentDesk.diaryEntries"
+              :key="d.id"
+              class="diary-entry-fullcard"
+              :class="'paper-' + d.color"
+            >
+              <!-- 撕边胶带拟物点缀 -->
+              <view class="entry-tape-accent" />
+
+              <view class="entry-meta-row">
+                <text class="entry-date">{{ d.dateStr }}</text>
+                <text class="entry-loc">📍 {{ d.locationName }}</text>
+              </view>
+
+              <text class="entry-title">{{ d.title }}</text>
+              <text class="entry-body">{{ d.content }}</text>
+
+              <view class="entry-footer-row">
+                <text class="entry-tag"># {{ d.tag }}</text>
+                <view class="entry-stamp">
+                  <text class="stamp-text">慢足迹</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 底部装订落款与留白 -->
+          <view class="diary-bottom-sign">
+            <view class="sign-divider">
+              <view class="line" />
+              <text class="sign-star">✦</text>
+              <view class="line" />
+            </view>
+            <text class="sign-text">小纸条 · 500米生活手账回忆录</text>
+            <text class="sign-sub">继续在窗台与桌洞收集慢生活记忆吧</text>
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
     <!-- 🔍 窗台便签放大展开检视弹窗 (支持查看手写真迹、撕下带走、点赞) -->
@@ -1599,91 +1652,331 @@ defineExpose({
   line-height: 1;
 }
 
-/* 弹窗通用 */
-.desk-modal-mask {
-  position: absolute;
+/* ==================== 📖 全窗口手账阅读器 (Full-Window Diary) ==================== */
+.diary-full-page {
+  position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(5px);
-  z-index: 100;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  z-index: 150;
+  background: #f7f4ed;
+  background-image: radial-gradient(#dfd7c8 0.8px, transparent 0.8px);
+  background-size: 18px 18px;
+  display: flex;
+  flex-direction: column;
+  animation: diary-slide-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes diary-slide-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.diary-full-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(254, 252, 248, 0.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1.5px dashed rgba(62, 39, 35, 0.15);
+  box-shadow: 0 4px 16px rgba(62, 39, 35, 0.05);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.diary-nav-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 18px;
+  background: rgba(62, 39, 35, 0.06);
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.95);
+    background: rgba(62, 39, 35, 0.12);
+  }
+
+  .back-arrow {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4e342e;
+    line-height: 1;
+  }
+  .back-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4e342e;
+  }
+}
+
+.diary-nav-title-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.diary-nav-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #3e2723;
+  letter-spacing: 0.5px;
+}
+
+.diary-nav-sub {
+  font-size: 11px;
+  color: #8d6e63;
+  margin-top: 1px;
+}
+
+.diary-nav-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(62, 39, 35, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:active {
+    transform: scale(0.92);
+    background: rgba(62, 39, 35, 0.12);
+  }
+
+  .close-icon {
+    font-size: 14px;
+    color: #5d4037;
+    font-weight: 600;
+  }
 }
 
-.diary-book-wrapper {
+.diary-full-scroll {
+  flex: 1;
+  height: 0;
   width: 100%;
-  max-width: 360px;
-  background: #fff;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  display: flex;
-  flex-direction: column;
-  max-height: 80vh;
 }
 
-.diary-header {
-  padding: 12px 16px;
-  background: #fdfaf6;
-  border-bottom: 1px solid #ebd9c5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 700;
-  color: #4e342e;
-}
-
-.modal-close-btn {
-  font-size: 16px;
-  color: #999;
-  padding: 4px 8px;
-}
-
-.diary-scroll {
-  padding: 12px;
-  max-height: 55vh;
+.diary-scroll-content {
+  padding: 18px 16px;
+  max-width: 620px;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
-.diary-entry-card {
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.diary-intro-card {
+  position: relative;
+  background: #fffdf9;
+  border: 1px solid #ebd9c5;
+  border-radius: 14px;
+  padding: 20px 18px 14px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 16px rgba(93, 64, 55, 0.06);
+
+  .washi-tape-strip {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 18px;
+    background: rgba(224, 185, 140, 0.55);
+    border: 1px dashed rgba(141, 110, 99, 0.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 2px;
+  }
+
+  .intro-quote {
+    position: relative;
+    padding: 0 8px;
+
+    .quote-mark {
+      font-size: 20px;
+      font-family: serif;
+      color: #bcaaa4;
+      line-height: 1;
+      vertical-align: middle;
+      &.right-mark { margin-left: 4px; }
+    }
+
+    .quote-text {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #5d4037;
+      font-style: italic;
+    }
+  }
+
+  .intro-author-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed #efebe9;
+
+    .intro-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid #ffd54f;
+    }
+
+    .intro-author-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #8d6e63;
+    }
+  }
 }
 
-.diary-date-row {
+.diary-entries-flow {
   display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  opacity: 0.75;
-  margin-bottom: 4px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.diary-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 4px;
-  display: block;
+.diary-entry-fullcard {
+  position: relative;
+  border-radius: 14px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 4px 18px rgba(62, 39, 35, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease;
+
+  &.paper-yellow { background: #fffbe6; border-color: #ffe58f; }
+  &.paper-pink   { background: #fff0f6; border-color: #ffadd2; }
+  &.paper-green  { background: #f6ffed; border-color: #b7eb8f; }
+  &.paper-blue   { background: #e6f7ff; border-color: #91d5ff; }
+  &.paper-white  { background: #ffffff; border-color: #d9d9d9; }
+  &.paper-kraft  { background: #f5ece1; border-color: #d7ccc8; }
+
+  .entry-tape-accent {
+    position: absolute;
+    top: -7px;
+    right: 28px;
+    width: 60px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.65);
+    border: 0.5px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+
+  .entry-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #795548;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 0.5px dashed rgba(121, 85, 72, 0.2);
+
+    .entry-date {
+      font-weight: 700;
+      color: #5d4037;
+    }
+    .entry-loc {
+      font-size: 11px;
+      opacity: 0.85;
+    }
+  }
+
+  .entry-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #3e2723;
+    margin-bottom: 8px;
+    display: block;
+    line-height: 1.4;
+  }
+
+  .entry-body {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #4e342e;
+    display: block;
+    letter-spacing: 0.3px;
+  }
+
+  .entry-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 8px;
+
+    .entry-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6d4c41;
+      background: rgba(62, 39, 35, 0.06);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .entry-stamp {
+      border: 1px solid #d32f2f;
+      color: #d32f2f;
+      padding: 2px 7px;
+      border-radius: 4px;
+      transform: rotate(-4deg);
+      opacity: 0.75;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+  }
 }
 
-.diary-body {
-  font-size: 12px;
-  line-height: 1.5;
-  display: block;
-}
+.diary-bottom-sign {
+  margin-top: 28px;
+  padding-bottom: calc(50px + env(safe-area-inset-bottom, 20px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 
-.diary-tag-box {
-  margin-top: 6px;
-}
+  .sign-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 80%;
 
-.diary-tag {
-  font-size: 10px;
-  background: rgba(0, 0, 0, 0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
+    .line {
+      flex: 1;
+      height: 1px;
+      background: rgba(62, 39, 35, 0.15);
+    }
+    .sign-star {
+      color: #a1887f;
+      font-size: 12px;
+    }
+  }
+
+  .sign-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: #8d6e63;
+    letter-spacing: 1px;
+  }
+
+  .sign-sub {
+    font-size: 11px;
+    color: #bcaaa4;
+  }
 }
 
 .theme-selector-pop {
