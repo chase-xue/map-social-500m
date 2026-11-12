@@ -234,11 +234,12 @@ function openGrowthMall() {
 
 /* 飞行雷达卡片 */
 .flying-radar-box {
-  margin: 12px 14px 4px;
-  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  margin: 10px 14px 6px;
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
   border-radius: 12px;
   padding: 12px;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+  box-shadow: 0 3px 10px rgba(62, 39, 35, 0.05);
+  border: 1px solid #fde68a;
 }
 
 .radar-header {
@@ -250,20 +251,21 @@ function openGrowthMall() {
 
 .radar-title {
   font-size: 13px;
-  font-weight: bold;
-  color: #0d47a1;
+  font-weight: 600;
+  color: #92400e;
 }
 
 .radar-tip {
-  font-size: 10px;
-  color: #1976d2;
+  font-size: 11px;
+  color: #b45309;
 }
 
 .flying-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
   padding: 10px;
   margin-bottom: 6px;
+  border: 0.5px solid rgba(220, 210, 198, 0.6);
 }
 
 .flying-card-top {
@@ -282,6 +284,7 @@ function openGrowthMall() {
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  border: 1px solid #ebd9c5;
 }
 
 .flying-info {
@@ -290,37 +293,37 @@ function openGrowthMall() {
 }
 
 .flying-to {
-  font-size: 12px;
-  font-weight: bold;
-  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c2420;
 }
 
 .flying-step {
   font-size: 11px;
-  color: #e65100;
+  color: #d97706;
   margin-top: 1px;
 }
 
 .slow-flight-badge {
-  background: rgba(33, 150, 243, 0.12);
-  border: 1px solid rgba(33, 150, 243, 0.3);
-  color: #1976d2;
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  color: #92400e;
   font-size: 11px;
   font-weight: 600;
   border-radius: 12px;
-  padding: 3px 8px;
+  padding: 2px 8px;
 }
 
 .seal-mall-badge {
-  background: #fff8e1 !important;
-  border-color: #ffd54f !important;
-  color: #b45309 !important;
+  background: #fbf5ea !important;
+  border-color: #ebd9c5 !important;
+  color: #8c5835 !important;
 }
 
 .flight-progress-bar {
   margin-top: 8px;
-  height: 6px;
-  background: #e0e0e0;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.06);
   border-radius: 3px;
   position: relative;
   overflow: visible;
@@ -328,7 +331,7 @@ function openGrowthMall() {
 
 .progress-fill {
   height: 100%;
-  background: #2196f3;
+  background: #d97706;
   border-radius: 3px;
   position: relative;
 }
@@ -348,20 +351,20 @@ function openGrowthMall() {
 
 .conversations-list {
   background: #fff;
-  border-top: 0.5px solid #eee;
-  border-bottom: 0.5px solid #eee;
+  border-top: 0.5px solid rgba(220, 210, 198, 0.5);
+  border-bottom: 0.5px solid rgba(220, 210, 198, 0.5);
 }
 
 .chat-cell-item {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 0.5px solid #f0eee9;
+  padding: 13px 16px;
+  border-bottom: 0.5px solid #f2ede4;
   transition: background 0.15s;
 }
 
 .chat-cell-item:active {
-  background: #faf8f5;
+  background: #faf7f2;
 }
 
 .avatar-box {
@@ -373,14 +376,14 @@ function openGrowthMall() {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1px solid #eee;
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .unread-badge {
   position: absolute;
   top: -2px;
   right: -2px;
-  background: #e74c3c;
+  background: #dc2626;
   color: #fff;
   font-size: 10px;
   min-width: 16px;
@@ -402,41 +405,45 @@ function openGrowthMall() {
 .cell-row-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 4px;
 }
 
 .friend-name {
   font-size: 15px;
   font-weight: 600;
-  color: #2c3e50;
-  flex: 1;
+  color: #2c2420;
 }
 
 .distance-tag {
   font-size: 10px;
-  background: #edf2f7;
-  color: #4a5568;
+  background: #fbf5ea;
+  color: #8c5835;
+  border: 0.5px solid #ebd9c5;
   padding: 1px 6px;
   border-radius: 10px;
-  margin-right: 8px;
+  margin-left: 6px;
+  margin-right: auto;
 }
 
 .chat-time {
   font-size: 11px;
-  color: #a0aec0;
+  color: #a8a096;
 }
 
 .cell-row-bottom {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .last-msg-preview {
   font-size: 13px;
-  color: #718096;
+  color: #70665f;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 240px;
+  max-width: 250px;
 }
 
 .in-flight {

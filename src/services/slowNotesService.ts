@@ -68,6 +68,8 @@ export function sendSlowPaperNote(
   content: string,
   options: {
     isSealed?: boolean;
+    sealType?: string;
+    paperType?: string;
     sketchMode?: boolean;
     imageUri?: string;
     targetDistanceMeters?: number;
@@ -90,6 +92,10 @@ export function sendSlowPaperNote(
     contentType: isImage ? "image" : "text",
     createdAt,
     isSealed: options.isSealed ?? false,
+    sealType: options.sealType,
+    paperType: options.paperType || "普通折纸",
+    isOpened: true, // 发送方自然知道内容
+    isPinnedToDesk: false,
     isAccelerated: false,
     sketchMode: options.sketchMode ?? false,
     distanceMeters: distance,

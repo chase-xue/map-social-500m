@@ -255,7 +255,11 @@ export function getChatMessages(friendId: string): ChatMessage[] {
           receiverId: "my_user_id",
           content: "哈喽！看到你在周边500米内发的状态啦👋",
           contentType: "text",
-          createdAt: Date.now() - 1000 * 60 * 30
+          createdAt: Date.now() - 1000 * 60 * 30,
+          isDelivered: true,
+          deliveredAt: Date.now() - 1000 * 60 * 29,
+          distanceMeters: 320,
+          isOpened: true
         },
         {
           id: "msg_2",
@@ -263,7 +267,11 @@ export function getChatMessages(friendId: string): ChatMessage[] {
           receiverId: "my_user_id",
           content: "今天新到了埃塞俄比亚水洗豆，给你留了一杯哦！☕",
           contentType: "text",
-          createdAt: Date.now() - 1000 * 60 * 15
+          createdAt: Date.now() - 1000 * 60 * 15,
+          isDelivered: true,
+          deliveredAt: Date.now() - 1000 * 60 * 14,
+          distanceMeters: 320,
+          isOpened: true
         }
       ];
       writeRawFile(FILE_NAME_CHATS, CHATS_STORAGE_KEY, allChats);
@@ -275,7 +283,11 @@ export function getChatMessages(friendId: string): ChatMessage[] {
           receiverId: "my_user_id",
           content: "哈喽！你也喜欢二次元动漫吗？看到你在周边500米发的状态啦🌸",
           contentType: "text",
-          createdAt: Date.now() - 1000 * 60 * 40
+          createdAt: Date.now() - 1000 * 60 * 40,
+          isDelivered: true,
+          deliveredAt: Date.now() - 1000 * 60 * 39,
+          distanceMeters: 450,
+          isOpened: true
         },
         {
           id: "msg_coser_2",
@@ -283,7 +295,11 @@ export function getChatMessages(friendId: string): ChatMessage[] {
           receiverId: "my_user_id",
           content: "返图出来啦！下次同城漫展一起组队出CP剧组呀🌸✨",
           contentType: "text",
-          createdAt: Date.now() - 1000 * 60 * 20
+          createdAt: Date.now() - 1000 * 60 * 20,
+          isDelivered: true,
+          deliveredAt: Date.now() - 1000 * 60 * 19,
+          distanceMeters: 450,
+          isOpened: true
         }
       ];
       writeRawFile(FILE_NAME_CHATS, CHATS_STORAGE_KEY, allChats);
@@ -291,7 +307,33 @@ export function getChatMessages(friendId: string): ChatMessage[] {
       allChats[friendId] = [];
     }
   }
-  return allChats[friendId] || [];
+
+  // 修复历史消息的投递状态，防止历史消息显示天空传递中
+  const list = allChats[friendId] || [];
+  let updated = false;
+  list.forEach(m => {
+    if (m.senderId !== 'my_user_id') {
+      if (!m.isDelivered) {
+        m.isDelivered = true;
+        updated = true;
+      }
+      if (m.isOpened === undefined) {
+        m.isOpened = true;
+      }
+    } else {
+      const duration = m.flightDurationSeconds || 0;
+      if (!m.isDelivered && (Date.now() - m.createdAt) / 1000 >= duration) {
+        m.isDelivered = true;
+        m.flightProgress = 100;
+        updated = true;
+      }
+    }
+  });
+  if (updated) {
+    writeRawFile(FILE_NAME_CHATS, CHATS_STORAGE_KEY, allChats);
+  }
+
+  return list;
 }
 
 export function sendChatMessage(

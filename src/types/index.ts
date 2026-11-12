@@ -65,6 +65,10 @@ export interface ChatMessage {
   createdAt: number;
   // 小纸条慢聊天特性
   isSealed?: boolean;            // 火漆印私密纸条
+  sealType?: string;             // 火漆印章外观 (如 "古铜月相印", "玫瑰金猫爪印")
+  paperType?: string;            // 信纸外观 (如 "京都和纸", "星空纸")
+  isOpened?: boolean;            // 是否已拆开火漆或折纸
+  isPinnedToDesk?: boolean;      // 是否已珍藏收入我的桌洞
   isAccelerated?: boolean;       // 是否已被加速
   distanceMeters?: number;       // 发送时的物理距离
   flightDurationSeconds?: number;// 传递所需总秒数
