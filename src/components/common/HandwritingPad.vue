@@ -139,6 +139,9 @@ let lastY = 0;
 onMounted(() => {
   nextTick(() => {
     initCanvas();
+    // 动画入场阶段与入场完毕后多次核验，确保尺寸绝对准确
+    setTimeout(initCanvas, 60);
+    setTimeout(initCanvas, 320);
   });
 });
 
@@ -151,14 +154,25 @@ function initCanvas() {
       : (uniCanvas.querySelector("canvas") as HTMLCanvasElement);
   }
   if (!canvasEl) {
-    canvasEl = document.querySelector(".hw-canvas canvas") as HTMLCanvasElement || document.querySelector("canvas") as HTMLCanvasElement;
+    canvasEl = (document.querySelector(".hw-canvas canvas") || document.querySelector("canvas")) as HTMLCanvasElement;
   }
 
-  if (canvasEl && typeof canvasEl.getContext === "function") {
-    const rect = canvasEl.getBoundingClientRect();
+  const wrapper = document.querySelector(".canvas-wrapper") as HTMLElement;
+  const rect = wrapper ? wrapper.getBoundingClientRect() : (canvasEl ? canvasEl.parentElement?.getBoundingClientRect() || canvasEl.getBoundingClientRect() : null);
+
+  if (canvasEl && rect && rect.width > 0 && rect.height > 0) {
     const dpr = window.devicePixelRatio || 1;
-    canvasEl.width = rect.width * dpr;
-    canvasEl.height = rect.height * dpr;
+    // 1. 强制覆盖 uni-app 内联注入的 width: 300px; height: 150px 样式，与外层容器严格 1:1 对齐
+    canvasEl.style.setProperty("width", `${rect.width}px`, "important");
+    canvasEl.style.setProperty("height", `${rect.height}px`, "important");
+    canvasEl.style.setProperty("position", "absolute", "important");
+    canvasEl.style.setProperty("left", "0px", "important");
+    canvasEl.style.setProperty("top", "0px", "important");
+
+    // 2. 设置与实际像素精准对齐的高清物理像素画布缓冲区
+    canvasEl.width = Math.round(rect.width * dpr);
+    canvasEl.height = Math.round(rect.height * dpr);
+
     ctx = canvasEl.getContext("2d");
     if (ctx) {
       ctx.scale(dpr, dpr);
@@ -216,8 +230,9 @@ function toggleEraser() {
 function getPos(e: any): { x: number; y: number } {
   if (!canvasEl) return { x: 0, y: 0 };
   const rect = canvasEl.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  const touch = e.touches && e.touches.length > 0 ? e.touches[0] : (e.changedTouches && e.changedTouches.length > 0 ? e.changedTouches[0] : null);
+  const clientX = touch ? touch.clientX : e.clientX;
+  const clientY = touch ? touch.clientY : e.clientY;
   return {
     x: clientX - rect.left,
     y: clientY - rect.top
@@ -457,6 +472,23 @@ function closePad() {
   width: 100%;
   background: #fff9c4;
   overflow: hidden;
+
+  :deep(uni-canvas),
+  uni-canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    position: relative !important;
+  }
+
+  :deep(canvas),
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    touch-action: none !important;
+    cursor: crosshair !important;
+  }
 }
 
 .pattern-yellow { background: #fff9c4; }
@@ -485,6 +517,7 @@ function closePad() {
 .hw-canvas {
   width: 100%;
   height: 100%;
+  display: block;
   touch-action: none;
   cursor: crosshair;
 }
