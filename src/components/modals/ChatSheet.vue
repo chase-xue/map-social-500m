@@ -146,14 +146,14 @@
             <view
               class="tray-chip"
               :class="{ 'chip-active-seal': isSealedMode }"
-              @tap="toggleSealMode"
+              @tap="openSealDrawer"
             >
               <text class="chip-icon">🔏</text>
               <text class="chip-text">{{ isSealedMode ? activeSealName : '火漆盖章' }}</text>
             </view>
 
             <!-- 特权信纸选择 -->
-            <view class="tray-chip" @tap="selectPaperPattern">
+            <view class="tray-chip" @tap="openPaperDrawer">
               <text class="chip-icon">📜</text>
               <text class="chip-text">{{ activePaperName }}</text>
             </view>
@@ -216,6 +216,77 @@
       @confirm="onHwConfirmed"
       @close="showHwPad = false"
     />
+
+    <!-- 拟物信笺抽屉 (彻底取代原生 ActionSheet，保持吉卜力手账风格统一) -->
+    <view v-if="showPaperDrawer" class="custom-drawer-mask" @tap="showPaperDrawer = false">
+      <view class="custom-drawer-card" @tap.stop>
+        <view class="drawer-header-row">
+          <view class="drawer-pill-bar" />
+          <text class="drawer-main-title">📜 挑选本次寄信的特权信纸</text>
+          <text class="drawer-sub-title">慢节奏触感信笺，为文字镀上温暖温度</text>
+        </view>
+        <view class="drawer-items-list">
+          <view
+            v-for="p in paperOptions"
+            :key="p.name"
+            class="paper-item-card"
+            :class="['paper-skin-' + p.colorKey, { 'item-card-active': activePaperName === p.name }]"
+            @tap="applyPaper(p)"
+          >
+            <view class="paper-swatch-box">
+              <text class="swatch-emoji">{{ p.icon }}</text>
+            </view>
+            <view class="paper-text-col">
+              <view class="p-title-row">
+                <text class="p-name">{{ p.name }}</text>
+                <text v-if="activePaperName === p.name" class="p-badge">当前使用</text>
+              </view>
+              <text class="p-desc">{{ p.desc }}</text>
+            </view>
+            <view class="p-select-indicator">
+              <text class="indicator-icon">{{ activePaperName === p.name ? '✓' : '›' }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 拟物火漆印章盒抽屉 (彻底取代原生弹窗，保持吉卜力手账风格统一) -->
+    <view v-if="showSealDrawer" class="custom-drawer-mask" @tap="showSealDrawer = false">
+      <view class="custom-drawer-card" @tap.stop>
+        <view class="drawer-header-row">
+          <view class="drawer-pill-bar" />
+          <text class="drawer-main-title">🔏 加盖专属火漆印章</text>
+          <text class="drawer-sub-title">私密慢纸条 · 对方需亲手戳破火漆方可拆信</text>
+        </view>
+        <view class="drawer-items-list seal-list">
+          <view
+            v-for="s in sealOptions"
+            :key="s.name"
+            class="seal-item-card"
+            :class="{ 'seal-card-active': isSealedMode && activeSealName === s.name }"
+            @tap="applySeal(s)"
+          >
+            <view class="seal-wax-stamp" :style="{ background: s.bg, borderColor: s.border }">
+              <text class="seal-stamp-ico">{{ s.icon }}</text>
+            </view>
+            <view class="seal-text-col">
+              <view class="p-title-row">
+                <text class="s-name">{{ s.name }}</text>
+                <text v-if="isSealedMode && activeSealName === s.name" class="s-badge">已加盖</text>
+              </view>
+              <text class="s-desc">{{ s.desc }}</text>
+            </view>
+            <view class="p-select-indicator">
+              <text class="indicator-icon">{{ isSealedMode && activeSealName === s.name ? '✓' : '›' }}</text>
+            </view>
+          </view>
+        </view>
+        <view v-if="isSealedMode" class="drawer-footer-action" @tap="removeSeal">
+          <text class="cancel-seal-btn">✕ 撤下火漆印（改为普通慢纸条）</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -233,6 +304,21 @@ import HandwritingPad from "../common/HandwritingPad.vue";
 
 const showHwPad = ref(false);
 const showStickerPicker = ref(false);
+const showPaperDrawer = ref(false);
+const showSealDrawer = ref(false);
+
+const paperOptions = [
+  { name: "京都和纸", colorKey: "yellow", icon: "🌾", desc: "古法棉麻纤维手感，水墨温润微黄底纹" },
+  { name: "星空流光纸", colorKey: "blue", icon: "🌌", desc: "幽蓝深邃星辰，适合夜读轻语" },
+  { name: "樱花手账纸", colorKey: "pink", icon: "🌸", desc: "柔和落樱微粉，温润少女心事" },
+  { name: "古朴牛皮卷", colorKey: "kraft", icon: "🪵", desc: "复古怀旧质感，手感厚重质朴" }
+];
+
+const sealOptions = [
+  { name: "古铜月相印", icon: "🌙", bg: "linear-gradient(135deg, #78350f, #92400e)", border: "#f59e0b", desc: "复古古铜压痕，月相清冷" },
+  { name: "玫瑰金猫爪印", icon: "🐾", bg: "linear-gradient(135deg, #9d174d, #be185d)", border: "#fbcfe8", desc: "治愈肉垫浮雕，温情陪伴" },
+  { name: "欧式皇家徽印", icon: "👑", bg: "linear-gradient(135deg, #7f1d1d, #991b1b)", border: "#fbbf24", desc: "双狮展翼纹章，庄重誓约" }
+];
 
 const {
   statusBarHeight,
@@ -300,31 +386,32 @@ const flyingNoteInfo = computed(() => {
   };
 });
 
-function toggleSealMode() {
-  isSealedMode.value = !isSealedMode.value;
-  if (isSealedMode.value) {
-    uni.showToast({ title: `已盖上「${activeSealName.value}」，私密慢送🔏`, icon: "none" });
-  }
+function openSealDrawer() {
+  showSealDrawer.value = true;
 }
 
-function selectPaperPattern() {
-  const papers = [
-    { name: "京都和纸", colorKey: "yellow" },
-    { name: "星空流光纸", colorKey: "blue" },
-    { name: "樱花手账纸", colorKey: "pink" },
-    { name: "古朴牛皮卷", colorKey: "kraft" }
-  ];
-  uni.showActionSheet({
-    itemList: papers.map(p => p.name + (p.name === activePaperName.value ? " (当前使用)" : "")),
-    success: (res) => {
-      const selected = papers[res.tapIndex];
-      if (selected) {
-        activePaperName.value = selected.name;
-        currentPaperColor.value = selected.colorKey;
-        uni.showToast({ title: `已换上：${selected.name} 📜`, icon: "none" });
-      }
-    }
-  });
+function applySeal(s: typeof sealOptions[0]) {
+  activeSealName.value = s.name;
+  isSealedMode.value = true;
+  showSealDrawer.value = false;
+  uni.showToast({ title: `已盖上「${s.name}」🔏`, icon: "none" });
+}
+
+function removeSeal() {
+  isSealedMode.value = false;
+  showSealDrawer.value = false;
+  uni.showToast({ title: "已撤下火漆印（改为普通纸条）", icon: "none" });
+}
+
+function openPaperDrawer() {
+  showPaperDrawer.value = true;
+}
+
+function applyPaper(p: typeof paperOptions[0]) {
+  activePaperName.value = p.name;
+  currentPaperColor.value = p.colorKey;
+  showPaperDrawer.value = false;
+  uni.showToast({ title: `已换上：${p.name} 📜`, icon: "none" });
 }
 
 function insertSticker(stk: string) {
@@ -928,5 +1015,197 @@ function goToFriendDesk() {
       }
     }
   }
+}
+
+/* 拟物手账抽屉 (统一定制设计，杜绝生硬原生白框弹窗) */
+.custom-drawer-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 220;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+
+.custom-drawer-card {
+  background: #fffdf8;
+  border-radius: 20px 20px 0 0;
+  padding: 16px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 24px rgba(62, 39, 35, 0.15);
+  border-top: 1px solid rgba(220, 210, 198, 0.8);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+
+  .drawer-header-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 16px;
+
+    .drawer-pill-bar {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: #ded8ce;
+      margin-bottom: 12px;
+    }
+
+    .drawer-main-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2c2420;
+    }
+
+    .drawer-sub-title {
+      font-size: 12px;
+      color: #8c827a;
+      margin-top: 3px;
+    }
+  }
+
+  .drawer-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .paper-item-card, .seal-item-card {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid #ebd9c5;
+      box-shadow: 0 2px 6px rgba(62, 39, 35, 0.04);
+      cursor: pointer;
+      transition: all 0.18s ease;
+
+      &:active {
+        transform: scale(0.985);
+      }
+
+      &.item-card-active, &.seal-card-active {
+        border-color: #3e2723;
+        box-shadow: 0 3px 12px rgba(62, 39, 35, 0.12);
+        background: #fffef2;
+      }
+
+      &.paper-skin-yellow {
+        background: #fffdf2;
+      }
+      &.paper-skin-blue {
+        background: #f0f7fe;
+        border-color: #cde4fa;
+      }
+      &.paper-skin-pink {
+        background: #fef2f4;
+        border-color: #fad2dc;
+      }
+      &.paper-skin-kraft {
+        background: #f7f3ec;
+        border-color: #ded1c1;
+      }
+
+      .paper-swatch-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.03);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+
+        .swatch-emoji {
+          font-size: 22px;
+        }
+      }
+
+      .paper-text-col, .seal-text-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+
+        .p-title-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .p-name, .s-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c2420;
+          }
+
+          .p-badge, .s-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            background: #3e2723;
+            color: #ffffff;
+            font-weight: 500;
+          }
+        }
+
+        .p-desc, .s-desc {
+          font-size: 12px;
+          color: #8c827a;
+          margin-top: 2px;
+        }
+      }
+
+      .seal-wax-stamp {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+        margin-right: 12px;
+        flex-shrink: 0;
+
+        .seal-stamp-ico {
+          font-size: 20px;
+        }
+      }
+
+      .p-select-indicator {
+        font-size: 16px;
+        color: #8c827a;
+        margin-left: 8px;
+        font-weight: bold;
+      }
+    }
+  }
+
+  .drawer-footer-action {
+    margin-top: 14px;
+    text-align: center;
+    padding: 8px 0;
+    cursor: pointer;
+
+    .cancel-seal-btn {
+      font-size: 13px;
+      color: #b91c1c;
+      font-weight: 500;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 </style>
