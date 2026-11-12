@@ -203,13 +203,13 @@
             </view>
           </view>
 
-          <!-- 桌面底部快捷操作条 (高出 TabBar 充足高度，100% 杜绝遮挡) -->
-          <view class="desk-action-dock">
+          <!-- 访客模式下的底部快捷操作条 (仅在客座他人桌洞时显示；自己书桌直接点击桌面手写便签本道具) -->
+          <view v-if="isVisitingOther" class="desk-action-dock">
             <button class="cozy-dock-btn post-btn" @tap="openHandwritingPad">
               <text class="dock-btn-icon">✍️</text>
-              <text class="dock-btn-label">{{ isVisitingOther ? '在TA窗台写便签' : '手写便签贴窗台' }}</text>
+              <text class="dock-btn-label">在TA窗台写便签</text>
             </button>
-            <button v-if="isVisitingOther" class="cozy-dock-btn send-btn" @tap="openSendPaperToUser">
+            <button class="cozy-dock-btn send-btn" @tap="openSendPaperToUser">
               <text class="dock-btn-icon">✉️</text>
               <text class="dock-btn-label">给TA塞小纸条</text>
             </button>
