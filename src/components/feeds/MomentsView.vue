@@ -59,7 +59,7 @@
 
           <!-- 右侧主体内容 -->
           <view class="item-right">
-            <!-- 昵称与距离 -->
+            <!-- 昵称与标签 -->
             <view class="author-row">
               <view class="author-name-box" @tap.stop="viewAuthorProfile(item)">
                 <text class="author-name">{{ item.userName }}</text>
@@ -68,11 +68,7 @@
                   {{ item.helpResolved ? '✅已解决' : item.isEmergency ? '🚨救命求助' : '🆘急事求助' }}
                 </text>
                 <text v-if="item.userId === myProfile.id" class="author-my-tag">我</text>
-                <text v-if="item.authorProfile?.gender" class="author-gender-hint">
-                  {{ item.authorProfile.gender === '女' ? '♀' : '♂' }}{{ item.authorProfile.age }}岁
-                </text>
               </view>
-              <text class="dist-badge">📍 {{ formatDistance(item.distance) }}</text>
             </view>
 
             <!-- 动态正文 (深炭灰 #191919，行高 1.55，点击支持进入详情) -->

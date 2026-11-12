@@ -33,10 +33,14 @@
           <view class="hero-name-row">
             <text class="hero-name">{{ viewingProfile?.name }}</text>
             <text
+              v-if="viewingProfile?.gender"
               class="hero-gender-icon"
               :class="viewingProfile?.gender === '女' ? 'female' : 'male'"
             >
               {{ viewingProfile?.gender === '女' ? '♀' : '♂' }}
+            </text>
+            <text v-if="viewingProfile?.age" class="hero-age-pill">
+              {{ viewingProfile.age }}岁
             </text>
           </view>
           <text class="hero-sub-text">邻友号：500m_{{ viewingProfile?.id?.slice(0, 8) || 'user' }}</text>
@@ -336,6 +340,17 @@ const userAllStatuses = computed(() => {
             &.male {
               color: #2563eb;
             }
+          }
+
+          .hero-age-pill {
+            font-size: 11px;
+            background: #fbf5ea;
+            border: 1px solid #ebd9c5;
+            color: #8c5835;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 500;
+            margin-left: 6px;
           }
         }
 

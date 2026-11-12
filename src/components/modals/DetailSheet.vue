@@ -46,29 +46,12 @@
               <text class="author-name">{{ activeStatus?.userName }}</text>
               <text v-if="activeStatus?.isAcgn" class="acgn-badge">🌸 二次元 · {{ activeStatus.acgnTag || '同好' }}</text>
               <text v-if="activeStatus?.userId === myProfile.id" class="author-badge-me">我</text>
-              <text
-                v-if="activeStatus?.authorProfile?.gender"
-                class="gender-pill"
-                :class="activeStatus.authorProfile.gender === '女' ? 'gender-female' : 'gender-male'"
-              >
-                {{ activeStatus.authorProfile.gender === '女' ? '♀' : '♂' }} {{ activeStatus.authorProfile.age }}岁
-              </text>
             </view>
             <view class="author-meta-row">
               <text class="meta-time">{{ activeStatus?.createdAt ? formatTime(activeStatus.createdAt) : '' }}</text>
               <text class="meta-dot">·</text>
               <text class="meta-dist">📍 {{ distanceText }}</text>
             </view>
-          </view>
-
-          <!-- 进TA桌洞按钮 (精致木窗拟物图标，杜绝日字乱码) -->
-          <view class="desk-entry-btn" @tap.stop="goToAuthorDesk">
-            <svg class="desk-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="12" y1="3" x2="12" y2="21" />
-            </svg>
-            <text class="desk-btn-label">进TA桌洞</text>
           </view>
         </view>
 
