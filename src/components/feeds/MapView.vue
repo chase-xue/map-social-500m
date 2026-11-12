@@ -97,11 +97,12 @@ const {
   recenterToUser, refreshNearbyStatuses, simulateUserMove,
   visibleStatuses, openPublishSheet, openDetailSheet, locationClusters,
   activeHelpStatuses, hasActiveEmergency, openHelpSheet, myActiveHelp,
-  openAiMatchSheet
+  openAiMatchSheet,
+  searchRadius,
+  toggleSearchRadius
 } = useAppState();
 
 const landmarkSearchText = ref("");
-const searchRadius = ref<number>(500);
 const newNoteAlertVisible = ref(true);
 
 const latestNote = computed(() => {
@@ -110,11 +111,6 @@ const latestNote = computed(() => {
   }
   return null;
 });
-
-function toggleRadius() {
-  searchRadius.value = searchRadius.value === 500 ? 1000 : 500;
-  uni.showToast({ title: `已切换为 ${searchRadius.value} 米视野`, icon: "none" });
-}
 
 function onSearchLandmark() {
   if (!landmarkSearchText.value.trim()) return;

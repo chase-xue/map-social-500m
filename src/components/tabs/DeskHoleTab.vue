@@ -323,6 +323,43 @@
         </view>
       </view>
     </view>
+
+    <!-- 💌 桌洞私密信纸阅读与快捷回信弹窗 -->
+    <view v-if="drawerSecretModalVisible && activeSecretNote" class="secret-letter-overlay" @tap.self="drawerSecretModalVisible = false">
+      <view class="secret-letter-card">
+        <!-- 信封顶部火漆封口 / 邮戳 -->
+        <view class="letter-top-row">
+          <view class="letter-sender-info">
+            <image class="letter-modal-avatar" :src="activeSecretNote.senderAvatar" mode="aspectFill" />
+            <view class="letter-sender-meta">
+              <text class="letter-sender-name">{{ activeSecretNote.senderName }}</text>
+              <text class="letter-send-time">悄悄塞入桌洞 · {{ activeSecretNote.receivedTime }}</text>
+            </view>
+          </view>
+          <view v-if="activeSecretNote.isSealed" class="letter-seal-tag">
+            <text class="seal-glyph">🔏</text>
+            <text class="seal-text">火漆印密封</text>
+          </view>
+          <text class="letter-close-btn" @tap="drawerSecretModalVisible = false">✕</text>
+        </view>
+
+        <!-- 信笺纸正文 -->
+        <view class="letter-sheet-body">
+          <text class="letter-text">{{ activeSecretNote.fullContent }}</text>
+        </view>
+
+        <!-- 底部快捷动作：提笔给TA回信 (一键跳转小纸条慢聊) + 收回抽屉 -->
+        <view class="letter-actions-row">
+          <button class="letter-reply-btn" @tap="replyToSecretSender(activeSecretNote)">
+            <text class="reply-icon">💬</text>
+            <text class="reply-text">提笔给TA回小纸条</text>
+          </button>
+          <button class="letter-fold-btn" @tap="drawerSecretModalVisible = false">
+            <text class="fold-text">收回抽屉</text>
+          </button>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -361,6 +398,10 @@ const peelingNoteId = ref<string | null>(null);
 // 窗台便签放大展开检视弹窗状态
 const inspectModalVisible = ref(false);
 const inspectingNote = ref<WindowNoteItem | null>(null);
+
+// 桌洞暗格私密信件阅读弹窗状态
+const drawerSecretModalVisible = ref(false);
+const activeSecretNote = ref<DrawerSecretNote | null>(null);
 
 const themeList = [
   { key: "wood" as DeskTheme, name: "温暖橡木", icon: "🪵" },
@@ -550,12 +591,27 @@ function onHandwritingConfirmed(dataUrl: string) {
 
 function openDrawerNoteDetail(dn: DrawerSecretNote) {
   dn.read = true;
-  uni.showModal({
-    title: `来自 ${dn.senderName} 的私信纸条`,
-    content: dn.fullContent,
-    showCancel: false,
-    confirmText: "收回抽屉"
-  });
+  saveMyDeskData(currentDesk.value);
+  activeSecretNote.value = dn;
+  drawerSecretModalVisible.value = true;
+}
+
+function replyToSecretSender(dn: DrawerSecretNote) {
+  drawerSecretModalVisible.value = false;
+  const friends = getFriendsList();
+  let f = friends.find(item => item.name === dn.senderName || item.avatar === dn.senderAvatar);
+  if (!f) {
+    f = {
+      userId: "user_" + Date.now(),
+      name: dn.senderName,
+      avatar: dn.senderAvatar,
+      distanceMeters: 680,
+      unreadCount: 0,
+      lastMessage: dn.preview,
+      lastMessageTime: Date.now()
+    };
+  }
+  openChatWithFriend(f);
 }
 
 function openSendPaperToUser() {
@@ -1814,6 +1870,182 @@ defineExpose({
 
   &.delete-btn .action-label {
     color: #d32f2f;
+  }
+}
+
+/* 💌 桌洞私密信笺阅读弹窗 */
+.secret-letter-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: letter-fade-in 0.2s ease-out;
+}
+
+@keyframes letter-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.secret-letter-card {
+  width: 100%;
+  max-width: 350px;
+  background: linear-gradient(135deg, #fffcf5 0%, #fdf8eb 100%);
+  border-radius: 12px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(215, 204, 196, 0.7);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: letter-pop-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes letter-pop-up {
+  from { transform: translateY(20px) scale(0.9); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.letter-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #d7ccc8;
+}
+
+.letter-sender-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.letter-modal-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid #ffb300;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.letter-sender-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.letter-sender-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3e2723;
+}
+
+.letter-send-time {
+  font-size: 10px;
+  color: #8d6e63;
+  margin-top: 2px;
+}
+
+.letter-seal-tag {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #fbe9e7;
+  border: 1px solid #ffab91;
+  color: #d84315;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.letter-close-btn {
+  font-size: 18px;
+  color: #8d6e63;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+.letter-sheet-body {
+  margin: 16px 0;
+  min-height: 100px;
+  max-height: 50vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  padding: 12px;
+  border: 0.5px solid rgba(215, 204, 196, 0.5);
+}
+
+.letter-text {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #3e2723;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.letter-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #d7ccc8;
+}
+
+.letter-reply-btn {
+  flex: 1.4;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border-radius: 20px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  .reply-icon {
+    font-size: 14px;
+  }
+  .reply-text {
+    font-size: 12px;
+    font-weight: 700;
+  }
+}
+
+.letter-fold-btn {
+  flex: 0.9;
+  background: rgba(239, 235, 233, 0.8);
+  border: 1px solid #d7ccc8;
+  color: #5d4037;
+  border-radius: 20px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  .fold-text {
+    font-size: 12px;
+    font-weight: 600;
   }
 }
 </style>

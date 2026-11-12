@@ -8,7 +8,7 @@
 
       <view class="pub-title-box">
         <text class="pub-title">
-          {{ currentPublishMode === 'moments' ? '发关注动态' : currentPublishMode === 'status' ? '发地图动态' : '🚨 救命/急事呼救' }}
+          {{ currentPublishMode === 'emergency' ? '🚨 救命/急事呼救' : '🖌️ 小刷子刷浆糊 · 贴便签' }}
         </text>
       </view>
 
@@ -23,7 +23,7 @@
           :loading="isPublishing"
           @tap="handlePublish"
         >
-          {{ currentPublishMode === 'emergency' ? '发送呼救' : '发表' }}
+          {{ currentPublishMode === 'emergency' ? '发送呼救' : '🖌️ 刷浆糊，贴上地图' }}
         </button>
       </view>
     </view>
@@ -36,8 +36,38 @@
 
     <!-- 3. 滚动输入与选项区 -->
     <scroll-view scroll-y class="pub-scroll-area">
-      <!-- 微信标准无边框大输入区 (这一刻的想法...) -->
-      <view class="wechat-textarea-box">
+      <!-- 手写真迹 / 键盘文字便签模式快速切换栏 -->
+      <view v-if="currentPublishMode !== 'emergency'" class="pub-type-switcher-bar">
+        <view
+          class="pub-switch-pill"
+          :class="{ 'pill-selected': !handwritingImg }"
+          @tap="handwritingImg = ''"
+        >
+          <text class="pill-ico">⌨️</text>
+          <text class="pill-txt">键盘文字便签</text>
+        </view>
+        <view
+          class="pub-switch-pill"
+          :class="{ 'pill-selected': !!handwritingImg }"
+          @tap="showHandwritingPad = true"
+        >
+          <text class="pill-ico">✍️</text>
+          <text class="pill-txt">真迹手写纸条</text>
+        </view>
+      </view>
+
+      <!-- 如果已手写，展示真迹纸条与和纸胶带预览 -->
+      <view v-if="handwritingImg" class="hw-preview-box" :class="'paper-' + selectedPaperColor">
+        <view class="washi-tape-strip" />
+        <image class="hw-preview-img" :src="handwritingImg" mode="widthFix" />
+        <view class="hw-preview-actions">
+          <text class="hw-action-btn redo-btn" @tap="showHandwritingPad = true">✏️ 重新手写</text>
+          <text class="hw-action-btn del-btn" @tap="handwritingImg = ''">✕ 清除真迹</text>
+        </view>
+      </view>
+
+      <!-- 键盘普通文字输入区 -->
+      <view v-else class="wechat-textarea-box">
         <textarea
           class="wechat-textarea"
           v-model="newPostContent"
@@ -46,6 +76,9 @@
           maxlength="500"
           :auto-height="true"
         />
+        <view class="quick-hw-trigger-row" @tap="showHandwritingPad = true">
+          <text class="quick-hw-link">✍️ 想要亲手写字？点击进入真迹手写绘板 ›</text>
+        </view>
       </view>
 
       <!-- 微信标准九宫格图片选择器 -->
@@ -236,6 +269,15 @@
       <view class="glue-streak" />
       <text class="brush-hint-text">小刷子正在刷胶水粘贴便签...</text>
     </view>
+
+    <!-- 真迹手写画板组件 -->
+    <HandwritingPad
+      v-if="showHandwritingPad"
+      actionConfirmText="💌 保存并贴在便签上"
+      :defaultPattern="selectedPaperColor"
+      @confirm="onHandwritingConfirmed"
+      @close="showHandwritingPad = false"
+    />
   </view>
 </template>
 
@@ -244,6 +286,7 @@ import { ref, computed } from "vue";
 import { NotePaperColor } from "../../types";
 import { useAppState } from "../../composables/useAppState";
 import { ACGN_TAG_CATEGORIES as ACGN_TAGS } from "../../constants/acgn";
+import HandwritingPad from "../common/HandwritingPad.vue";
 
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
@@ -254,6 +297,13 @@ const {
 } = useAppState();
 
 const isBrushingGlue = ref(false);
+const showHandwritingPad = ref(false);
+const handwritingImg = ref("");
+
+function onHandwritingConfirmed(dataUrl: string) {
+  showHandwritingPad.value = false;
+  handwritingImg.value = dataUrl;
+}
 
 const paperColorList: { key: NotePaperColor; name: string }[] = [
   { key: "yellow", name: "鹅黄" },
@@ -264,7 +314,7 @@ const paperColorList: { key: NotePaperColor; name: string }[] = [
 ];
 
 const canSubmit = computed(() => {
-  return !!newPostContent.value.trim() || pickedImages.value.length > 0;
+  return !!newPostContent.value.trim() || pickedImages.value.length > 0 || !!handwritingImg.value;
 });
 
 const placeholderText = computed(() => {
@@ -284,6 +334,15 @@ async function handlePublish() {
   await new Promise(r => setTimeout(r, 600));
 
   try {
+    if (handwritingImg.value) {
+      if (!newPostContent.value.trim()) {
+        newPostContent.value = handwritingImg.value;
+      }
+      if (!pickedImages.value.includes(handwritingImg.value)) {
+        pickedImages.value.unshift(handwritingImg.value);
+      }
+    }
+
     if (currentPublishMode.value === "emergency") {
       const { newHelpContent, pickedHelpImages } = useAppState();
       newHelpContent.value = newPostContent.value;
@@ -292,6 +351,7 @@ async function handlePublish() {
       closePublishSheet(true);
     } else {
       await submitNewPost();
+      handwritingImg.value = "";
       if (currentPublishMode.value === "status") {
         switchMainTab("map");
       }
@@ -391,6 +451,98 @@ async function handlePublish() {
 .pub-scroll-area {
   flex: 1;
   background-color: #ffffff;
+
+  /* 手写 / 打字模式切换 */
+  .pub-type-switcher-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px 20px 4px;
+
+    .pub-switch-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 16px;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+
+      &.pill-selected {
+        background: #fff8e1;
+        color: #d97706;
+        border-color: #ffd54f;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+      }
+    }
+  }
+
+  /* 真迹手写纸条预览卡片 */
+  .hw-preview-box {
+    margin: 14px 20px 16px;
+    border-radius: 8px;
+    padding: 20px 14px 12px;
+    position: relative;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .washi-tape-strip {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      border-left: 1.5px dashed rgba(0, 0, 0, 0.2);
+      border-right: 1.5px dashed rgba(0, 0, 0, 0.2);
+    }
+
+    .hw-preview-img {
+      width: 100%;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+
+    .hw-preview-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+
+      .hw-action-btn {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.08);
+        color: #4e342e;
+        font-weight: 600;
+        cursor: pointer;
+
+        &.del-btn {
+          color: #d32f2f;
+          background: #ffebee;
+        }
+      }
+    }
+  }
+
+  .quick-hw-trigger-row {
+    padding: 8px 0;
+    cursor: pointer;
+
+    .quick-hw-link {
+      font-size: 12px;
+      color: #d97706;
+      font-weight: 600;
+    }
+  }
 
   /* 微信大输入框 */
   .wechat-textarea-box {

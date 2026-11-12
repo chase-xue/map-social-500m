@@ -103,10 +103,29 @@ const viewingDistance = ref<number | undefined>(undefined);
 
 // ============ 状态数据 ============
 const allStatuses = ref<StatusItem[]>([]);
+const searchRadius = ref<number>(500);
+const mapSearchKeyword = ref<string>("");
 
-const visibleStatuses = computed(() =>
-  filterStatusesWithinRange(userLocation.value, allStatuses.value, 500)
-);
+function toggleSearchRadius() {
+  searchRadius.value = searchRadius.value === 500 ? 1000 : 500;
+  uni.showToast({
+    title: `已切换至 ${searchRadius.value === 500 ? '500米圈' : '1公里街区'}`,
+    icon: "none"
+  });
+}
+
+const visibleStatuses = computed(() => {
+  let list = filterStatusesWithinRange(userLocation.value, allStatuses.value, searchRadius.value);
+  if (mapSearchKeyword.value.trim()) {
+    const kw = mapSearchKeyword.value.trim().toLowerCase();
+    list = list.filter(s =>
+      s.content.toLowerCase().includes(kw) ||
+      s.userName.toLowerCase().includes(kw) ||
+      (s.address && s.address.toLowerCase().includes(kw))
+    );
+  }
+  return list;
+});
 
 const locationClusters = computed(() =>
   clusterStatusesByLocation(visibleStatuses.value, 35)
@@ -253,7 +272,7 @@ const mapCircles = computed<MapCircle[]>(() => {
     {
       latitude: userLocation.value.latitude,
       longitude: userLocation.value.longitude,
-      radius: 500,
+      radius: searchRadius.value,
       color: "#6366F1",
       fillColor: "#6366F115",
       strokeWidth: 2,
@@ -1169,6 +1188,7 @@ export function useAppState() {
     openUserProfileCard, closeUserCard, viewAuthorProfile, viewCommenterProfile, makePhoneCall,
     // 状态
     allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses, recommendedStatuses, acgnStatuses, dailySponsoredAd,
+    searchRadius, mapSearchKeyword, toggleSearchRadius,
     // 地图
     mapCircles, mapMarkers, onMarkerTap, onCalloutTap, onRegionChange: () => {},
     recenterToUser, refreshNearbyStatuses, simulateUserMove,

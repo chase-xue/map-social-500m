@@ -2,7 +2,7 @@
   <view class="pure-top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
     <view class="nav-glass-bar">
       <!-- 左侧：位置与范围切换胶囊 -->
-      <view class="range-selector-pill" @tap="toggleRadius">
+      <view class="range-selector-pill" @tap="toggleSearchRadius">
         <text class="loc-pin">📍</text>
         <text class="range-txt">{{ searchRadius === 500 ? '500m 生活圈' : '1km 街区' }}</text>
         <text class="dropdown-chevron">▼</text>
@@ -13,11 +13,10 @@
         <text class="search-ico">🔍</text>
         <input
           class="search-inp"
-          v-model="searchText"
+          v-model="mapSearchKeyword"
           placeholder="搜索附近地标/生活便签..."
-          @confirm="onSearch"
         />
-        <text v-if="searchText" class="clear-ico" @tap="searchText = ''">✕</text>
+        <text v-if="mapSearchKeyword" class="clear-ico" @tap="mapSearchKeyword = ''">✕</text>
       </view>
 
       <!-- 右侧：地图 / 列表流视图无缝切换 -->
@@ -29,37 +28,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
 import { useAppState } from "../../composables/useAppState";
 
 const {
   statusBarHeight,
   mapSubTab,
-  visibleStatuses,
+  searchRadius,
+  mapSearchKeyword,
+  toggleSearchRadius,
   recenterToUser
 } = useAppState();
 
-const searchRadius = ref(500);
-const searchText = ref("");
-
-function toggleRadius() {
-  searchRadius.value = searchRadius.value === 500 ? 1000 : 500;
-  uni.showToast({
-    title: `已切换至 ${searchRadius.value === 500 ? '500米圈' : '1公里街区'}`,
-    icon: "none"
-  });
-}
-
 function toggleViewMode() {
   mapSubTab.value = mapSubTab.value === 'map' ? 'moments' : 'map';
-}
-
-function onSearch() {
-  if (!searchText.value.trim()) return;
-  uni.showToast({
-    title: `正在检索附近“${searchText.value}”...`,
-    icon: "none"
-  });
 }
 </script>
 

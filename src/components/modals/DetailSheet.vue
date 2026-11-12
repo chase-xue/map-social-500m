@@ -120,8 +120,17 @@
           </view>
         </view>
 
-        <!-- 4. 正文文字内容 -->
-        <view class="status-body-text">
+        <!-- 4. 正文文字内容 或 手写真迹纸条 -->
+        <view v-if="isHandwritingImg(activeStatus?.content)" class="status-handwriting-card" :class="'paper-' + (activeStatus?.paperColor || 'yellow')">
+          <view class="washi-tape-strip" />
+          <image
+            class="status-hw-full-img"
+            :src="activeStatus?.content"
+            mode="widthFix"
+            @tap="previewImage(activeStatus?.content, [activeStatus?.content])"
+          />
+        </view>
+        <view v-else class="status-body-text">
           <text>{{ activeStatus?.content }}</text>
         </view>
 
@@ -299,6 +308,11 @@ function goToAuthorDesk() {
   if (!activeStatus.value) return;
   closeDetailSheet(true);
   switchMainTab("deskHole");
+}
+
+function isHandwritingImg(content?: string): boolean {
+  if (!content) return false;
+  return content.startsWith("data:image/") || content.startsWith("http");
 }
 
 const isLiked = computed(() => {
@@ -645,11 +659,47 @@ function handleToggleLike() {
 .status-body-text {
   margin-top: 24rpx;
   font-size: 32rpx;
+  color: #1f2937;
   line-height: 1.6;
-  color: #191919;
   word-break: break-all;
-  white-space: pre-wrap;
 }
+
+/* 动态真迹手写和纸便签卡片 */
+.status-handwriting-card {
+  margin: 20rpx 0 24rpx;
+  border-radius: 12rpx;
+  padding: 24rpx 16rpx 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .washi-tape-strip {
+    position: absolute;
+    top: -12rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 68rpx;
+    height: 18rpx;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+    border-left: 2rpx dashed rgba(0, 0, 0, 0.2);
+    border-right: 2rpx dashed rgba(0, 0, 0, 0.2);
+  }
+
+  .status-hw-full-img {
+    width: 100%;
+    border-radius: 6rpx;
+    object-fit: contain;
+  }
+}
+
+.paper-yellow { background: #fff9c4; color: #4e342e; }
+.paper-pink   { background: #fce4ec; color: #4a148c; }
+.paper-blue   { background: #e1f5fe; color: #01579b; }
+.paper-green  { background: #e8f5e9; color: #1b5e20; }
+.paper-kraft  { background: #efebe9; color: #3e2723; }
 
 /* 九宫格媒体区 */
 .media-gallery-box {
