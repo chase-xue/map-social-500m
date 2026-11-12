@@ -211,8 +211,9 @@ const {
 
 function visitDeskFromCard(profile: any) {
   if (!profile) return;
+  const { id, name, avatar } = profile;
   closeUserCard(true);
-  visitDesk(profile.id, profile.name, profile.avatar);
+  visitDesk(id, name, avatar);
 }
 
 // 和位置无关：直接从 allStatuses 中筛选该用户的全部动态

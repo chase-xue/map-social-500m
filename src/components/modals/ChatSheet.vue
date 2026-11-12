@@ -479,8 +479,9 @@ function onHwConfirmed(dataUrl: string) {
 
 function goToFriendDesk() {
   if (!currentChatFriend.value) return;
+  const { userId, name, avatar } = currentChatFriend.value;
   closeChatSheet(true);
-  visitDesk(currentChatFriend.value.userId, currentChatFriend.value.name, currentChatFriend.value.avatar);
+  visitDesk(userId, name, avatar);
 }
 </script>
 

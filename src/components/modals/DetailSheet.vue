@@ -312,8 +312,9 @@ const {
 
 function goToAuthorDesk() {
   if (!activeStatus.value) return;
+  const { userId, userName, userAvatar } = activeStatus.value;
   closeDetailSheet(true);
-  visitDesk(activeStatus.value.userId, activeStatus.value.userName, activeStatus.value.userAvatar);
+  visitDesk(userId, userName, userAvatar);
 }
 
 function isHandwritingImg(content?: string): boolean {
