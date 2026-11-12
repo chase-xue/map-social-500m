@@ -357,21 +357,21 @@ function selectGender(g: string) {
   position: absolute;
   inset: 0;
   z-index: 100;
-  background-color: #ededed;
+  background-color: #f7f5f0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-sizing: border-box;
 
-  /* 微信标准顶栏 */
+  /* 拟物顶栏 */
   .wechat-profile-header {
     height: 48px;
-    background-color: #ededed;
+    background-color: #f7f5f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    border-bottom: 0.5px solid #dcdcdc;
+    border-bottom: 1px solid #ebd9c5;
     flex-shrink: 0;
 
     .header-back-btn {
@@ -383,42 +383,44 @@ function selectGender(g: string) {
       .back-arrow {
         font-size: 24px;
         font-weight: 300;
-        color: #191919;
+        color: #3e2723;
         margin-right: 2px;
         line-height: 1;
       }
 
       .back-text {
         font-size: 15px;
-        color: #191919;
+        color: #3e2723;
         font-weight: 500;
       }
     }
 
     .header-title-box {
       .header-title {
-        font-size: 17px;
+        font-size: 16px;
         font-weight: 600;
-        color: #191919;
+        color: #3e2723;
       }
     }
 
     .header-action-box {
       .wechat-save-btn {
         margin: 0;
-        padding: 5px 14px;
+        padding: 6px 16px;
         height: auto;
         line-height: 1.4;
-        background-color: #07c160;
+        background-color: #3e2723;
         color: #ffffff;
-        font-size: 14px;
-        font-weight: 500;
-        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 16px;
         border: none;
         cursor: pointer;
+        box-shadow: 0 2px 6px rgba(62, 39, 35, 0.15);
 
         &:active {
-          background-color: #06ad56;
+          background-color: #2c1a17;
+          transform: scale(0.96);
         }
 
         &::after {
@@ -432,20 +434,22 @@ function selectGender(g: string) {
   .profile-scroll-view {
     flex: 1;
     height: 100%;
-    background-color: #ededed;
+    background-color: #f7f5f0;
 
     .wechat-cells-group {
-      margin-top: 10px;
+      margin: 12px 16px 0;
       background-color: #ffffff;
-      border-top: 0.5px solid #dcdcdc;
-      border-bottom: 0.5px solid #dcdcdc;
+      border: 1px solid #ebd9c5;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(62, 39, 35, 0.04);
+      overflow: hidden;
 
       .wechat-cell-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 13px 16px;
-        border-bottom: 0.5px solid #ededed;
+        border-bottom: 0.5px solid #ebd9c5;
         background-color: #ffffff;
         user-select: none;
 
@@ -454,13 +458,13 @@ function selectGender(g: string) {
         }
 
         &:active {
-          background-color: #f7f7f7;
+          background-color: #fbf5ea;
         }
 
         .cell-label {
-          font-size: 16px;
-          color: #191919;
-          font-weight: 400;
+          font-size: 15px;
+          color: #3e2723;
+          font-weight: 500;
           flex-shrink: 0;
         }
 
@@ -723,30 +727,32 @@ function selectGender(g: string) {
     }
   }
 
-  /* 微信 ActionSheet 性别选择弹窗 */
+  /* 治愈系手账抽屉性别选择 */
   .wechat-actionsheet-mask {
     position: absolute;
     inset: 0;
     z-index: 200;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(62, 39, 35, 0.4);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     animation: fadeIn 0.15s ease;
 
     .wechat-actionsheet {
-      background-color: #f7f7f7;
-      border-radius: 12px 12px 0 0;
+      background-color: #faf6f0;
+      border-radius: 20px 20px 0 0;
+      border-top: 1px solid #ebd9c5;
       overflow: hidden;
       animation: slideUp 0.2s ease;
+      padding-bottom: env(safe-area-inset-bottom);
 
       .actionsheet-title {
-        padding: 14px;
+        padding: 16px;
         text-align: center;
-        font-size: 12px;
-        color: #7f7f7f;
-        background-color: #ffffff;
-        border-bottom: 0.5px solid #ededed;
+        font-size: 13px;
+        color: #8c7e74;
+        background-color: #faf6f0;
+        border-bottom: 0.5px solid #ebd9c5;
       }
 
       .actionsheet-menu {
@@ -758,7 +764,7 @@ function selectGender(g: string) {
           justify-content: center;
           position: relative;
           height: 52px;
-          border-bottom: 0.5px solid #ededed;
+          border-bottom: 0.5px solid #ebd9c5;
           cursor: pointer;
 
           &:last-child {
@@ -766,19 +772,20 @@ function selectGender(g: string) {
           }
 
           &:active {
-            background-color: #f7f7f7;
+            background-color: #fbf5ea;
           }
 
           .item-text {
-            font-size: 17px;
-            color: #191919;
+            font-size: 16px;
+            color: #3e2723;
+            font-weight: 500;
           }
 
           .item-check {
             position: absolute;
             right: 24px;
             font-size: 18px;
-            color: #07c160;
+            color: #d97757;
             font-weight: 600;
           }
         }
@@ -786,7 +793,7 @@ function selectGender(g: string) {
 
       .actionsheet-gap {
         height: 8px;
-        background-color: #ededed;
+        background-color: #faf6f0;
       }
 
       .actionsheet-cancel {
@@ -795,13 +802,13 @@ function selectGender(g: string) {
         align-items: center;
         justify-content: center;
         background-color: #ffffff;
-        font-size: 17px;
-        color: #191919;
+        font-size: 16px;
+        color: #8c7e74;
         font-weight: 500;
         cursor: pointer;
 
         &:active {
-          background-color: #f7f7f7;
+          background-color: #fbf5ea;
         }
       }
     }

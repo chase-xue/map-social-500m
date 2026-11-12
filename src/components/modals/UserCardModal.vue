@@ -206,13 +206,13 @@ const {
   closeUserCard, makePhoneCall, isFriend, isFriendPending,
   startChatFromCard, acceptFriendFromCard, handleAddFriend, openMyProfileSheet,
   openDetailSheet, previewImage, formatTime,
-  switchMainTab,
+  switchMainTab, visitDesk,
 } = useAppState();
 
 function visitDeskFromCard(profile: any) {
   if (!profile) return;
   closeUserCard(true);
-  switchMainTab("deskHole");
+  visitDesk(profile.id, profile.name, profile.avatar);
 }
 
 // 和位置无关：直接从 allStatuses 中筛选该用户的全部动态
@@ -228,8 +228,8 @@ const userAllStatuses = computed(() => {
 .wechat-contact-page {
   position: absolute;
   inset: 0;
-  z-index: 100;
-  background-color: #ededed;
+  z-index: 200;
+  background-color: #f7f5f0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -237,12 +237,12 @@ const userAllStatuses = computed(() => {
 
   .wechat-contact-header {
     height: 48px;
-    background-color: #ededed;
+    background-color: #f7f5f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    border-bottom: 0.5px solid #dcdcdc;
+    border-bottom: 1px solid #ebd9c5;
     flex-shrink: 0;
 
     .header-back-btn {
@@ -253,30 +253,30 @@ const userAllStatuses = computed(() => {
       .back-arrow {
         font-size: 24px;
         font-weight: 300;
-        color: #191919;
+        color: #3e2723;
         margin-right: 2px;
         line-height: 1;
       }
 
       .back-text {
         font-size: 15px;
-        color: #191919;
+        color: #3e2723;
         font-weight: 500;
       }
     }
 
     .header-title-box {
       .header-title {
-        font-size: 17px;
+        font-size: 16px;
         font-weight: 600;
-        color: #191919;
+        color: #3e2723;
       }
     }
 
     .header-action-box {
       .header-more-btn {
         font-size: 18px;
-        color: #191919;
+        color: #3e2723;
         font-weight: 600;
         letter-spacing: 2px;
       }
@@ -286,24 +286,26 @@ const userAllStatuses = computed(() => {
   .contact-scroll-view {
     flex: 1;
     height: 100%;
-    background-color: #ededed;
+    background-color: #f7f5f0;
 
     .wechat-hero-card {
-      margin-top: 10px;
+      margin: 12px 16px 0;
       background-color: #ffffff;
-      padding: 20px 16px;
+      padding: 18px 16px;
       display: flex;
       align-items: flex-start;
-      border-top: 0.5px solid #dcdcdc;
-      border-bottom: 0.5px solid #dcdcdc;
+      border: 1px solid #ebd9c5;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(62, 39, 35, 0.04);
 
       .hero-avatar {
         width: 64px;
         height: 64px;
-        border-radius: 6px;
+        border-radius: 14px;
         object-fit: cover;
         margin-right: 16px;
         flex-shrink: 0;
+        border: 1px solid #ebd9c5;
       }
 
       .hero-info-col {
@@ -316,9 +318,9 @@ const userAllStatuses = computed(() => {
           margin-bottom: 4px;
 
           .hero-name {
-            font-size: 19px;
+            font-size: 18px;
             font-weight: 600;
-            color: #191919;
+            color: #3e2723;
             margin-right: 8px;
           }
 
@@ -337,8 +339,8 @@ const userAllStatuses = computed(() => {
         }
 
         .hero-sub-text {
-          font-size: 13px;
-          color: #7f7f7f;
+          font-size: 12px;
+          color: #8c7e74;
           margin-top: 2px;
           display: block;
         }
@@ -347,8 +349,9 @@ const userAllStatuses = computed(() => {
           margin-top: 8px;
           display: inline-flex;
           align-items: center;
-          background-color: #f2f5f9;
-          padding: 3px 8px;
+          background-color: #fbf5ea;
+          border: 1px solid #ebd9c5;
+          padding: 3px 10px;
           border-radius: 12px;
 
           .pill-dot {
@@ -358,7 +361,7 @@ const userAllStatuses = computed(() => {
 
           .pill-text {
             font-size: 11px;
-            color: #576B95;
+            color: #8c5835;
             font-weight: 500;
           }
         }
@@ -615,7 +618,7 @@ const userAllStatuses = computed(() => {
 
     .wechat-contact-actions {
       margin-top: 24px;
-      padding: 0 16px;
+      padding: 0 16px 32px;
 
       .wechat-btn {
         width: 100%;
@@ -623,43 +626,49 @@ const userAllStatuses = computed(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
-        font-size: 16px;
+        border-radius: 24px;
+        font-size: 15px;
         font-weight: 600;
         cursor: pointer;
         border: none;
         margin-bottom: 12px;
+        transition: all 0.15s ease;
 
         &::after {
           border: none;
         }
 
         &.btn-primary {
-          background-color: #07c160;
+          background-color: #5c715e;
           color: #ffffff;
+          box-shadow: 0 4px 12px rgba(92, 113, 94, 0.2);
 
           &:active {
-            background-color: #06ad56;
+            background-color: #4b5d4d;
+            transform: scale(0.98);
           }
         }
 
         &.btn-secondary {
           background-color: #ffffff;
-          color: #191919;
-          border: 0.5px solid #dcdcdc;
+          color: #3e2723;
+          border: 1px solid #ebd9c5;
 
           &:active {
-            background-color: #f7f7f7;
+            background-color: #fbf5ea;
+            transform: scale(0.98);
           }
         }
 
         &.btn-desk-card {
-          background-color: #fff3e0;
-          color: #e67e22;
-          border: 1px solid #ffe082;
+          background-color: #fbf5ea;
+          color: #8c5835;
+          border: 1px solid #ebd9c5;
+          box-shadow: 0 2px 8px rgba(62, 39, 35, 0.05);
 
           &:active {
-            background-color: #ffe0b2;
+            background-color: #f5ece0;
+            transform: scale(0.98);
           }
         }
       }

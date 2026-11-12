@@ -172,7 +172,9 @@
               mallDrawerType === 'seals' ? '🔏 火漆印章外观典藏馆' :
               mallDrawerType === 'papers' ? '📜 典藏和纸与星空信笺套装' :
               mallDrawerType === 'themes' ? '🪵 治愈桌洞拟物化装扮皮肤' :
-              '🎁 《小纸条》实体文创慢寄礼盒'
+              mallDrawerType === 'merch' ? '🎁 《小纸条》实体文创慢寄礼盒' :
+              mallDrawerType === 'merchant' ? '🏪 本地商户 500m 慢递合作' :
+              '🕊️ 关于《小纸条 (Slow Notes 500m)》'
             }}
           </text>
           <text class="drawer-subtitle">
@@ -180,7 +182,9 @@
               mallDrawerType === 'seals' ? '手工压印浮雕印记，专属慢纸条个性身份' :
               mallDrawerType === 'papers' ? '京都和纸与星空信笺，让文字在纸上呼吸' :
               mallDrawerType === 'themes' ? '雨夜咖啡馆、老书屋写字台，沉浸书桌氛围' :
-              '手工黄铜折纸飞机书签 + 手账和纸胶带盲盒 + 慢递信笺'
+              mallDrawerType === 'merch' ? '手工黄铜折纸飞机书签 + 手账和纸胶带盲盒 + 慢递信笺' :
+              mallDrawerType === 'merchant' ? '支持周边独立小店、手作人投放专属福利便签' :
+              '现代快节奏生活里的一方温柔自留地'
             }}
           </text>
         </view>
@@ -292,6 +296,64 @@
             </button>
           </view>
         </view>
+
+        <!-- 商户合作抽屉 -->
+        <view v-else-if="mallDrawerType === 'merchant'" class="drawer-info-flow">
+          <view class="info-content-card">
+            <view class="info-tag-row">
+              <text class="info-tag">📍 500m 极近圈精准获客</text>
+              <text class="info-tag">🏮 无佣金纯福利</text>
+            </view>
+            <text class="info-body-p">支持周边咖啡馆、烘焙店、手作工坊、书店等实体独立小店投放定向打卡便签。凭 500 米生活圈身份核销，促进真实社区温情连接。</text>
+            <view class="info-privilege-list">
+              <view class="info-privilege-item">
+                <text class="ip-ico">📜</text>
+                <text class="ip-txt">专属手账风格便签排版，告别硬广牛皮癣</text>
+              </view>
+              <view class="info-privilege-item">
+                <text class="ip-ico">🔏</text>
+                <text class="ip-txt">定制商户联名火漆印章与专属打卡勋章</text>
+              </view>
+              <view class="info-privilege-item">
+                <text class="ip-ico">🤝</text>
+                <text class="ip-txt">支持线下慢纸条“留声簿”与代收桌洞纸条</text>
+              </view>
+            </view>
+          </view>
+          <button class="drawer-confirm-btn" @tap="submitMerchantApply">
+            ✨ 申请入驻周边生活圈
+          </button>
+        </view>
+
+        <!-- 关于我们抽屉 -->
+        <view v-else-if="mallDrawerType === 'about'" class="drawer-info-flow">
+          <view class="info-content-card">
+            <view class="about-logo-row">
+              <text class="about-logo-ico">📜</text>
+              <text class="about-app-name">小纸条 · Slow Notes</text>
+              <text class="about-version">v1.2.0 · 治愈手账版</text>
+            </view>
+            <text class="info-body-p">灵感来自学生时代前后座悄悄传递的折纸小纸条与弄堂弄口的手写小告示。</text>
+            <text class="info-body-p">在信息过载的时代，我们没有冰冷的数据算法推荐，而是按物理距离换算传递延迟，为城市里的人们留下一方带着纸香与温热的慢社交净土。</text>
+            <view class="about-values-box">
+              <view class="value-item">
+                <text class="v-label">🌲 慢生活</text>
+                <text class="v-desc">距离决定投递时间，找回期待的浪漫</text>
+              </view>
+              <view class="value-item">
+                <text class="v-label">🛡️ 严隐私</text>
+                <text class="v-desc">模糊区间保护真实坐标，杜绝人身追踪</text>
+              </view>
+              <view class="value-item">
+                <text class="v-label">🪵 轻拟物</text>
+                <text class="v-desc">吉卜力手账质感，温润和纸与火漆印</text>
+              </view>
+            </view>
+          </view>
+          <button class="drawer-confirm-btn" @tap="mallDrawerType = null">
+            🌿 温暖同行 · 留住回忆
+          </button>
+        </view>
       </view>
     </view>
   </view>
@@ -309,7 +371,7 @@ const {
   openMyProfileSheet
 } = useAppState();
 
-const mallDrawerType = ref<'seals' | 'papers' | 'themes' | 'merch' | null>(null);
+const mallDrawerType = ref<'seals' | 'papers' | 'themes' | 'merch' | 'merchant' | 'about' | null>(null);
 
 const sealsData = [
   { name: "古铜月相印", icon: "🌙", bg: "linear-gradient(135deg, #78350f, #92400e)", border: "#f59e0b", desc: "复古古铜压痕，月相清冷" },
@@ -475,12 +537,12 @@ function buyCoins() {
 }
 
 function openMerchantPublishModal() {
-  uni.showModal({
-    title: "本地商户 500m 投放",
-    content: "支持周边生活小店、餐饮手作人投放定向便签，附带打卡优惠券，随叫随到！",
-    confirmText: "立即申请",
-    showCancel: true
-  });
+  mallDrawerType.value = 'merchant';
+}
+
+function submitMerchantApply() {
+  mallDrawerType.value = null;
+  uni.showToast({ title: "🎉 已收到商户意向，社区管理员将在24小时内联系您", icon: "none", duration: 3000 });
 }
 
 function toggleShowPhone() {
@@ -493,12 +555,7 @@ function toggleShowPhone() {
 }
 
 function showAboutApp() {
-  uni.showModal({
-    title: "关于《小纸条》",
-    content: "灵感来自学生时代前后座传递的小纸条与家门口的小告示。没有冰冷算法推荐，根据真实物理距离换算传递时间，打造属于现代人的慢社交与生活回忆录。",
-    showCancel: false,
-    confirmText: "温暖同行"
-  });
+  mallDrawerType.value = 'about';
 }
 </script>
 
@@ -1089,6 +1146,113 @@ function showAboutApp() {
         font-weight: 600;
         border: none;
         box-shadow: 0 2px 8px rgba(194, 91, 56, 0.3);
+      }
+    }
+  }
+
+  /* 详细介绍型抽屉 (商户与关于) */
+  .drawer-info-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .info-content-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #ebd9c5;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .info-tag-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .info-tag {
+          font-size: 11px;
+          background: #fbf5ea;
+          color: #8c5835;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-weight: 500;
+        }
+      }
+
+      .info-body-p {
+        font-size: 13px;
+        color: #5d4037;
+        line-height: 1.6;
+      }
+
+      .info-privilege-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 4px;
+
+        .info-privilege-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          color: #3e2723;
+
+          .ip-ico { font-size: 14px; }
+          .ip-txt { flex: 1; }
+        }
+      }
+
+      .about-logo-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed #ebd9c5;
+
+        .about-logo-ico { font-size: 32px; }
+        .about-app-name { font-size: 16px; font-weight: 700; color: #3e2723; }
+        .about-version { font-size: 11px; color: #a89f91; }
+      }
+
+      .about-values-box {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #fdfcf9;
+        padding: 10px;
+        border-radius: 8px;
+
+        .value-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 12px;
+
+          .v-label { font-weight: 600; color: #3e2723; }
+          .v-desc { color: #8c7e74; font-size: 11px; }
+        }
+      }
+    }
+
+    .drawer-confirm-btn {
+      margin: 0;
+      height: 42px;
+      line-height: 42px;
+      border-radius: 21px;
+      background: #3e2723;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      box-shadow: 0 4px 12px rgba(62, 39, 35, 0.15);
+      cursor: pointer;
+
+      &:active {
+        transform: scale(0.98);
+        background: #2c1a17;
       }
     }
   }

@@ -364,7 +364,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { DeskTheme, NotePaperColor } from "../../types";
 import {
   getMyDeskData,
@@ -379,10 +379,17 @@ import {
 import { useAppState } from "../../composables/useAppState";
 import HandwritingPad from "../common/HandwritingPad.vue";
 
-const { statusBarHeight, openChatWithFriend, getFriendsList } = useAppState();
+const { statusBarHeight, openChatWithFriend, getFriendsList, targetVisitingDesk } = useAppState();
 
 const currentDesk = ref<DeskHoleData>(getMyDeskData());
 const isVisitingOther = ref(false);
+
+watch(targetVisitingDesk, (target) => {
+  if (target) {
+    visitUserDesk(target.userId, target.name, target.avatar);
+    targetVisitingDesk.value = null;
+  }
+}, { immediate: true });
 
 const isDrawerPulled = ref(false);
 const drawerDragY = ref(0);

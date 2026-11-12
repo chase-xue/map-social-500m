@@ -179,16 +179,7 @@ const {
 
 function handleAdClick(ad: SponsoredAdItem) {
   if (ad.phone) {
-    uni.showActionSheet({
-      itemList: [`拨打商户电话: ${ad.phone}`, "查看精选大图"],
-      success: (res) => {
-        if (res.tapIndex === 0) {
-          makePhoneCall(ad.phone!);
-        } else if (res.tapIndex === 1 && ad.images.length > 0) {
-          previewImage(ad.images[0], ad.images);
-        }
-      }
-    });
+    makePhoneCall(ad.phone);
   } else {
     uni.showToast({ title: "已领取今日同城福利！凭本界面进店核销", icon: "success" });
   }

@@ -61,9 +61,13 @@
             </view>
           </view>
 
-          <!-- 进TA桌洞按钮 -->
+          <!-- 进TA桌洞按钮 (精致木窗拟物图标，杜绝日字乱码) -->
           <view class="desk-entry-btn" @tap.stop="goToAuthorDesk">
-            <text class="desk-btn-icon">🪟</text>
+            <svg class="desk-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="12" y1="3" x2="12" y2="21" />
+            </svg>
             <text class="desk-btn-label">进TA桌洞</text>
           </view>
         </view>
@@ -303,12 +307,13 @@ const {
   isHelpResolvedPromptVisible,
   toggleLikeStatus,
   switchMainTab,
+  visitDesk,
 } = useAppState();
 
 function goToAuthorDesk() {
   if (!activeStatus.value) return;
   closeDetailSheet(true);
-  switchMainTab("deskHole");
+  visitDesk(activeStatus.value.userId, activeStatus.value.userName, activeStatus.value.userAvatar);
 }
 
 function isHandwritingImg(content?: string): boolean {
@@ -347,14 +352,14 @@ function handleToggleLike() {
 </script>
 
 <style lang="scss" scoped>
-/* 微信原生全屏页面容器 */
+/* 治愈手账全屏页面容器 */
 .wechat-detail-page {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ededed;
+  background-color: #f7f5f0;
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -362,11 +367,11 @@ function handleToggleLike() {
   box-sizing: border-box;
 }
 
-/* 微信标准顶栏 */
+/* 拟物手账优雅顶栏 */
 .wechat-detail-header {
   height: 88rpx;
-  background-color: #ededed;
-  border-bottom: 1rpx solid #d9d9d9;
+  background-color: #f7f5f0;
+  border-bottom: 1rpx solid #ebd9c5;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -381,18 +386,18 @@ function handleToggleLike() {
     min-width: 140rpx;
 
     .back-arrow {
-      font-size: 48rpx;
-      color: #191919;
+      font-size: 44rpx;
+      color: #3e2723;
       line-height: 1;
       margin-right: 4rpx;
-      margin-top: -6rpx;
+      margin-top: -4rpx;
       font-weight: 300;
     }
 
     .back-text {
-      font-size: 32rpx;
-      color: #191919;
-      font-weight: 400;
+      font-size: 30rpx;
+      color: #3e2723;
+      font-weight: 500;
     }
   }
 
@@ -401,9 +406,9 @@ function handleToggleLike() {
     text-align: center;
 
     .header-title {
-      font-size: 34rpx;
+      font-size: 32rpx;
       font-weight: 600;
-      color: #191919;
+      color: #3e2723;
     }
   }
 
@@ -415,25 +420,30 @@ function handleToggleLike() {
     .header-like-btn {
       display: flex;
       align-items: center;
-      gap: 6rpx;
-      padding: 8rpx 16rpx;
-      border-radius: 24rpx;
-      background-color: #ffffff;
-      border: 1rpx solid #e2e8f0;
+      gap: 5px;
+      padding: 5px 14px;
+      border-radius: 16px;
+      background-color: #fbf5ea;
+      border: 1px solid #ebd9c5;
       cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:active {
+        transform: scale(0.96);
+      }
 
       .like-icon {
-        font-size: 24rpx;
+        font-size: 14px;
       }
 
       .like-text {
-        font-size: 24rpx;
-        color: #576b95;
+        font-size: 12px;
+        color: #8c5835;
         font-weight: 600;
       }
 
       &.is-liked {
-        background-color: #fef2f2;
+        background-color: #fee2e2;
         border-color: #fca5a5;
         .like-text {
           color: #dc2626;
@@ -447,11 +457,16 @@ function handleToggleLike() {
 .detail-scroll-view {
   flex: 1;
   min-height: 0;
-  background-color: #ffffff;
+  background-color: #f7f5f0;
 }
 
 .detail-content-wrap {
-  padding: 30rpx 32rpx;
+  margin: 20rpx 20rpx 40rpx;
+  padding: 30rpx 28rpx;
+  background: #ffffff;
+  border: 1rpx solid #ebd9c5;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(62, 39, 35, 0.05);
   box-sizing: border-box;
 }
 
@@ -464,10 +479,11 @@ function handleToggleLike() {
   .wechat-author-avatar {
     width: 88rpx;
     height: 88rpx;
-    border-radius: 12rpx;
+    border-radius: 16rpx;
     background-color: #f1f5f9;
     flex-shrink: 0;
     cursor: pointer;
+    box-shadow: 0 2rpx 8rpx rgba(62, 39, 35, 0.08);
   }
 
   .author-info-col {
@@ -484,9 +500,9 @@ function handleToggleLike() {
       margin-bottom: 6rpx;
 
       .author-name {
-        font-size: 32rpx;
+        font-size: 30rpx;
         font-weight: 600;
-        color: #576b95;
+        color: #3e2723;
       }
 
       .acgn-badge {
@@ -744,11 +760,12 @@ function handleToggleLike() {
   }
 }
 
-/* 点赞灰框 */
+/* 邻友点赞温暖纸条 */
 .likes-summary-box {
   margin-top: 24rpx;
-  background-color: #f7f7f7;
-  border-radius: 8rpx;
+  background-color: #fbf5ea;
+  border: 1rpx solid #ebd9c5;
+  border-radius: 16rpx;
   padding: 16rpx 20rpx;
   display: flex;
   align-items: flex-start;
@@ -762,15 +779,15 @@ function handleToggleLike() {
   .likes-user-names {
     flex: 1;
     font-size: 26rpx;
-    color: #576b95;
+    color: #8c5835;
     line-height: 1.5;
   }
 }
 
-/* 微信评论流 */
+/* 治愈留言簿 */
 .wechat-comments-block {
   margin-top: 36rpx;
-  border-top: 1rpx solid #ededed;
+  border-top: 1rpx dashed #ebd9c5;
   padding-top: 24rpx;
 
   .comments-section-header {
@@ -779,7 +796,7 @@ function handleToggleLike() {
     .comments-section-title {
       font-size: 28rpx;
       font-weight: 600;
-      color: #191919;
+      color: #3e2723;
     }
   }
 
@@ -789,7 +806,7 @@ function handleToggleLike() {
 
     .empty-text {
       font-size: 26rpx;
-      color: #999999;
+      color: #a89f91;
     }
   }
 
@@ -806,7 +823,7 @@ function handleToggleLike() {
       .comment-author-avatar {
         width: 64rpx;
         height: 64rpx;
-        border-radius: 8rpx;
+        border-radius: 12rpx;
         background-color: #f1f5f9;
         flex-shrink: 0;
         cursor: pointer;
@@ -829,22 +846,22 @@ function handleToggleLike() {
             .comment-author-name {
               font-size: 26rpx;
               font-weight: 600;
-              color: #576b95;
+              color: #3e2723;
               cursor: pointer;
             }
 
             .author-owner-tag {
               font-size: 18rpx;
-              color: #07c160;
-              background-color: #e8f8f0;
+              color: #6b8e23;
+              background-color: #f4f7eb;
               padding: 1rpx 8rpx;
               border-radius: 6rpx;
             }
 
             .author-me-tag {
               font-size: 18rpx;
-              color: #576b95;
-              background-color: #f1f5f9;
+              color: #8c5835;
+              background-color: #fbf5ea;
               padding: 1rpx 8rpx;
               border-radius: 6rpx;
             }
@@ -852,14 +869,14 @@ function handleToggleLike() {
 
           .comment-post-time {
             font-size: 22rpx;
-            color: #b2b2b2;
+            color: #a89f91;
           }
         }
 
         .comment-text-box {
           .comment-text {
             font-size: 28rpx;
-            color: #191919;
+            color: #4e342e;
             line-height: 1.5;
             word-break: break-all;
           }
@@ -881,7 +898,7 @@ function handleToggleLike() {
 
           .photo-zoom-hint {
             font-size: 22rpx;
-            color: #576b95;
+            color: #8c5835;
             cursor: pointer;
           }
         }
@@ -890,21 +907,21 @@ function handleToggleLike() {
   }
 }
 
-/* 微信固定底栏 */
+/* 拟物留言托盘底栏 */
 .wechat-bottom-bar-wrap {
   flex-shrink: 0;
-  background-color: #f7f7f7;
-  border-top: 1rpx solid #d9d9d9;
+  background-color: #faf6f0;
+  border-top: 1rpx solid #ebd9c5;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 .comment-img-preview-bar {
   padding: 12rpx 24rpx;
-  background-color: #f1f5f9;
+  background-color: #fbf5ea;
   display: flex;
   align-items: center;
   gap: 16rpx;
-  border-bottom: 1rpx solid #e2e8f0;
+  border-bottom: 1rpx solid #ebd9c5;
 
   .comment-preview-box {
     position: relative;
@@ -924,7 +941,7 @@ function handleToggleLike() {
       width: 28rpx;
       height: 28rpx;
       border-radius: 50%;
-      background-color: rgba(0, 0, 0, 0.6);
+      background-color: rgba(62, 39, 35, 0.7);
       color: #ffffff;
       font-size: 18rpx;
       display: flex;
@@ -936,7 +953,7 @@ function handleToggleLike() {
 
   .comment-img-tip {
     font-size: 22rpx;
-    color: #64748b;
+    color: #8c5835;
   }
 }
 
@@ -950,7 +967,7 @@ function handleToggleLike() {
   .reply-user-avatar {
     width: 64rpx;
     height: 64rpx;
-    border-radius: 8rpx;
+    border-radius: 12rpx;
     background-color: #e2e8f0;
     flex-shrink: 0;
   }
@@ -959,15 +976,15 @@ function handleToggleLike() {
     flex: 1;
     height: 72rpx;
     background-color: #ffffff;
-    border-radius: 8rpx;
-    border: 1rpx solid #e2e8f0;
-    padding: 0 20rpx;
+    border-radius: 36rpx;
+    border: 1rpx solid #ebd9c5;
+    padding: 0 24rpx;
     font-size: 28rpx;
-    color: #191919;
+    color: #3e2723;
   }
 
   .wechat-input-placeholder {
-    color: #b2b2b2;
+    color: #a89f91;
     font-size: 28rpx;
   }
 
@@ -987,37 +1004,51 @@ function handleToggleLike() {
     padding: 0 24rpx;
     height: 68rpx;
     line-height: 68rpx;
-    border-radius: 8rpx;
-    background-color: #e5e5e5;
-    color: #b2b2b2;
+    border-radius: 34rpx;
+    background-color: #ebd9c5;
+    color: #a89f91;
     font-size: 28rpx;
-    font-weight: 500;
+    font-weight: 600;
     border: none;
     flex-shrink: 0;
+    transition: all 0.2s ease;
 
     &.btn-send-active {
-      background-color: #07c160;
+      background-color: #d97757;
       color: #ffffff;
+      box-shadow: 0 2rpx 8rpx rgba(217, 119, 87, 0.3);
     }
   }
 }
 
 .desk-entry-btn {
   margin-left: auto;
-  background: #fff3e0;
-  border: 1px solid #ffe082;
-  border-radius: 14px;
-  padding: 4px 10px;
+  background: #fbf5ea;
+  border: 1px solid #ebd9c5;
+  border-radius: 16px;
+  padding: 5px 12px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(62, 39, 35, 0.06);
+  transition: all 0.15s ease;
 
-  .desk-btn-icon { font-size: 14px; }
+  &:active {
+    transform: scale(0.96);
+    background: #f5ece0;
+  }
+
+  .desk-svg-icon {
+    width: 14px;
+    height: 14px;
+    color: #8c5835;
+  }
+
   .desk-btn-label {
-    font-size: 11px;
-    font-weight: bold;
-    color: #e67e22;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8c5835;
   }
 }
 

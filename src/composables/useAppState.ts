@@ -91,6 +91,14 @@ function switchMainTab(tab: MainTabType) {
   mainTab.value = tab;
 }
 
+// ============ 桌洞互访联动 ============
+const targetVisitingDesk = ref<{ userId: string; name: string; avatar: string } | null>(null);
+
+function visitDesk(userId: string, name: string, avatar: string) {
+  targetVisitingDesk.value = { userId, name, avatar };
+  mainTab.value = "deskHole";
+}
+
 // ============ 我的资料 ============
 const myProfile = ref<UserProfile>(getUserProfile());
 const editingProfile = ref<UserProfile>({ ...myProfile.value });
@@ -667,6 +675,9 @@ function makePhoneCall(phoneNumber?: string) {
 function toggleLikeStatus(item: StatusItem) {
   const isLiked = toggleStatusLike(item.id, myProfile.value.name);
   allStatuses.value = readLocalData();
+  if (activeStatus.value && activeStatus.value.id === item.id) {
+    activeStatus.value = allStatuses.value.find((s) => s.id === item.id) || null;
+  }
   uni.showToast({ title: isLiked ? "❤️ 点赞成功！" : "已取消点赞", icon: "none" });
 }
 
@@ -1213,6 +1224,8 @@ export function useAppState() {
     // 私聊
     chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText, chatScrollTop,
     openChatSheet, openChatWithFriend: openChatSheet, closeChatSheet, sendCurrentChatMessage,
+    // 桌洞客座互访
+    targetVisitingDesk, visitDesk,
     // 点赞与朋友圈就地交互
     toggleLikeStatus,
     activeActionMenuStatusId, toggleActionMenu, closeActionMenu, handleLikeFromMenu,

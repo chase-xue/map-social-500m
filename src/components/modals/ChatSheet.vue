@@ -332,7 +332,8 @@ const {
   formatTime,
   previewImage,
   openUserProfileCard,
-  switchMainTab
+  switchMainTab,
+  visitDesk
 } = useAppState();
 
 const isSealedMode = ref(false);
@@ -477,8 +478,9 @@ function onHwConfirmed(dataUrl: string) {
 }
 
 function goToFriendDesk() {
+  if (!currentChatFriend.value) return;
   closeChatSheet(true);
-  switchMainTab("deskHole");
+  visitDesk(currentChatFriend.value.userId, currentChatFriend.value.name, currentChatFriend.value.avatar);
 }
 </script>
 

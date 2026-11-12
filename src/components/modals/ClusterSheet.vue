@@ -117,7 +117,7 @@ const {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ededed;
+  background-color: #f7f5f0;
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -127,8 +127,8 @@ const {
 
 .wechat-cluster-header {
   height: 88rpx;
-  background-color: #ededed;
-  border-bottom: 1rpx solid #d9d9d9;
+  background-color: #f7f5f0;
+  border-bottom: 1rpx solid #ebd9c5;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -143,17 +143,18 @@ const {
     min-width: 140rpx;
 
     .back-arrow {
-      font-size: 48rpx;
-      color: #191919;
+      font-size: 44rpx;
+      color: #3e2723;
       line-height: 1;
       margin-right: 4rpx;
-      margin-top: -6rpx;
+      margin-top: -4rpx;
       font-weight: 300;
     }
 
     .back-text {
-      font-size: 32rpx;
-      color: #191919;
+      font-size: 30rpx;
+      color: #3e2723;
+      font-weight: 500;
     }
   }
 
@@ -162,9 +163,9 @@ const {
     text-align: center;
 
     .header-title {
-      font-size: 34rpx;
+      font-size: 32rpx;
       font-weight: 600;
-      color: #191919;
+      color: #3e2723;
     }
   }
 
@@ -175,9 +176,9 @@ const {
     cursor: pointer;
 
     .header-moments-btn {
-      font-size: 28rpx;
-      color: #576b95;
-      font-weight: 500;
+      font-size: 26rpx;
+      color: #8c5835;
+      font-weight: 600;
     }
   }
 }
@@ -185,6 +186,7 @@ const {
 .cluster-scroll-view {
   flex: 1;
   min-height: 0;
+  background-color: #f7f5f0;
 }
 
 .cluster-cover-card {
@@ -228,13 +230,15 @@ const {
   align-items: center;
   gap: 16rpx;
   background-color: #ffffff;
-  padding: 24rpx 32rpx;
-  margin-bottom: 16rpx;
-  border-bottom: 1rpx solid #e5e5e5;
+  padding: 24rpx 28rpx;
+  margin: 16rpx 20rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid #ebd9c5;
+  box-shadow: 0 2rpx 8rpx rgba(62, 39, 35, 0.04);
   cursor: pointer;
 
   .jump-icon {
-    font-size: 40rpx;
+    font-size: 36rpx;
   }
 
   .jump-text-col {
@@ -244,45 +248,51 @@ const {
     gap: 4rpx;
 
     .jump-main {
-      font-size: 30rpx;
-      color: #191919;
-      font-weight: 500;
+      font-size: 28rpx;
+      color: #3e2723;
+      font-weight: 600;
     }
 
     .jump-sub {
       font-size: 22rpx;
-      color: #999999;
+      color: #8c7e74;
     }
   }
 
   .jump-arrow {
-    font-size: 36rpx;
-    color: #b2b2b2;
+    font-size: 32rpx;
+    color: #ebd9c5;
   }
 }
 
 .cluster-list-wrap {
-  background-color: #ffffff;
-  border-top: 1rpx solid #e5e5e5;
-  border-bottom: 1rpx solid #e5e5e5;
+  margin: 0 20rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
 }
 
 .cluster-wechat-cell {
   display: flex;
   align-items: flex-start;
   gap: 20rpx;
-  padding: 28rpx 32rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 24rpx 24rpx;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  border: 1rpx solid #ebd9c5;
+  box-shadow: 0 2rpx 8rpx rgba(62, 39, 35, 0.04);
   cursor: pointer;
+  transition: all 0.15s ease;
 
-  &:last-child {
-    border-bottom: none;
+  &:active {
+    transform: scale(0.99);
+    background-color: #fbf5ea;
   }
 
   .cell-avatar {
     width: 80rpx;
     height: 80rpx;
-    border-radius: 8rpx;
+    border-radius: 14rpx;
     background-color: #f1f5f9;
     flex-shrink: 0;
   }
@@ -305,7 +315,7 @@ const {
         .cell-user-name {
           font-size: 30rpx;
           font-weight: 600;
-          color: #576b95;
+          color: #3e2723;
         }
 
         .tag-acgn {
