@@ -112,12 +112,18 @@
 
       <!-- 2. 实木写字台面与实体跟手拖拽滑出抽屉 -->
       <view class="solid-wood-desk">
+        <!-- 窗外柔和阳光投射在桌面的斜向光束与光斑 -->
+        <view v-if="currentDesk.weather === 'sunny'" class="desk-sunlight-beam" pointer-events="none" />
+
         <view class="desk-linen-mat">
           <!-- 桌面物件行：生活回忆录日记本 + 真实手写笔筒 -->
           <view class="desk-items-row">
-            <!-- 📖 生活回忆录日记本 (手账皮质封皮) -->
+            <!-- 📖 生活回忆录日记本 (复古装订缝线与侧边多层纸质感) -->
             <view class="vintage-journal-book" @tap="diaryModalVisible = true">
+              <view class="journal-spine-leather" />
+              <view class="journal-stitch-line" />
               <view class="journal-ribbon" />
+              <view class="deckled-pages-edge" />
               <view class="journal-cover-title">
                 <text class="journal-icon">📖</text>
                 <text class="journal-txt">生活回忆录</text>
@@ -127,6 +133,7 @@
 
             <!-- ✍️ 真实手写笔筒 (点击立即弹出真迹画板) -->
             <view class="desk-pen-caddy" @tap="openHandwritingPad">
+              <view class="pen-caddy-brim" />
               <text class="caddy-icon">✍️</text>
               <view class="caddy-meta">
                 <text class="caddy-title">手写新纸条</text>
@@ -962,6 +969,21 @@ defineExpose({
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
+}
+
+/* 窗外阳光漫射在桌面的柔和光束 */
+.desk-sunlight-beam {
+  position: absolute;
+  top: -40px;
+  left: 20%;
+  width: 140px;
+  height: 220px;
+  background: linear-gradient(135deg, rgba(255, 249, 196, 0.28) 0%, rgba(255, 238, 88, 0.08) 60%, transparent 100%);
+  transform: rotate(-25deg);
+  pointer-events: none;
+  filter: blur(8px);
+  z-index: 2;
 }
 
 .desk-linen-mat {
@@ -974,6 +996,8 @@ defineExpose({
   justify-content: space-between;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   border: 1px solid #d7ccc8;
+  position: relative;
+  z-index: 3;
 }
 
 .desk-items-row {
@@ -983,35 +1007,77 @@ defineExpose({
 
 .vintage-journal-book {
   flex: 1.3;
-  background: linear-gradient(135deg, #5d4037 0%, #3e2723 100%);
-  border-radius: 8px;
-  padding: 10px 12px;
+  background: linear-gradient(135deg, #4e342e 0%, #3e2723 60%, #2e1c18 100%);
+  border-radius: 6px 10px 10px 6px;
+  padding: 10px 12px 10px 18px;
   display: flex;
   align-items: center;
   position: relative;
-  box-shadow: 3px 4px 10px rgba(0, 0, 0, 0.3);
-  border-left: 6px solid #8d6e63;
+  box-shadow: 3px 5px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
-.vintage-journal-book:active {
-  transform: scale(0.97);
+/* 书脊皮革包边与金属暗纹 */
+.journal-spine-leather {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  background: linear-gradient(90deg, #6d4c41 0%, #8d6e63 50%, #4e342e 100%);
+  border-right: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.25);
+}
+
+/* 缝合线质感 */
+.journal-stitch-line {
+  position: absolute;
+  left: 13px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  border-left: 1px dashed rgba(255, 213, 79, 0.4);
+}
+
+/* 侧边多层做旧米色纸张层叠效果 */
+.deckled-pages-edge {
+  position: absolute;
+  right: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 5px;
+  background: repeating-linear-gradient(
+    180deg,
+    #fff8e1,
+    #fff8e1 1.5px,
+    #d7ccc8 1.5px,
+    #d7ccc8 3px
+  );
+  border-radius: 0 4px 4px 0;
+  box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.25);
 }
 
 .journal-ribbon {
   position: absolute;
   top: 0;
-  right: 14px;
+  right: 18px;
   width: 8px;
   height: 22px;
-  background: #c62828;
-  border-radius: 0 0 4px 4px;
+  background: linear-gradient(180deg, #d32f2f, #b71c1c);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .journal-cover-title {
   display: flex;
   flex-direction: column;
+  z-index: 2;
 }
 
 .journal-icon {
@@ -1021,27 +1087,46 @@ defineExpose({
 .journal-txt {
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: #fff8e1;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   margin-top: 2px;
 }
 
 .journal-meta {
   font-size: 10px;
-  color: #ffcc80;
-  margin-top: 1px;
+  color: #ffe082;
+  margin-top: 2px;
+  opacity: 0.9;
 }
 
 .desk-pen-caddy {
   flex: 0.9;
-  background: #fff8e1;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+  border-radius: 10px;
   padding: 10px;
-  border: 1px solid #ffe082;
-  box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #ffd54f;
+  box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.8);
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
   cursor: pointer;
+  transition: transform 0.15s;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.pen-caddy-brim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ffa000, #ffd54f, #ffa000);
+  border-radius: 10px 10px 0 0;
 }
 
 .caddy-icon {
@@ -1069,18 +1154,18 @@ defineExpose({
 .physical-drawer-unit {
   margin-top: 8px;
   border-radius: 10px;
-  background: #a1887f;
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.35);
-  padding: 4px;
+  background: #5d4037;
+  box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 5px;
   transition: background 0.3s;
 }
 
 .drawer-face-panel {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #8d6e63 0%, #795548 50%, #5d4037 100%);
   border-radius: 8px;
   padding: 8px 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  border: 1.5px solid #a1887f;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  border: 1px solid #a1887f;
   cursor: grab;
   display: flex;
   align-items: center;
@@ -1097,53 +1182,77 @@ defineExpose({
 .brass-handle-box {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
+/* 黄铜立体拉手 */
 .brass-curved-pull {
-  width: 24px;
-  height: 10px;
-  border-radius: 0 0 10px 10px;
-  border: 3px solid #ffb300;
+  width: 26px;
+  height: 12px;
+  border-radius: 0 0 13px 13px;
+  border: 3.5px solid;
+  border-color: #ffd54f #ffb300 #ff8f00 #ffd54f;
   border-top: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  position: relative;
+
+  &::before, &::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    width: 6px;
+    height: 4px;
+    background: #ffd54f;
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  &::before { left: -4px; }
+  &::after { right: -4px; }
 }
 
 .brass-label-plate {
   display: flex;
   align-items: center;
   gap: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(255, 213, 79, 0.3);
 }
 
 .drawer-plate-text {
   font-size: 12px;
   font-weight: 700;
-  color: #fff;
+  color: #fff9c4;
   letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .drawer-count-badge {
   font-size: 9px;
-  background: #d84315;
+  background: linear-gradient(135deg, #e65100, #bf360c);
   color: #fff;
-  padding: 1px 5px;
+  padding: 1px 6px;
   border-radius: 8px;
   font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .drawer-pull-hint .hint-arrow {
   font-size: 10px;
   color: #ffe082;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .drawer-inner-compartment {
   margin-top: 6px;
-  background: #3e2723;
+  background: #2e151b; /* 暗红色复古丝绒内衬 */
   border-radius: 6px;
-  padding: 8px;
-  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.6);
+  padding: 8px 10px;
+  box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.7);
   animation: drawer-slide-down 0.25s ease-out;
+  border: 1px solid rgba(255, 213, 79, 0.15);
 }
 
 @keyframes drawer-slide-down {

@@ -199,8 +199,9 @@ function openGrowthMall() {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f6f5f0;
+  background-color: #f7f5f0;
   box-sizing: border-box;
+  padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
 }
 
 .tab-header {

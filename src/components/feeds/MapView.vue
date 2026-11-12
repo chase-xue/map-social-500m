@@ -32,28 +32,11 @@
       </view>
     </view>
 
-    <!-- 顶部地标搜索与范围切换栏 -->
-    <view class="map-search-bar">
-      <view class="search-input-box">
-        <text class="search-icon">🔍</text>
-        <input
-          class="search-input"
-          v-model="landmarkSearchText"
-          placeholder="搜索附近地标/生活商户/便签..."
-          @confirm="onSearchLandmark"
-        />
-        <text v-if="landmarkSearchText" class="clear-icon" @tap="landmarkSearchText = ''">✕</text>
-      </view>
-      <view class="range-switch-pill" @tap="toggleRadius">
-        <text class="range-label">{{ searchRadius === 500 ? '📍 500米圈' : '🌐 1公里街区' }}</text>
-      </view>
-    </view>
-
-    <!-- 附近新增便签浮窗提醒 -->
-    <view v-if="newNoteAlertVisible && latestNote" class="new-note-float-alert" @tap="openDetailSheet(latestNote)">
-      <text class="alert-icon">🔔</text>
-      <text class="alert-text">刚刚在周边贴出了一张新便签：《{{ latestNote.content.slice(0, 14) }}...》</text>
-      <text class="alert-action">查看 ›</text>
+    <!-- 附近新增便签轻量悬浮胶囊 (位于顶栏下方) -->
+    <view v-if="newNoteAlertVisible && latestNote" class="new-note-float-capsule" @tap="openDetailSheet(latestNote)">
+      <text class="capsule-icon">🔔</text>
+      <text class="capsule-text">周边新便签：《{{ latestNote.content.slice(0, 16) }}...》</text>
+      <text class="capsule-action">查看 ›</text>
     </view>
 
     <map
@@ -70,33 +53,24 @@
       @regionchange="onRegionChange"
     />
 
-    <!-- 右侧控制按钮组 -->
-    <view class="right-controls">
-      <!-- 方案 B：Zenly 原生轻量磨砂圆钮 AI 交友匹配 -->
-      <view
-        class="control-btn ai-match-btn"
-        @tap="openAiMatchSheet"
-        hover-class="btn-hover"
-        title="AI 智能交友匹配"
-      >
-        <text class="btn-icon">🤖</text>
-        <text class="ai-badge">AI</text>
+    <!-- 右侧极简毛玻璃控制组 (Apple / Zenly 级垂直坞) -->
+    <view class="right-vertical-dock">
+      <view class="dock-circle-btn" @tap="recenterToUser" hover-class="btn-hover" title="定位回当前位置">
+        <text class="dock-btn-icon">🎯</text>
       </view>
 
-      <!-- 醒目的全局 HELP 按钮 -->
       <view
-        class="control-btn help-btn"
+        class="dock-circle-btn help-dock-btn"
         :class="{ 'emergency-pulsing': hasActiveEmergency }"
         @tap="openHelpSheet(false)"
         hover-class="btn-hover"
-        title="急事 / 救命求助"
+        title="急事/求助便签"
       >
-        <text class="btn-icon">🆘</text>
-        <text class="help-btn-label">HELP</text>
+        <text class="dock-btn-icon">🆘</text>
       </view>
 
-      <view class="control-btn" @tap="refreshNearbyStatuses" hover-class="btn-hover" title="刷新">
-        <text class="btn-icon">🔄</text>
+      <view class="dock-circle-btn" @tap="refreshNearbyStatuses" hover-class="btn-hover" title="刷新便签">
+        <text class="dock-btn-icon">🔄</text>
       </view>
     </view>
 
@@ -316,92 +290,81 @@ onUnmounted(() => {
   50% { transform: scale(1.1); }
 }
 
-.map-search-bar {
+.new-note-float-capsule {
   position: absolute;
-  top: 112rpx;
-  left: 16rpx;
-  right: 16rpx;
-  z-index: 42;
-  display: flex;
-  gap: 12rpx;
-  align-items: center;
-}
-
-.search-input-box {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.95);
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 249, 196, 0.94);
   backdrop-filter: blur(10px);
-  border-radius: 32rpx;
-  padding: 8rpx 20rpx;
+  border: 1px solid #fbc02d;
+  border-radius: 20px;
+  padding: 6px 14px;
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-  border: 1rpx solid rgba(0, 0, 0, 0.06);
-
-  .search-icon {
-    font-size: 24rpx;
-    opacity: 0.7;
-  }
-
-  .search-input {
-    flex: 1;
-    font-size: 24rpx;
-    color: #333;
-  }
-
-  .clear-icon {
-    font-size: 22rpx;
-    color: #999;
-    padding: 0 4rpx;
-  }
-}
-
-.range-switch-pill {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 10rpx 18rpx;
-  border-radius: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-  border: 1rpx solid #ffe082;
-
-  .range-label {
-    font-size: 22rpx;
-    font-weight: 700;
-    color: #d84315;
-  }
-}
-
-.new-note-float-alert {
-  position: absolute;
-  bottom: 140rpx;
-  left: 20rpx;
-  right: 20rpx;
-  background: linear-gradient(135deg, #fff9c4, #fff176);
-  border: 2rpx solid #fbc02d;
-  border-radius: 20rpx;
-  padding: 12rpx 20rpx;
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-  box-shadow: 0 6rpx 20rpx rgba(251, 192, 45, 0.35);
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(251, 192, 45, 0.3);
   z-index: 45;
   cursor: pointer;
+  max-width: 90%;
 
-  .alert-icon { font-size: 28rpx; }
-  .alert-text {
-    flex: 1;
-    font-size: 22rpx;
+  .capsule-icon { font-size: 13px; }
+  .capsule-text {
+    font-size: 11px;
     font-weight: 600;
     color: #5d4037;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .alert-action {
-    font-size: 22rpx;
+  .capsule-action {
+    font-size: 11px;
     font-weight: 700;
     color: #e65100;
+  }
+}
+
+.right-vertical-dock {
+  position: absolute;
+  right: 14px;
+  bottom: 84px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dock-circle-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  .dock-btn-icon {
+    font-size: 18px;
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.help-dock-btn {
+  background: linear-gradient(135deg, #ffa726, #fb8c00);
+  border-color: #ffe082;
+  box-shadow: 0 4px 14px rgba(251, 140, 0, 0.35);
+
+  &.emergency-pulsing {
+    background: linear-gradient(135deg, #ef5350, #c62828);
+    animation: help-pulse 1.5s infinite ease-in-out;
   }
 }
 </style>

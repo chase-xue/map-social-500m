@@ -100,14 +100,16 @@ function triggerBrushPublish() {
   right: 0;
   height: calc(56px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background-color: #faf8f5;
-  border-top: 0.5px solid #e0d8cc;
+  background: rgba(254, 252, 248, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 0.5px solid rgba(215, 204, 196, 0.7);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 60;
   box-sizing: border-box;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 -2px 14px rgba(62, 39, 35, 0.06);
 }
 
 .tab-bar-item {
@@ -118,11 +120,32 @@ function triggerBrushPublish() {
   justify-content: center;
   height: 100%;
   color: #8d6e63;
-  transition: color 0.15s;
+  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .item-active {
-  color: #e67e22 !important;
+  color: #d97706 !important;
+
+  .tab-label {
+    font-weight: 700;
+    color: #b45309;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 3px);
+    width: 14px;
+    height: 3px;
+    background: #d97706;
+    border-radius: 2px;
+  }
 }
 
 .icon-box {
@@ -135,21 +158,23 @@ function triggerBrushPublish() {
 }
 
 .tab-svg {
-  width: 22px;
-  height: 22px;
+  width: 21px;
+  height: 21px;
+  transition: transform 0.2s;
 }
 
 .tab-label {
-  font-size: 10px;
-  margin-top: 3px;
+  font-size: 10.5px;
+  margin-top: 2px;
   font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .note-badge {
   position: absolute;
   top: -4px;
   right: -8px;
-  background-color: #e74c3c;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #ffffff;
   font-size: 10px;
   font-weight: bold;
@@ -160,6 +185,7 @@ function triggerBrushPublish() {
   text-align: center;
   padding: 0 4px;
   box-sizing: border-box;
+  box-shadow: 0 2px 5px rgba(220, 38, 38, 0.35);
 }
 
 /* 居中小刷子突出按钮 */
@@ -171,34 +197,41 @@ function triggerBrushPublish() {
   justify-content: center;
   height: 100%;
   position: relative;
-  top: -12px;
+  top: -14px;
+  cursor: pointer;
 }
 
 .brush-circle-btn {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff9f43, #e67e22);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 60%, #b45309 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(230, 126, 34, 0.45);
-  border: 3px solid #faf8f5;
-  transition: transform 0.15s;
-}
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  border: 3.5px solid #fefcf8;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-.brush-circle-btn:active {
-  transform: scale(0.92);
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
 }
 
 .brush-icon {
   font-size: 24px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
 }
 
 .center-label {
-  font-size: 10px;
-  color: #e67e22;
-  font-weight: bold;
-  margin-top: 2px;
+  font-size: 10.5px;
+  color: #b45309;
+  font-weight: 700;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
 }
 </style>

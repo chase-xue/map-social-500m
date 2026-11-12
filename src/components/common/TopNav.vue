@@ -1,188 +1,176 @@
 <template>
-  <view class="top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
-    <view class="nav-content-row">
-      <!-- 微信风格一级核心导航胶囊 (全局固定稳重，一眼看清全局，绝不横向卷动与切字) -->
-      <view class="tab-switcher">
-        <view
-          class="tab-item"
-          :class="{ 'tab-active': mapSubTab === 'map' }"
-          @tap="mapSubTab = 'map'"
-        >
-          <text class="tab-icon">📍</text>
-          <text class="tab-text">附近</text>
-        </view>
-        <view
-          v-if="myProfile.showRecommendTab !== false"
-          class="tab-item"
-          :class="{ 'tab-active': mapSubTab === 'recommend' }"
-          @tap="mapSubTab = 'recommend'"
-        >
-          <text class="tab-icon">✨</text>
-          <text class="tab-text">推荐</text>
-        </view>
-        <view
-          class="tab-item"
-          :class="{ 'tab-active': mapSubTab === 'moments' }"
-          @tap="mapSubTab = 'moments'"
-        >
-          <text class="tab-icon">👥</text>
-          <text class="tab-text">关注</text>
-          <view v-if="visibleStatuses.length > 0" class="tab-badge">{{ visibleStatuses.length }}</view>
-        </view>
-        <view
-          v-if="myProfile.showAcgnTab !== false"
-          class="tab-item tab-acgn"
-          :class="{ 'tab-active': mapSubTab === 'acgn' }"
-          @tap="mapSubTab = 'acgn'"
-        >
-          <text class="tab-icon">🌸</text>
-          <text class="tab-text">二次元</text>
-          <view v-if="acgnStatuses.length > 0" class="tab-badge acgn-tab-badge">{{ acgnStatuses.length }}</view>
-        </view>
+  <view class="pure-top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="nav-glass-bar">
+      <!-- 左侧：位置与范围切换胶囊 -->
+      <view class="range-selector-pill" @tap="toggleRadius">
+        <text class="loc-pin">📍</text>
+        <text class="range-txt">{{ searchRadius === 500 ? '500m 生活圈' : '1km 街区' }}</text>
+        <text class="dropdown-chevron">▼</text>
       </view>
 
-      <!-- 同行右侧快捷功能：微信经典圆形相机发动态按钮 -->
-      <view class="nav-right-actions">
-        <view class="nav-camera-btn" @tap="openPublishSheet" hover-class="btn-hover" title="发动态">
-          <text class="camera-icon">📷</text>
-        </view>
+      <!-- 中间：地标与便签搜索框 -->
+      <view class="nav-search-box">
+        <text class="search-ico">🔍</text>
+        <input
+          class="search-inp"
+          v-model="searchText"
+          placeholder="搜索附近地标/生活便签..."
+          @confirm="onSearch"
+        />
+        <text v-if="searchText" class="clear-ico" @tap="searchText = ''">✕</text>
+      </view>
+
+      <!-- 右侧：地图 / 列表流视图无缝切换 -->
+      <view class="view-switch-btn" @tap="toggleViewMode" :title="mapSubTab === 'map' ? '切换为列表流' : '切换为地图'">
+        <text class="switch-icon">{{ mapSubTab === 'map' ? '📜' : '🗺️' }}</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import { useAppState } from "../../composables/useAppState";
+
 const {
-  statusBarHeight, mapSubTab, visibleStatuses, acgnStatuses, myProfile, openPublishSheet
+  statusBarHeight,
+  mapSubTab,
+  visibleStatuses,
+  recenterToUser
 } = useAppState();
+
+const searchRadius = ref(500);
+const searchText = ref("");
+
+function toggleRadius() {
+  searchRadius.value = searchRadius.value === 500 ? 1000 : 500;
+  uni.showToast({
+    title: `已切换至 ${searchRadius.value === 500 ? '500米圈' : '1公里街区'}`,
+    icon: "none"
+  });
+}
+
+function toggleViewMode() {
+  mapSubTab.value = mapSubTab.value === 'map' ? 'moments' : 'map';
+}
+
+function onSearch() {
+  if (!searchText.value.trim()) return;
+  uni.showToast({
+    title: `正在检索附近“${searchText.value}”...`,
+    icon: "none"
+  });
+}
 </script>
 
 <style lang="scss" scoped>
-.top-nav {
+.pure-top-nav {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 50;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%);
-  backdrop-filter: blur(12px);
-  border-bottom: 0.5px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  padding: 8px 12px 6px;
+  pointer-events: none;
+}
 
-  .nav-content-row {
-    height: 48px;
-    padding: 0 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    box-sizing: border-box;
+.nav-glass-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
+  padding: 5px 8px 5px 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.9);
+  pointer-events: auto;
+}
 
-    /* 一级导航全宽自适应固定容器 */
-    .tab-switcher {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      align-items: center;
-      background-color: #ededed;
-      border-radius: 20px;
-      padding: 3px;
-      border: 0.5px solid #dcdcdc;
-      box-sizing: border-box;
+/* 范围切换 */
+.range-selector-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
 
-      .tab-item {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2px;
-        padding: 5px 4px;
-        border-radius: 17px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #64748b;
-        transition: all 0.2s ease;
-        position: relative;
-        cursor: pointer;
-        white-space: nowrap;
-        box-sizing: border-box;
+  .loc-pin {
+    font-size: 13px;
+  }
 
-        .tab-icon { 
-          font-size: 12px;
-          line-height: 1;
-          flex-shrink: 0;
-        }
+  .range-txt {
+    font-size: 11px;
+    font-weight: 700;
+    color: #e65100;
+    white-space: nowrap;
+  }
 
-        .tab-text {
-          font-size: 12px;
-          line-height: 1;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
+  .dropdown-chevron {
+    font-size: 8px;
+    color: #f57c00;
+    margin-left: 1px;
+  }
+}
 
-        .tab-badge {
-          font-size: 10px;
-          background-color: #fa5151;
-          color: #ffffff;
-          padding: 1px 4px;
-          border-radius: 8px;
-          font-weight: 700;
-          line-height: 1;
-          flex-shrink: 0;
+/* 搜索框 */
+.nav-search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f2eb;
+  border-radius: 16px;
+  padding: 4px 10px;
+  min-width: 0;
 
-          &.acgn-tab-badge {
-            background-color: #ec4899;
-          }
-        }
+  .search-ico {
+    font-size: 12px;
+    opacity: 0.6;
+  }
 
-        &.tab-active {
-          background-color: #ffffff;
-          color: #07c160;
-          box-shadow: 0 1px 4px rgba(7, 193, 96, 0.2);
-          font-weight: 700;
-        }
+  .search-inp {
+    flex: 1;
+    font-size: 12px;
+    color: #3e2723;
+    border: none;
+    background: transparent;
+    min-width: 0;
+  }
 
-        &.tab-acgn.tab-active {
-          color: #db2777;
-          box-shadow: 0 1px 4px rgba(219, 39, 119, 0.2);
-        }
-      }
-    }
+  .clear-ico {
+    font-size: 11px;
+    color: #9e9e9e;
+    padding: 0 4px;
+    cursor: pointer;
+  }
+}
 
-    /* 右侧精致微信小相机图标 */
-    .nav-right-actions {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
+/* 视图模式切换 */
+.view-switch-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e0d8cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  flex-shrink: 0;
 
-      .nav-camera-btn {
-        width: 34px;
-        height: 34px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #ffffff;
-        border: 0.5px solid #dcdcdc;
-        border-radius: 17px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-        cursor: pointer;
-        transition: all 0.15s ease;
+  .switch-icon {
+    font-size: 15px;
+  }
 
-        .camera-icon { 
-          font-size: 16px;
-          line-height: 1;
-        }
-
-        &:active {
-          background-color: #f0f0f0;
-          transform: scale(0.96);
-        }
-      }
-    }
+  &:active {
+    transform: scale(0.92);
   }
 }
 </style>

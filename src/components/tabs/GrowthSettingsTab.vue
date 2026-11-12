@@ -29,15 +29,16 @@
             <view class="exp-progress-fill" :style="{ width: (myGrowth.experience / 10) + '%' }" />
           </view>
           <view class="grades-step-row">
-            <text
+            <view
               v-for="g in gradesList"
               :key="g"
               class="grade-step-item"
               :class="{ 'step-active': myGrowth.grade === g }"
               @tap="switchGrade(g)"
             >
-              {{ g }}
-            </text>
+              <text class="grade-badge-icon">{{ getGradeIcon(g) }}</text>
+              <text class="grade-badge-text">{{ g }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -158,6 +159,18 @@ const {
 
 const gradesList: GradeLevel[] = ["幼儿园", "小学生", "初中生", "高中生", "大学生", "老教授"];
 
+function getGradeIcon(g: GradeLevel): string {
+  switch (g) {
+    case "幼儿园": return "🌱";
+    case "小学生": return "🧣";
+    case "初中生": return "🥈";
+    case "高中生": return "🥇";
+    case "大学生": return "🎓";
+    case "老教授": return "🦉";
+    default: return "⭐";
+  }
+}
+
 const titlesList = [
   "传纸条课代表",
   "课堂捣蛋鬼",
@@ -248,6 +261,8 @@ function showAboutApp() {
   width: 100%;
   height: 100%;
   background: #f7f5f0;
+  box-sizing: border-box;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
 }
 
 .settings-scroll {
@@ -262,7 +277,8 @@ function showAboutApp() {
   border-radius: 14px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 14px rgba(62, 39, 35, 0.05);
+  border: 0.5px solid rgba(220, 210, 198, 0.5);
 }
 
 .hero-main-row {
@@ -275,7 +291,8 @@ function showAboutApp() {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 2px solid #ebd9c5;
+  border: 2px solid #ffd54f;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .hero-info {
@@ -336,7 +353,7 @@ function showAboutApp() {
   color: #ccc;
 }
 
-/* 成长进度条 */
+/* 成长进度条与珐琅校徽学级 */
 .growth-exp-section {
   margin-top: 14px;
   padding-top: 12px;
@@ -352,35 +369,54 @@ function showAboutApp() {
 }
 
 .exp-progress-bar {
-  height: 6px;
-  background: #eee;
-  border-radius: 3px;
+  height: 7px;
+  background: #ede8e1;
+  border-radius: 4px;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .exp-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ff9800, #4caf50);
-  border-radius: 3px;
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+  border-radius: 4px;
 }
 
 .grades-step-row {
   display: flex;
   justify-content: space-between;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .grade-step-item {
-  font-size: 10px;
-  color: #999;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  color: #8d6e63;
+  padding: 4px 7px;
+  border-radius: 12px;
+  background: rgba(239, 235, 233, 0.7);
+  border: 0.5px solid #d7ccc8;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  white-space: nowrap;
 
-.step-active {
-  background: #e8f5e9;
-  color: #2e7d32;
-  font-weight: bold;
+  .grade-badge-icon {
+    font-size: 12px;
+  }
+
+  &.step-active {
+    background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%);
+    color: #b45309;
+    border: 1px solid #ffd54f;
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+    font-weight: 700;
+    transform: translateY(-2px);
+  }
 }
 
 /* 资产网格 */
@@ -398,19 +434,27 @@ function showAboutApp() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(62, 39, 35, 0.04);
+  border: 0.5px solid rgba(220, 210, 198, 0.5);
+  cursor: pointer;
+  transition: transform 0.15s;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
 .asset-num {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: bold;
   color: #d84315;
+  letter-spacing: 0.5px;
 }
 
 .asset-label {
   font-size: 11px;
   color: #8d6e63;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 /* 卡片模块 */
