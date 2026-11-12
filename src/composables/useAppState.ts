@@ -182,6 +182,7 @@ const pickedImages = ref<string[]>([]);
 const isPublishing = ref(false);
 const isAcgnPost = ref(false);
 const acgnTag = ref("Cosplay");
+const selectedPaperColor = ref<NotePaperColor>("yellow");
 
 // ============ 漂流瓶与小宇宙 ============
 const shellCount = ref<number>(getShellCount());
@@ -1014,6 +1015,7 @@ async function submitNewPost() {
       authorProfile: { ...myProfile.value },
       isAcgn: isAcgnPost.value,
       acgnTag: isAcgnPost.value ? acgnTag.value : undefined,
+      paperColor: selectedPaperColor.value,
     });
     allStatuses.value = readLocalData();
     closePublishSheet(true);
@@ -1178,19 +1180,19 @@ export function useAppState() {
     chooseCommentImage, removeCommentImage, handleSendComment,
     // 发布
     currentPublishMode, publishVisible, newPostContent, pickedImages, isPublishing,
-    isAcgnPost, acgnTag,
+    isAcgnPost, acgnTag, selectedPaperColor,
     openPublishSheet, closePublishSheet, chooseImages, removePickedImage, submitNewPost, addPresetSamplePhoto,
     // HELP 求助
     helpSheetVisible, isEmergencyHelp, newHelpContent, helpContactPhone, pickedHelpImages, isHelpSubmitting,
     activeHelpStatuses, hasActiveEmergency, myActiveHelp, myHelpHistory, isHelpResolvedPromptVisible,
     openHelpSheet, closeHelpSheet, chooseHelpImages, removePickedHelpImage, submitHelpPost, handleCloseHelp,
     // 好友
-    friendsSheetVisible, friendsList, pendingFriendsCount,
+    friendsSheetVisible, friendsList, pendingFriendsCount, getFriendsList,
     openFriendsSheet, closeFriendsSheet, isFriend, isFriendPending,
     handleAddFriend, handleAcceptFriend, startChatFromCard, acceptFriendFromCard,
     // 私聊
     chatSheetVisible, currentChatFriend, currentChatMessages, newChatMessageText, chatScrollTop,
-    openChatSheet, closeChatSheet, sendCurrentChatMessage,
+    openChatSheet, openChatWithFriend: openChatSheet, closeChatSheet, sendCurrentChatMessage,
     // 点赞与朋友圈就地交互
     toggleLikeStatus,
     activeActionMenuStatusId, toggleActionMenu, closeActionMenu, handleLikeFromMenu,

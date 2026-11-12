@@ -1,35 +1,11 @@
 <template>
   <view class="universe-page" :style="{ paddingTop: statusBarHeight + 'px' }">
-    <!-- 1. 顶栏：关注 | 小宇宙 | 漂流瓶 (复刻用户截图红框) -->
+    <!-- 1. 顶栏：小纸条 -->
     <view class="universe-top-nav">
       <view class="top-nav-tabs">
-        <view
-          class="nav-tab"
-          :class="{ 'tab-active': universeSubTab === 'moments' }"
-          @tap="handleNavTab('moments')"
-        >
-          <text>关注</text>
-        </view>
-        <view
-          class="nav-tab"
-          :class="{ 'tab-active': universeSubTab === 'cosmos' }"
-          @tap="handleNavTab('cosmos')"
-        >
-          <text>小宇宙</text>
-        </view>
-        <view
-          class="nav-tab"
-          :class="{ 'tab-active': universeSubTab === 'bottle' }"
-          @tap="handleNavTab('bottle')"
-        >
+        <view class="nav-tab tab-active">
           <text>小纸条</text>
         </view>
-      </view>
-
-      <!-- 右上角贝壳金币 (复刻用户截图) -->
-      <view class="shell-coin-box">
-        <text class="shell-icon">🐚</text>
-        <text class="shell-num">{{ shellCount }}</text>
       </view>
     </view>
 
@@ -51,6 +27,48 @@
 
       <!-- 海面波浪线 -->
       <view class="ocean-wave-glow" />
+
+      <!-- 动态游动鱼群 1 (自左向右巡游) -->
+      <view class="fish-school school-1">
+        <text class="swimming-fish f1">🐠</text>
+        <text class="swimming-fish f2">🐟</text>
+        <text class="swimming-fish f3">🐡</text>
+        <text class="swimming-fish f4">🐠</text>
+      </view>
+
+      <!-- 动态潜水员与上升气泡 (巡游海底) -->
+      <view class="diver-container">
+        <view class="diver-figure">
+          <svg class="diver-svg" viewBox="0 0 72 44" fill="none">
+            <!-- 脚蹼 -->
+            <path d="M6 26 C1 28 0 34 5 36 C10 37 14 30 18 28 Z" fill="#0284c7"/>
+            <path d="M4 21 C0 23 0 28 4 30 C8 31 12 26 16 24 Z" fill="#38bdf8"/>
+            <!-- 潜水服躯干 -->
+            <ellipse cx="28" cy="22" rx="15" ry="7" transform="rotate(-15 28 22)" fill="#0f172a"/>
+            <!-- 氧气瓶 -->
+            <rect x="22" y="10" width="16" height="6" rx="3" transform="rotate(-15 30 13)" fill="#f59e0b" stroke="#d97706" stroke-width="1"/>
+            <!-- 面镜与头部 -->
+            <circle cx="45" cy="18" r="6.5" fill="#0f172a"/>
+            <path d="M44 16 H50 V20 H44 Z" rx="2" fill="#67e8f9" opacity="0.9"/>
+            <path d="M45 19 Q48 24 53 23" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <!-- 划水手臂 -->
+            <path d="M35 24 Q48 26 54 22" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <!-- 呼出上升气泡流 -->
+          <view class="bubble-stream">
+            <view class="bubble b1" />
+            <view class="bubble b2" />
+            <view class="bubble b3" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 动态游动鱼群 2 (深海自右向左巡游) -->
+      <view class="fish-school school-2">
+        <text class="swimming-fish f5">🐟</text>
+        <text class="swimming-fish f6">🐠</text>
+        <text class="swimming-fish f7">🐟</text>
+      </view>
 
       <!-- 海面上漂浮的晶莹瓶子群 (真实复刻截图玻璃漂流瓶与信纸) -->
       <view class="drift-bottles-layer">
@@ -111,25 +129,25 @@
         </view>
       </view>
 
-      <!-- 底部三大核心操作胶囊 (复刻用户截图红框) -->
+      <!-- 底部三大核心操作胶囊 (使用 view 彻底杜绝 button 默认线框与 ::after 划线痕迹) -->
       <view class="ocean-action-bar">
-        <button class="action-btn btn-throw" @tap="openThrowBottleModal">
+        <view class="action-btn btn-throw" @tap="openThrowBottleModal">
           <text class="btn-icon">🌊</text>
           <text class="btn-text">扔一个</text>
-        </button>
+        </view>
 
-        <button class="action-btn btn-fish" @tap="handleFishBottle">
+        <view class="action-btn btn-fish" @tap="handleFishBottle">
           <view v-if="shellCount > 0" class="fish-bonus-tag">
             <text>赠送{{ shellCount }}次</text>
           </view>
           <text class="btn-icon">🔍</text>
           <text class="btn-text">随机捞</text>
-        </button>
+        </view>
 
-        <button class="action-btn btn-msg" @tap="bottleMsgModalVisible = true">
+        <view class="action-btn btn-msg" @tap="bottleMsgModalVisible = true">
           <text class="btn-icon">💬</text>
           <text class="btn-text">消息</text>
-        </button>
+        </view>
       </view>
     </view>
 
@@ -347,7 +365,7 @@ function confirmReply() {
   padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.6) 100%);
   backdrop-filter: blur(10px);
   border-bottom: 0.5px solid rgba(226, 232, 240, 0.8);
@@ -356,47 +374,32 @@ function confirmReply() {
   .top-nav-tabs {
     display: flex;
     align-items: center;
-    gap: 20px;
 
     .nav-tab {
-      font-size: 15px;
-      color: #64748b;
-      font-weight: 500;
+      font-size: 17px;
+      color: #0f172a;
+      font-weight: 800;
       position: relative;
       cursor: pointer;
       padding: 4px 2px;
 
       &.tab-active {
-        font-size: 17px;
+        font-size: 18px;
         color: #0f172a;
-        font-weight: 800;
+        font-weight: 900;
 
         &::after {
           content: "";
           position: absolute;
           bottom: -4px;
-          left: 10%;
-          width: 80%;
-          height: 3px;
+          left: 5%;
+          width: 90%;
+          height: 3.5px;
           background: #0284c7;
           border-radius: 2px;
         }
       }
     }
-  }
-
-  .shell-coin-box {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid #e2e8f0;
-    padding: 4px 12px;
-    border-radius: 16px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-
-    .shell-icon { font-size: 14px; }
-    .shell-num { font-size: 13px; font-weight: 800; color: #d97706; }
   }
 }
 

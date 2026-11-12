@@ -7,11 +7,14 @@ export { default as TopNav } from "./common/TopNav.vue";
 export { default as WeChatTabBar } from "./common/WeChatTabBar.vue";
 export { default as ImagePreviewModal } from "./common/ImagePreviewModal.vue";
 
-// 2. 底部五大主页签核心页面 (Tabs)
+// 2. 底部主页签核心页面 (Tabs)
 export { default as ContactsTab } from "./tabs/ContactsTab.vue";
 export { default as ChatsTab } from "./tabs/ChatsTab.vue";
 export { default as UniverseTab } from "./tabs/UniverseTab.vue";
 export { default as MeTab } from "./tabs/MeTab.vue";
+export { default as DeskHoleTab } from "./tabs/DeskHoleTab.vue";
+export { default as SlowNotesTab } from "./tabs/SlowNotesTab.vue";
+export { default as GrowthSettingsTab } from "./tabs/GrowthSettingsTab.vue";
 
 // 3. 首页四大内容流视图 (Feeds)
 export { default as MapView } from "./feeds/MapView.vue";

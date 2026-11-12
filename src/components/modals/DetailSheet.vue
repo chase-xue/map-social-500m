@@ -60,6 +60,18 @@
               <text class="meta-dist">📍 距离你 {{ distanceText }}</text>
             </view>
           </view>
+
+          <!-- 进TA桌洞按钮 -->
+          <view class="desk-entry-btn" @tap.stop="goToAuthorDesk">
+            <text class="desk-btn-icon">🪟</text>
+            <text class="desk-btn-label">进TA桌洞</text>
+          </view>
+        </view>
+
+        <!-- 商户优惠福利便签横幅 -->
+        <view v-if="activeStatus?.isMerchant" class="merchant-badge-banner">
+          <text class="m-icon">🏪</text>
+          <text class="m-text">【商户福利便签】{{ activeStatus?.merchantDiscount || '凭500米圈便签立享专属打卡优惠！' }}</text>
         </view>
 
         <!-- 3. 急事/救命求助服务提醒横幅 (如果是求助帖) -->
@@ -173,6 +185,9 @@
                 <view class="comment-author-top">
                   <view class="comment-name-badge-wrap">
                     <text class="comment-author-name" @tap="viewCommenterProfile(cmt)">{{ cmt.userName }}</text>
+                    <text class="reply-type-tag" :class="cmt.isLocalReply !== false ? 'tag-local' : 'tag-remote'">
+                      {{ cmt.isLocalReply !== false ? '📍 现场回复' : '🌐 远程留言' }}
+                    </text>
                     <text v-if="cmt.userId === activeStatus?.userId" class="author-owner-tag">作者</text>
                     <text v-else-if="cmt.userId === myProfile.id" class="author-me-tag">我</text>
                   </view>
@@ -277,7 +292,14 @@ const {
   makePhoneCall,
   isHelpResolvedPromptVisible,
   toggleLikeStatus,
+  switchMainTab,
 } = useAppState();
+
+function goToAuthorDesk() {
+  if (!activeStatus.value) return;
+  closeDetailSheet(true);
+  switchMainTab("deskHole");
+}
 
 const isLiked = computed(() => {
   if (!activeStatus.value?.likes) return false;
@@ -928,6 +950,61 @@ function handleToggleLike() {
       background-color: #07c160;
       color: #ffffff;
     }
+  }
+}
+
+.desk-entry-btn {
+  margin-left: auto;
+  background: #fff3e0;
+  border: 1px solid #ffe082;
+  border-radius: 14px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+
+  .desk-btn-icon { font-size: 14px; }
+  .desk-btn-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #e67e22;
+  }
+}
+
+.merchant-badge-banner {
+  margin: 10px 0;
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border: 1px solid #81c784;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .m-icon { font-size: 16px; }
+  .m-text {
+    font-size: 12px;
+    font-weight: bold;
+    color: #2e7d32;
+  }
+}
+
+.reply-type-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-weight: 500;
+
+  &.tag-local {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  &.tag-remote {
+    background: #f5f5f5;
+    color: #757575;
   }
 }
 </style>

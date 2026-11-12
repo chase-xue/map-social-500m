@@ -116,6 +116,26 @@
           </view>
         </view>
 
+        <!-- 便签底色选择 (小纸条/小便签拟物风格) -->
+        <view class="wechat-cell-row">
+          <view class="row-left">
+            <text class="cell-icon">🎨</text>
+            <view class="acgn-label-col">
+              <text class="cell-label">便签贴纸色彩</text>
+              <text class="acgn-sub-tip">挑选属于此地心情的彩纸底色</text>
+            </view>
+          </view>
+          <view class="row-right color-palette-chips">
+            <view
+              v-for="c in paperColorList"
+              :key="c.key"
+              class="paper-dot"
+              :class="['dot-' + c.key, { 'dot-active': selectedPaperColor === c.key }]"
+              @tap="selectedPaperColor = c.key"
+            />
+          </view>
+        </view>
+
         <!-- 行 1.5: 标注为二次元动态 -->
         <view v-if="currentPublishMode !== 'emergency'" class="wechat-cell-row acgn-toggle-row">
           <view class="row-left">
@@ -209,21 +229,39 @@
 
       <view class="pub-bottom-safe-padding" />
     </scroll-view>
+
+    <!-- 小刷子刷胶水拟物动效遮罩 -->
+    <view v-if="isBrushingGlue" class="brush-glue-overlay">
+      <view class="brush-hand-icon">🖌️</view>
+      <view class="glue-streak" />
+      <text class="brush-hint-text">小刷子正在刷胶水粘贴便签...</text>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed } from "vue";
+import { NotePaperColor } from "../../types";
 import { useAppState } from "../../composables/useAppState";
 import { ACGN_TAG_CATEGORIES as ACGN_TAGS } from "../../constants/acgn";
 
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
   isPublishing, myProfile, helpContactPhone,
-  isAcgnPost, acgnTag,
+  isAcgnPost, acgnTag, selectedPaperColor,
   closePublishSheet, chooseImages, removePickedImage, previewImage, addPresetSamplePhoto,
   submitNewPost, submitHelpPost, openMyProfileSheet, switchMainTab
 } = useAppState();
+
+const isBrushingGlue = ref(false);
+
+const paperColorList: { key: NotePaperColor; name: string }[] = [
+  { key: "yellow", name: "鹅黄" },
+  { key: "pink", name: "樱粉" },
+  { key: "blue", name: "天蓝" },
+  { key: "green", name: "薄荷绿" },
+  { key: "kraft", name: "牛皮纸" }
+];
 
 const canSubmit = computed(() => {
   return !!newPostContent.value.trim() || pickedImages.value.length > 0;
@@ -242,17 +280,24 @@ const placeholderText = computed(() => {
 async function handlePublish() {
   if (!canSubmit.value) return;
 
-  if (currentPublishMode.value === "emergency") {
-    const { newHelpContent, pickedHelpImages } = useAppState();
-    newHelpContent.value = newPostContent.value;
-    pickedHelpImages.value = [...pickedImages.value];
-    await submitHelpPost();
-    closePublishSheet(true);
-  } else {
-    await submitNewPost();
-    if (currentPublishMode.value === "status") {
-      switchMainTab("map");
+  isBrushingGlue.value = true;
+  await new Promise(r => setTimeout(r, 600));
+
+  try {
+    if (currentPublishMode.value === "emergency") {
+      const { newHelpContent, pickedHelpImages } = useAppState();
+      newHelpContent.value = newPostContent.value;
+      pickedHelpImages.value = [...pickedImages.value];
+      await submitHelpPost();
+      closePublishSheet(true);
+    } else {
+      await submitNewPost();
+      if (currentPublishMode.value === "status") {
+        switchMainTab("map");
+      }
     }
+  } finally {
+    isBrushingGlue.value = false;
   }
 }
 </script>
@@ -612,5 +657,68 @@ async function handlePublish() {
   .pub-bottom-safe-padding {
     height: 40px;
   }
+}
+
+.color-palette-chips {
+  display: flex;
+  gap: 10px;
+}
+
+.paper-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.dot-active {
+  border-color: #3e2723;
+  transform: scale(1.2);
+}
+
+.dot-yellow { background-color: #fff59d; }
+.dot-pink   { background-color: #f8bbd0; }
+.dot-blue   { background-color: #b3e5fc; }
+.dot-green  { background-color: #c8e6c9; }
+.dot-kraft  { background-color: #d7ccc8; }
+
+.brush-glue-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.brush-hand-icon {
+  font-size: 48px;
+  animation: brush-stroke 0.6s ease-in-out infinite alternate;
+}
+
+.glue-streak {
+  width: 160px;
+  height: 12px;
+  background: linear-gradient(90deg, rgba(255, 235, 59, 0.8), rgba(255, 152, 0, 0.8));
+  border-radius: 6px;
+  margin-top: 14px;
+  box-shadow: 0 0 16px rgba(255, 193, 7, 0.6);
+}
+
+.brush-hint-text {
+  font-size: 14px;
+  color: #fff;
+  font-weight: bold;
+  margin-top: 16px;
+}
+
+@keyframes brush-stroke {
+  0% { transform: translate(-20px, 0) rotate(-15deg); }
+  100% { transform: translate(20px, 0) rotate(15deg); }
 }
 </style>

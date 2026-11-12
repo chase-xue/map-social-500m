@@ -3,7 +3,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "500米圈",
+        "navigationBarTitleText": "小纸条",
         "navigationStyle": "custom",
         "app-plus": {
           "titleNView": false
@@ -13,7 +13,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "500米地图生活圈",
+    "navigationBarTitleText": "小纸条 - 500米慢社交生活圈",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#EEF2F6",
     "rpxCalcMaxDeviceWidth": 960,

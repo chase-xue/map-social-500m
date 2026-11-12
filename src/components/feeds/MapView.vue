@@ -32,6 +32,30 @@
       </view>
     </view>
 
+    <!-- 顶部地标搜索与范围切换栏 -->
+    <view class="map-search-bar">
+      <view class="search-input-box">
+        <text class="search-icon">🔍</text>
+        <input
+          class="search-input"
+          v-model="landmarkSearchText"
+          placeholder="搜索附近地标/生活商户/便签..."
+          @confirm="onSearchLandmark"
+        />
+        <text v-if="landmarkSearchText" class="clear-icon" @tap="landmarkSearchText = ''">✕</text>
+      </view>
+      <view class="range-switch-pill" @tap="toggleRadius">
+        <text class="range-label">{{ searchRadius === 500 ? '📍 500米圈' : '🌐 1公里街区' }}</text>
+      </view>
+    </view>
+
+    <!-- 附近新增便签浮窗提醒 -->
+    <view v-if="newNoteAlertVisible && latestNote" class="new-note-float-alert" @tap="openDetailSheet(latestNote)">
+      <text class="alert-icon">🔔</text>
+      <text class="alert-text">刚刚在周边贴出了一张新便签：《{{ latestNote.content.slice(0, 14) }}...》</text>
+      <text class="alert-action">查看 ›</text>
+    </view>
+
     <map
       id="mainMap"
       class="map-view"
@@ -79,19 +103,19 @@
     <!-- 底部操作栏 -->
     <view class="bottom-action-bar">
       <view class="summary-info">
-        <text class="count-highlight">附近 {{ visibleStatuses.length }} 条动态</text>
-        <text class="sub-tip">严格按 500m 地理范围圈可见</text>
+        <text class="count-highlight">附近 {{ visibleStatuses.length }} 张便签</text>
+        <text class="sub-tip">严格按 {{ searchRadius }}m 精准圈可见 · 支持现场回复</text>
       </view>
       <button class="publish-trigger-btn" @tap="openPublishSheet" hover-class="btn-hover">
-        <text class="btn-plus">＋</text>
-        <text class="btn-label">在此发动态</text>
+        <text class="btn-plus">🖌️</text>
+        <text class="btn-label">在此贴便签</text>
       </button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useAppState } from "../../composables/useAppState";
 const {
   mapCenter, mapScale, mapMarkers, mapCircles,
@@ -101,6 +125,27 @@ const {
   activeHelpStatuses, hasActiveEmergency, openHelpSheet, myActiveHelp,
   openAiMatchSheet
 } = useAppState();
+
+const landmarkSearchText = ref("");
+const searchRadius = ref<number>(500);
+const newNoteAlertVisible = ref(true);
+
+const latestNote = computed(() => {
+  if (visibleStatuses.value && visibleStatuses.value.length > 0) {
+    return visibleStatuses.value[0];
+  }
+  return null;
+});
+
+function toggleRadius() {
+  searchRadius.value = searchRadius.value === 500 ? 1000 : 500;
+  uni.showToast({ title: `已切换为 ${searchRadius.value} 米视野`, icon: "none" });
+}
+
+function onSearchLandmark() {
+  if (!landmarkSearchText.value.trim()) return;
+  uni.showToast({ title: `正在探索“${landmarkSearchText.value}”周边便签...`, icon: "none" });
+}
 
 const topEmergencyHelp = computed(() => {
   if (!activeHelpStatuses.value.length) return null;
@@ -269,5 +314,94 @@ onUnmounted(() => {
 @keyframes help-pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
+}
+
+.map-search-bar {
+  position: absolute;
+  top: 112rpx;
+  left: 16rpx;
+  right: 16rpx;
+  z-index: 42;
+  display: flex;
+  gap: 12rpx;
+  align-items: center;
+}
+
+.search-input-box {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 32rpx;
+  padding: 8rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  border: 1rpx solid rgba(0, 0, 0, 0.06);
+
+  .search-icon {
+    font-size: 24rpx;
+    opacity: 0.7;
+  }
+
+  .search-input {
+    flex: 1;
+    font-size: 24rpx;
+    color: #333;
+  }
+
+  .clear-icon {
+    font-size: 22rpx;
+    color: #999;
+    padding: 0 4rpx;
+  }
+}
+
+.range-switch-pill {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 10rpx 18rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  border: 1rpx solid #ffe082;
+
+  .range-label {
+    font-size: 22rpx;
+    font-weight: 700;
+    color: #d84315;
+  }
+}
+
+.new-note-float-alert {
+  position: absolute;
+  bottom: 140rpx;
+  left: 20rpx;
+  right: 20rpx;
+  background: linear-gradient(135deg, #fff9c4, #fff176);
+  border: 2rpx solid #fbc02d;
+  border-radius: 20rpx;
+  padding: 12rpx 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  box-shadow: 0 6rpx 20rpx rgba(251, 192, 45, 0.35);
+  z-index: 45;
+  cursor: pointer;
+
+  .alert-icon { font-size: 28rpx; }
+  .alert-text {
+    flex: 1;
+    font-size: 22rpx;
+    font-weight: 600;
+    color: #5d4037;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .alert-action {
+    font-size: 22rpx;
+    font-weight: 700;
+    color: #e65100;
+  }
 }
 </style>

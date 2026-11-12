@@ -19,11 +19,21 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80",
   gender: "男",
   age: 24,
-  bio: "在周边500米里记录最真实的烟火气与风景✨",
+  bio: "在周边500米里写下我的小纸条，慢慢生活✨",
   phone: "13800138000",
   showPhone: true, // 是否向他人公开展示手机号
   showAcgnTab: true, // 默认在首页展示二次元页签
-  showRecommendTab: true
+  showRecommendTab: true,
+  growth: {
+    grade: '大学生',
+    title: '传纸条课代表',
+    experience: 860,
+    coins: 66,
+    speedTickets: 3,
+    charExpandCards: 2,
+    activeTheme: 'wood',
+    ownedThemes: ['wood', 'cherry', 'retro']
+  }
 };
 
 // 平台环境下的文件管理器兼容处理

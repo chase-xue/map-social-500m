@@ -182,6 +182,15 @@
         >
           添加到通讯录
         </button>
+
+        <!-- 进TA桌洞 (小纸条慢社交核心通道) -->
+        <button
+          v-if="viewingProfile?.id !== myProfile.id"
+          class="wechat-btn btn-desk-card"
+          @tap="visitDeskFromCard(viewingProfile)"
+        >
+          🪟 进TA的桌洞 (窗台留言 / 塞小纸条)
+        </button>
       </view>
     </scroll-view>
   </view>
@@ -196,7 +205,14 @@ const {
   closeUserCard, makePhoneCall, isFriend, isFriendPending,
   startChatFromCard, acceptFriendFromCard, handleAddFriend, openMyProfileSheet,
   openDetailSheet, previewImage, formatTime,
+  switchMainTab,
 } = useAppState();
+
+function visitDeskFromCard(profile: any) {
+  if (!profile) return;
+  closeUserCard(true);
+  switchMainTab("deskHole");
+}
 
 // 和位置无关：直接从 allStatuses 中筛选该用户的全部动态
 const userAllStatuses = computed(() => {
@@ -633,6 +649,16 @@ const userAllStatuses = computed(() => {
 
           &:active {
             background-color: #f7f7f7;
+          }
+        }
+
+        &.btn-desk-card {
+          background-color: #fff3e0;
+          color: #e67e22;
+          border: 1px solid #ffe082;
+
+          &:active {
+            background-color: #ffe0b2;
           }
         }
       }

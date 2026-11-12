@@ -1,236 +1,204 @@
 <template>
-  <view class="wechat-tab-bar">
-    <!-- 1. 地图 (500米圈) - 居首位 -->
+  <view class="note-tab-bar">
+    <!-- 1. 小便签 (首页高德地图与附近便签) -->
     <view
       class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'map' }"
+      :class="{ 'item-active': mainTab === 'map' || mainTab === 'notes' }"
       @tap="switchMainTab('map')"
     >
       <view class="icon-box">
-        <!-- 地图 Active 选中态: 高光微信绿定位图钉 -->
-        <svg v-if="mainTab === 'map'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+        <!-- 小便签便贴图标 -->
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10l6-6V5c0-1.1-.9-2-2-2zm-5 15.5V14h4.5L14 18.5zM17 11H7V9h10v2zm-4-4H7V5h6v2z"/>
         </svg>
-        <!-- 地图 Inactive 未选中态: 优雅线性定位图钉 -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-          <circle cx="12" cy="9" r="2.5"/>
-        </svg>
-
-        <view v-if="visibleStatuses.length > 0 && mainTab !== 'map'" class="wechat-badge">
+        <view v-if="visibleStatuses.length > 0 && mainTab !== 'map' && mainTab !== 'notes'" class="note-badge">
           {{ visibleStatuses.length }}
         </view>
       </view>
-      <text class="tab-label">首页</text>
+      <text class="tab-label">小便签</text>
     </view>
 
-    <!-- 2. 通讯录 -->
+    <!-- 2. 小纸条 (慢节奏聊天) -->
     <view
       class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'contacts' }"
-      @tap="switchMainTab('contacts')"
+      :class="{ 'item-active': mainTab === 'chats' || mainTab === 'slowNotes' }"
+      @tap="switchMainTab('slowNotes')"
     >
       <view class="icon-box">
-        <!-- 通讯录 Active 选中态: 层次分明的优雅双人联系人 (👥) -->
-        <svg v-if="mainTab === 'contacts'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <!-- 后排同伴 -->
-          <circle cx="15.5" cy="8" r="3.2"/>
-          <path d="M12 20.5c0-2.6 1.8-4.5 4.2-4.5 2.3 0 4.2 1.9 4.2 4.5v.5h-8.4v-.5z"/>
-          <!-- 前排主人物分层衬底 (与底色一致，杜绝任何碎裂悬挂物) -->
-          <circle cx="8.5" cy="8.5" r="4.3" fill="#f7f7f7"/>
-          <path d="M2.2 21c0-3.5 2.8-6.3 6.3-6.3 3.5 0 6.3 2.8 6.3 6.3v.8H2.2v-.8z" fill="#f7f7f7"/>
-          <!-- 前排主人物 -->
-          <circle cx="8.5" cy="8.5" r="3.4" fill="currentColor"/>
-          <path d="M3 21c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5v.5H3v-.5z" fill="currentColor"/>
+        <!-- 折叠小纸条/信封纸飞机图标 -->
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
         </svg>
-        <!-- 通讯录 Inactive 未选中态: 极简线性双人联系人 (👥) -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-
-        <view v-if="pendingFriendsCount > 0" class="wechat-badge">
-          {{ pendingFriendsCount }}
-        </view>
-      </view>
-      <text class="tab-label">通讯录</text>
-    </view>
-
-    <!-- 3. 聊天 (微信) -->
-    <view
-      class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'chats' }"
-      @tap="switchMainTab('chats')"
-    >
-      <view class="icon-box">
-        <!-- 聊天 Active 选中态: 高清实色圆润对话气泡带 3 点 -->
-        <svg v-if="mainTab === 'chats'" class="tab-svg" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z" fill="currentColor"/>
-          <circle cx="8" cy="11" r="1.3" fill="white"/>
-          <circle cx="12" cy="11" r="1.3" fill="white"/>
-          <circle cx="16" cy="11" r="1.3" fill="white"/>
-        </svg>
-        <!-- 聊天 Inactive 未选中态: 极简线性圆润对话气泡 -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2C6.48 2 2 6.03 2 11c0 2.45 1.1 4.67 2.91 6.27-.27 1.72-.94 3.48-1.95 4.73 1.95 0 4.12-.86 5.66-2.02.45.08.91.12 1.38.12 5.52 0 10-4.03 10-9S17.52 2 12 2z"/>
-          <circle cx="8" cy="11" r="1" fill="currentColor"/>
-          <circle cx="12" cy="11" r="1" fill="currentColor"/>
-          <circle cx="16" cy="11" r="1" fill="currentColor"/>
-        </svg>
-
-        <view v-if="unreadChatsCount > 0" class="wechat-badge">
+        <view v-if="unreadChatsCount > 0" class="note-badge">
           {{ unreadChatsCount > 99 ? '99+' : unreadChatsCount }}
         </view>
       </view>
-      <text class="tab-label">消息</text>
+      <text class="tab-label">小纸条</text>
     </view>
 
-    <!-- 4. 小宇宙 (漂流瓶海洋) -->
-    <view
-      class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'universe' }"
-      @tap="switchMainTab('universe')"
-    >
-      <view class="icon-box">
-        <!-- 小宇宙 Active 选中态: 高清实色行星与星环 (🪐) -->
-        <svg v-if="mainTab === 'universe'" class="tab-svg" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="5.6" fill="currentColor"/>
-          <ellipse cx="12" cy="12" rx="9.8" ry="3.6" transform="rotate(-25 12 12)" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M 4 15.5 C 6.5 18, 17 14, 19.5 8.5" stroke="#f7f7f7" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-          <path d="M 4.5 15.5 C 7 18, 16.5 14, 19 8.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-        </svg>
-        <!-- 小宇宙 Inactive 未选中态: 极简线性行星与星环 (🪐) -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5.5"/>
-          <ellipse cx="12" cy="12" rx="9.8" ry="3.6" transform="rotate(-25 12 12)"/>
-        </svg>
+    <!-- 3. 小刷子 (居中拟物化毛刷发布键) -->
+    <view class="tab-bar-center" @tap="triggerBrushPublish">
+      <view class="brush-circle-btn">
+        <text class="brush-icon">🖌️</text>
       </view>
-      <text class="tab-label">小宇宙</text>
+      <text class="center-label">小刷子</text>
     </view>
 
-    <!-- 5. 我 -->
+    <!-- 4. 我的桌洞 (面对窗户的写字台拟物空间) -->
     <view
       class="tab-bar-item"
-      :class="{ 'item-active': mainTab === 'me' }"
-      @tap="switchMainTab('me')"
+      :class="{ 'item-active': mainTab === 'deskHole' }"
+      @tap="switchMainTab('deskHole')"
     >
       <view class="icon-box">
-        <!-- 我 Active 选中态: 微信官方实色用户 -->
-        <svg v-if="mainTab === 'me'" class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="7.5" r="3.8"/>
-          <path d="M4.5 19.5c0-3.6 3.4-6.5 7.5-6.5s7.5 2.9 7.5 6.5v.5h-15v-.5z"/>
+        <!-- 书桌/抽屉桌洞图标 -->
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20 18v-1c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2v1H2v2h20v-2h-2zM4 7h16v6H4V7zm2 8h12v1H6v-1z"/>
         </svg>
-        <!-- 我 Inactive 未选中态: 微信官方线性用户 -->
-        <svg v-else class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="7.5" r="3.5"/>
-          <path d="M5.5 19.5c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6"/>
-        </svg>
-
-        <view v-if="hasActiveEmergency" class="wechat-dot" />
       </view>
-      <text class="tab-label">更多</text>
+      <text class="tab-label">我的桌洞</text>
+    </view>
+
+    <!-- 5. 设置 / 成长 -->
+    <view
+      class="tab-bar-item"
+      :class="{ 'item-active': mainTab === 'me' || mainTab === 'settings' }"
+      @tap="switchMainTab('settings')"
+    >
+      <view class="icon-box">
+        <!-- 徽章与个人中心图标 -->
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </view>
+      <text class="tab-label">设置</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { useAppState } from "../../composables/useAppState";
+
 const {
-  mainTab, switchMainTab, unreadChatsCount, pendingFriendsCount,
-  visibleStatuses, hasActiveEmergency
+  mainTab,
+  switchMainTab,
+  unreadChatsCount,
+  visibleStatuses,
+  openPublishSheet
 } = useAppState();
+
+function triggerBrushPublish() {
+  openPublishSheet();
+}
 </script>
 
 <style lang="scss" scoped>
-.wechat-tab-bar {
+.note-tab-bar {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(52px + env(safe-area-inset-bottom, 0px));
+  height: calc(56px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background-color: #f7f7f7;
-  border-top: 0.5px solid #dcdcdc;
+  background-color: #faf8f5;
+  border-top: 0.5px solid #e0d8cc;
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 60;
   box-sizing: border-box;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+}
 
-  .tab-bar-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #191919;
-    cursor: pointer;
-    transition: color 0.15s ease;
-    user-select: none;
+.tab-bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #8d6e63;
+  transition: color 0.15s;
+}
 
-    .icon-box {
-      position: relative;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+.item-active {
+  color: #e67e22 !important;
+}
 
-      .tab-svg {
-        width: 24px;
-        height: 24px;
-        transition: transform 0.15s ease;
-      }
+.icon-box {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-      .wechat-badge {
-        position: absolute;
-        top: -4px;
-        right: -8px;
-        background-color: #fa5151;
-        color: #ffffff;
-        font-size: 10px;
-        font-weight: 700;
-        min-width: 16px;
-        height: 16px;
-        line-height: 16px;
-        padding: 0 4px;
-        border-radius: 8px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-      }
+.tab-svg {
+  width: 22px;
+  height: 22px;
+}
 
-      .wechat-dot {
-        position: absolute;
-        top: 0px;
-        right: -2px;
-        width: 8px;
-        height: 8px;
-        background-color: #fa5151;
-        border-radius: 50%;
-      }
-    }
+.tab-label {
+  font-size: 10px;
+  margin-top: 3px;
+  font-weight: 500;
+}
 
-    .tab-label {
-      font-size: 10px;
-      margin-top: 3px;
-      line-height: 1;
-      font-weight: 500;
-    }
+.note-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background-color: #e74c3c;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: bold;
+  height: 16px;
+  min-width: 16px;
+  line-height: 16px;
+  border-radius: 8px;
+  text-align: center;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
 
-    &.item-active {
-      color: #07c160;
+/* 居中小刷子突出按钮 */
+.tab-bar-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  top: -12px;
+}
 
-      .tab-svg {
-        transform: scale(1.05);
-      }
+.brush-circle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9f43, #e67e22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(230, 126, 34, 0.45);
+  border: 3px solid #faf8f5;
+  transition: transform 0.15s;
+}
 
-      .tab-label {
-        font-weight: 600;
-      }
-    }
-  }
+.brush-circle-btn:active {
+  transform: scale(0.92);
+}
+
+.brush-icon {
+  font-size: 24px;
+}
+
+.center-label {
+  font-size: 10px;
+  color: #e67e22;
+  font-weight: bold;
+  margin-top: 2px;
 }
 </style>

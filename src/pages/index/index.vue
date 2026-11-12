@@ -2,8 +2,8 @@
   <view class="app-layout">
     <view class="container">
       <!-- 微信四大底层页签内容 -->
-      <!-- 1. 地图 (500米 Zenly 地图与朋友圈) - 居首位 -->
-      <view v-show="mainTab === 'map'" class="map-tab-container">
+      <!-- 1. 小便签 (高德地图 500米圈与便签流) -->
+      <view v-show="mainTab === 'map' || mainTab === 'notes'" class="map-tab-container">
         <!-- 地图顶栏 (胶囊切换器) -->
         <TopNav />
         <MapView v-if="mapSubTab === 'map'" />
@@ -12,19 +12,22 @@
         <AcgnView v-if="mapSubTab === 'acgn'" />
       </view>
 
-      <!-- 2. 通讯录 -->
+      <!-- 2. 小纸条 (慢聊天系统) -->
+      <SlowNotesTab v-show="mainTab === 'slowNotes' || mainTab === 'chats'" />
+
+      <!-- 3. 通讯录 (兼容保留) -->
       <ContactsTab v-show="mainTab === 'contacts'" />
 
-      <!-- 3. 聊天 (微信) -->
-      <ChatsTab v-show="mainTab === 'chats'" />
+      <!-- 4. 我的桌洞 (面对窗户的写字台拟物空间) -->
+      <DeskHoleTab v-show="mainTab === 'deskHole'" />
 
-      <!-- 4. 小宇宙 (漂流瓶海洋) -->
+      <!-- 5. 设置 / 成长体系 -->
+      <GrowthSettingsTab v-show="mainTab === 'settings' || mainTab === 'me'" />
+
+      <!-- 6. 小宇宙 (漂流瓶保留) -->
       <UniverseTab v-show="mainTab === 'universe'" />
 
-      <!-- 5. 我 -->
-      <MeTab v-show="mainTab === 'me'" />
-
-      <!-- 微信原生四大底层页签 TabBar -->
+      <!-- 底部五大页签 TabBar -->
       <WeChatTabBar />
 
       <!-- 弹窗层 (z-index 分层管理) -->
@@ -49,6 +52,7 @@ import { useAppState } from "../../composables/useAppState";
 import {
   TopNav, WeChatTabBar, ImagePreviewModal,
   ContactsTab, ChatsTab, UniverseTab, MeTab,
+  DeskHoleTab, SlowNotesTab, GrowthSettingsTab,
   MapView, MomentsView, RecommendView, AcgnView,
   DetailSheet, PublishSheet, HelpSheet, MyProfileSheet,
   FriendsSheet, ChatSheet, ClusterSheet, UserCardModal, AiMatchSheet

@@ -3,6 +3,23 @@ export interface Coordinates {
   longitude: number;
 }
 
+export type NotePaperColor = 'yellow' | 'pink' | 'blue' | 'green' | 'kraft';
+
+export type DeskTheme = 'wood' | 'cherry' | 'retro' | 'modern';
+
+export type GradeLevel = '幼儿园' | '小学生' | '初中生' | '高中生' | '大学生' | '老教授';
+
+export interface UserGrowth {
+  grade: GradeLevel;
+  title: string;           // 如 "课堂捣蛋鬼", "传纸条课代表"
+  experience: number;
+  coins: number;           // 慢纸条慢币
+  speedTickets: number;    // 极速加速券数量 (1元会员特权)
+  charExpandCards: number; // 70字扩充卡
+  activeTheme: DeskTheme;
+  ownedThemes: DeskTheme[];
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -12,11 +29,12 @@ export interface UserProfile {
   bio: string;
   phone?: string;        // 绑定的手机号
   showPhone?: boolean;   // 是否向附近500米内他人公开展示手机号
-  showAcgnTab?: boolean; // 首页顶部是否展示「二次元」页签 (可自定义开启/隐藏)
+  showAcgnTab?: boolean; // 首页顶部是否展示「二次元」页签
   showRecommendTab?: boolean; // 首页顶部是否展示「推荐」页签
   constellation?: string; // 星座
   personalityTags?: string[]; // 性格标签
   mbti?: string;         // MBTI 人格
+  growth?: UserGrowth;   // 学级成长体系
 }
 
 export interface FriendItem {
@@ -31,6 +49,7 @@ export interface FriendItem {
   lastMessage?: string;
   lastMessageTime?: number;
   unreadCount?: number;
+  distanceMeters?: number;       // 与我的物理距离 (米)
 }
 
 export interface ChatMessage {
@@ -40,6 +59,17 @@ export interface ChatMessage {
   content: string;
   contentType: 'text' | 'image';
   createdAt: number;
+  // 小纸条慢聊天特性
+  isSealed?: boolean;            // 火漆印私密纸条
+  isAccelerated?: boolean;       // 是否已被加速
+  distanceMeters?: number;       // 发送时的物理距离
+  flightDurationSeconds?: number;// 传递所需总秒数
+  deliveredAt?: number;          // 预计或实际送达时间戳
+  isDelivered?: boolean;         // 是否已到达
+  flightProgress?: number;       // 0~100 飞行进度
+  currentFlyLocation?: string;   // 航迹描述 (如 "正飞跃海淀黄庄...")
+  passByUsers?: string[];        // 途经中转路人印记
+  sketchMode?: boolean;          // 配图素描滤镜
 }
 
 export interface CommentItem {
@@ -49,10 +79,11 @@ export interface CommentItem {
   userName: string;
   userAvatar: string;
   content: string;
-  replyToUserName?: string; // 微信朋友圈二级回复对象 (如 "婷婷 回复 咖啡老张:")
-  images?: string[];       // 评论附带的照片，支持点击放大查看
+  replyToUserName?: string;
+  images?: string[];
   createdAt: number;
   authorProfile?: UserProfile;
+  isLocalReply?: boolean;        // 500m 内现场回复 vs 远程回复
 }
 
 export interface LocationCluster {
@@ -64,7 +95,6 @@ export interface LocationCluster {
   statuses: StatusItem[];
   distance?: number;
 }
-
 
 export interface StatusItem {
   id: string;
@@ -79,14 +109,19 @@ export interface StatusItem {
   distance?: number;
   comments: CommentItem[];
   authorProfile?: UserProfile;
-  likes?: string[]; // 点赞用户昵称列表，用于朋友圈互动展示
-  isHelp?: boolean;                  // 是否为求助帖 (普通help或救命help)
-  isEmergency?: boolean;             // 是否为救命HELP (标红标大)
-  helpResolved?: boolean;            // 问题是否已解决 (由发起人关闭)
-  helpResolvedTime?: number;         // 解决关闭时间戳 (用于2小时后提示自动消失)
-  helpContactPhone?: string;         // 紧急求助联系电话
-  isAcgn?: boolean;                  // 是否标注为二次元动态 (ACGN / 二次元同好)
-  acgnTag?: string;                  // 二次元细分子标签 (如 Cosplay / 谷子市集 / 漫展打卡 / 番剧安利)
+  likes?: string[];
+  isHelp?: boolean;
+  isEmergency?: boolean;
+  helpResolved?: boolean;
+  helpResolvedTime?: number;
+  helpContactPhone?: string;
+  isAcgn?: boolean;
+  acgnTag?: string;
+  // 小纸条/小便签新增特性
+  paperColor?: NotePaperColor;   // 便签纸张颜色
+  paperTag?: '闲聊' | '小告示' | '商户优惠' | '求助' | '回忆录' | '同好';
+  isMerchant?: boolean;          // 是否为本地商户便签
+  merchantDiscount?: string;     // 商户专属福利/优惠打卡
 }
 
 export interface MapMarker {
