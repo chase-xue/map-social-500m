@@ -157,7 +157,7 @@
               <view class="brass-handle-box">
                 <view class="brass-curved-pull" />
                 <view class="brass-label-plate">
-                  <text class="drawer-plate-text">📥 我的桌洞抽屉</text>
+                  <text class="drawer-plate-text">📥 桌洞抽屉</text>
                   <text class="drawer-count-badge">{{ currentDesk.drawerNotes.length }} 封信</text>
                 </view>
               </view>

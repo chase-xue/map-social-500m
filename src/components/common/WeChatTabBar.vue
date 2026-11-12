@@ -44,7 +44,7 @@
       <text class="center-label">小刷子</text>
     </view>
 
-    <!-- 4. 我的桌洞 (面对窗户的写字台拟物空间) -->
+    <!-- 4. 桌洞 (面对窗户的写字台拟物空间) -->
     <view
       class="tab-bar-item"
       :class="{ 'item-active': mainTab === 'deskHole' }"
@@ -56,7 +56,7 @@
           <path d="M20 18v-1c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2v1H2v2h20v-2h-2zM4 7h16v6H4V7zm2 8h12v1H6v-1z"/>
         </svg>
       </view>
-      <text class="tab-label">我的桌洞</text>
+      <text class="tab-label">桌洞</text>
     </view>
 
     <!-- 5. 设置 / 成长 -->

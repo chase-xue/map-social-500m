@@ -18,7 +18,7 @@
       <!-- 3. 通讯录 (兼容保留) -->
       <ContactsTab v-show="mainTab === 'contacts'" />
 
-      <!-- 4. 我的桌洞 (面对窗户的写字台拟物空间) -->
+      <!-- 4. 桌洞 (面对窗户的写字台拟物空间) -->
       <DeskHoleTab v-show="mainTab === 'deskHole'" />
 
       <!-- 5. 设置 / 成长体系 -->
