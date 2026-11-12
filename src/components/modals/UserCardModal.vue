@@ -4,7 +4,7 @@
     class="wechat-contact-page"
     :style="{ paddingTop: statusBarHeight + 'px' }"
   >
-    <!-- 微信原生「详细资料」顶栏 -->
+    <!-- 1. 治愈手账顶栏 -->
     <view class="wechat-contact-header">
       <view class="header-back-btn" @tap="closeUserCard(true)">
         <text class="back-arrow">‹</text>
@@ -12,85 +12,120 @@
       </view>
 
       <view class="header-title-box">
-        <text class="header-title">详细资料</text>
+        <text class="header-title">邻友手账名片</text>
       </view>
 
-      <view class="header-action-box">
-        <text class="header-more-btn">···</text>
-      </view>
+      <view class="header-action-box" />
     </view>
 
-    <!-- 详细资料滚动内容 -->
+    <!-- 2. 详细资料滚动内容 -->
     <scroll-view scroll-y class="contact-scroll-view">
-      <!-- 组 1: 个人核心名片 -->
-      <view class="wechat-hero-card">
-        <image
-          class="hero-avatar"
-          :src="viewingProfile?.avatar"
-          mode="aspectFill"
-        />
-        <view class="hero-info-col">
-          <view class="hero-name-row">
-            <text class="hero-name">{{ viewingProfile?.name }}</text>
-            <text
-              v-if="viewingProfile?.gender"
-              class="hero-gender-icon"
-              :class="viewingProfile?.gender === '女' ? 'female' : 'male'"
-            >
-              {{ viewingProfile?.gender === '女' ? '♀' : '♂' }}
-            </text>
-            <text v-if="viewingProfile?.age" class="hero-age-pill">
-              {{ viewingProfile.age }}岁
-            </text>
-          </view>
-          <text class="hero-sub-text">邻友号：500m_{{ viewingProfile?.id?.slice(0, 8) || 'user' }}</text>
-          <text class="hero-sub-text">地区：北京 · 500米生活圈</text>
-          <view class="hero-distance-pill">
-            <text class="pill-dot">📍</text>
-            <text class="pill-text">{{ formatDistance(viewingDistance) }}</text>
+      <!-- 核心治愈和纸名片大卡片 -->
+      <view class="profile-washi-card">
+        <view class="washi-tape-strip" />
+
+        <!-- 头部作者基本资料 -->
+        <view class="profile-header-row">
+          <image class="profile-avatar" :src="viewingProfile?.avatar" mode="aspectFill" />
+          <view class="profile-info-col">
+            <view class="profile-name-row">
+              <text class="profile-name">{{ viewingProfile?.name }}</text>
+              <text
+                v-if="viewingProfile?.gender"
+                class="gender-pill"
+                :class="viewingProfile.gender === '女' ? 'female' : 'male'"
+              >
+                {{ viewingProfile.gender === '女' ? '♀ 女' : '♂ 男' }}
+              </text>
+              <text v-if="viewingProfile?.age" class="age-pill">
+                {{ viewingProfile.age }}岁
+              </text>
+            </view>
+            <view class="profile-dist-row">
+              <text class="dist-pill">📍 {{ formatDistance(viewingDistance) }}</text>
+              <text class="city-text">北京 · 500米生活圈</text>
+            </view>
           </view>
         </view>
-      </view>
 
-      <!-- 组 2: 标签与签名 -->
-      <view class="wechat-cells-group">
-        <view class="wechat-cell-row">
-          <text class="cell-label">个性签名</text>
-          <view class="cell-right-box">
-            <text class="cell-desc-text">{{ viewingProfile?.bio || '这个人很低调，还没有写个性签名~' }}</text>
-          </view>
+        <!-- 个性签名信签纸 -->
+        <view class="profile-bio-box">
+          <text class="bio-quote-mark">“</text>
+          <text class="bio-content-text">{{ viewingProfile?.bio || '慢下来，在500米的生活圈里写下真实的自己～' }}</text>
         </view>
 
         <!-- 电话联系 (如果可见) -->
-        <view class="wechat-cell-row">
-          <text class="cell-label">电话</text>
-          <view class="cell-right-box">
-            <view v-if="viewingProfile?.phone && viewingProfile?.showPhone" class="phone-call-box">
-              <text class="phone-num-text">{{ viewingProfile.phone }}</text>
-              <button class="phone-call-btn" @tap="makePhoneCall(viewingProfile.phone)">
-                拨打
-              </button>
-            </view>
-            <text v-else class="cell-dim-text">对方已设为隐藏保密</text>
+        <view v-if="viewingProfile?.phone && viewingProfile?.showPhone" class="profile-phone-row" @tap="makePhoneCall(viewingProfile.phone)">
+          <view class="phone-left">
+            <text class="phone-ico">📞</text>
+            <text class="phone-num">{{ viewingProfile.phone }}</text>
           </view>
+          <text class="phone-dial-badge">拨打 ›</text>
+        </view>
+
+        <!-- 核心行动按钮群：进TA桌洞 + 传小纸条 (放置在名片最引人注目的位置！) -->
+        <view class="profile-quick-actions">
+          <!-- 进TA桌洞 (精致木窗 SVG 图标，绝不乱码，手账主操作) -->
+          <button
+            v-if="viewingProfile?.id !== myProfile.id"
+            class="action-btn-desk"
+            @tap="visitDeskFromCard(viewingProfile)"
+          >
+            <svg class="action-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="12" y1="3" x2="12" y2="21" />
+            </svg>
+            <text class="action-btn-txt">进TA的桌洞 (窗台留言 / 塞小纸条)</text>
+          </button>
+
+          <!-- 社交联系按钮 -->
+          <button
+            v-if="viewingProfile?.id === myProfile.id"
+            class="action-btn-sub"
+            @tap="closeUserCard(true); openMyProfileSheet()"
+          >
+            ✏️ 编辑我的个人资料
+          </button>
+          <button
+            v-else-if="isFriend(viewingProfile?.id)"
+            class="action-btn-sub"
+            @tap="startChatFromCard(viewingProfile)"
+          >
+            💬 传小纸条 (已是好友)
+          </button>
+          <button
+            v-else-if="isFriendPending(viewingProfile?.id)"
+            class="action-btn-sub"
+            @tap="acceptFriendFromCard(viewingProfile?.id)"
+          >
+            🤝 通过朋友验证
+          </button>
+          <button
+            v-else
+            class="action-btn-sub"
+            @tap="handleAddFriend(viewingProfile)"
+          >
+            ✨ 添加到通讯录
+          </button>
         </view>
       </view>
 
-      <!-- 组 3: 个人发表的所有动态 (和位置无关，支持完整查看) -->
-      <view class="wechat-user-statuses-section">
+      <!-- 组 2: 个人发表的所有动态 -->
+      <view class="user-statuses-section">
         <view class="section-heading">
-          <text class="section-title">发表的动态 ({{ userAllStatuses.length }})</text>
-          <text class="section-subtitle">全部公开动态 · 无视距离限制</text>
+          <text class="section-title">📜 TA留在此处的便签 ({{ userAllStatuses.length }})</text>
+          <text class="section-subtitle">全部公开动态</text>
         </view>
 
-        <view v-if="userAllStatuses.length > 0" class="wechat-cells-group user-statuses-group">
+        <view v-if="userAllStatuses.length > 0" class="statuses-flow">
           <view
             v-for="item in userAllStatuses"
             :key="item.id"
-            class="user-status-card-cell"
+            class="status-washi-card"
             @tap="openDetailSheet(item)"
           >
-            <view class="card-cell-top">
+            <view class="status-top-row">
               <view class="card-badges">
                 <text v-if="item.isAcgn" class="badge-acgn">🌸 {{ item.acgnTag || '二次元' }}</text>
                 <text v-if="item.isEmergency" class="badge-sos">🚨 救命求助</text>
@@ -134,67 +169,8 @@
         <!-- 空状态 -->
         <view v-else class="user-empty-statuses">
           <text class="empty-icon">📭</text>
-          <text class="empty-text">该用户暂未发表任何动态</text>
+          <text class="empty-text">该邻友暂未发表任何公开便签</text>
         </view>
-      </view>
-
-      <!-- 组 4: 更多信息 -->
-      <view class="wechat-cells-group">
-        <view class="wechat-cell-row">
-          <text class="cell-label">更多信息</text>
-          <view class="cell-right-box">
-            <text class="cell-dim-text">{{ viewingProfile?.age ? viewingProfile.age + '岁' : '未设置' }}</text>
-            <text class="cell-arrow">›</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 底部操作按钮群 (微信大按钮样式) -->
-      <view class="wechat-contact-actions">
-        <!-- 如果是自己 -->
-        <button
-          v-if="viewingProfile?.id === myProfile.id"
-          class="wechat-btn btn-secondary"
-          @tap="closeUserCard(true); openMyProfileSheet()"
-        >
-          编辑个人资料
-        </button>
-
-        <!-- 如果已是好友 -->
-        <button
-          v-else-if="isFriend(viewingProfile?.id)"
-          class="wechat-btn btn-primary"
-          @tap="startChatFromCard(viewingProfile)"
-        >
-          💬 发消息
-        </button>
-
-        <!-- 如果正在申请加为好友 -->
-        <button
-          v-else-if="isFriendPending(viewingProfile?.id)"
-          class="wechat-btn btn-primary"
-          @tap="acceptFriendFromCard(viewingProfile?.id)"
-        >
-          通过朋友验证
-        </button>
-
-        <!-- 尚未添加好友 -->
-        <button
-          v-else
-          class="wechat-btn btn-primary"
-          @tap="handleAddFriend(viewingProfile)"
-        >
-          添加到通讯录
-        </button>
-
-        <!-- 进TA桌洞 (小纸条慢社交核心通道) -->
-        <button
-          v-if="viewingProfile?.id !== myProfile.id"
-          class="wechat-btn btn-desk-card"
-          @tap="visitDeskFromCard(viewingProfile)"
-        >
-          🪟 进TA的桌洞 (窗台留言 / 塞小纸条)
-        </button>
       </view>
     </scroll-view>
   </view>
@@ -216,7 +192,6 @@ const {
 function visitDeskFromCard(profile: any) {
   if (!profile) return;
   const { id, name, avatar } = profile;
-  closeUserCard(true);
   visitDesk(id, name, avatar);
 }
 
@@ -279,12 +254,7 @@ const userAllStatuses = computed(() => {
     }
 
     .header-action-box {
-      .header-more-btn {
-        font-size: 18px;
-        color: #3e2723;
-        font-weight: 600;
-        letter-spacing: 2px;
-      }
+      width: 48px;
     }
   }
 
@@ -293,400 +263,399 @@ const userAllStatuses = computed(() => {
     height: 100%;
     background-color: #f7f5f0;
 
-    .wechat-hero-card {
-      margin: 12px 16px 0;
+    /* 治愈和纸名片大卡 */
+    .profile-washi-card {
+      margin: 16px 16px 20px;
       background-color: #ffffff;
-      padding: 18px 16px;
-      display: flex;
-      align-items: flex-start;
+      padding: 22px 18px 18px;
       border: 1px solid #ebd9c5;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(62, 39, 35, 0.04);
+      border-radius: 20px;
+      box-shadow: 0 4px 16px rgba(62, 39, 35, 0.05);
+      position: relative;
 
-      .hero-avatar {
+      .washi-tape-strip {
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 64px;
-        height: 64px;
-        border-radius: 14px;
-        object-fit: cover;
-        margin-right: 16px;
-        flex-shrink: 0;
-        border: 1px solid #ebd9c5;
+        height: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 1px 4px rgba(62, 39, 35, 0.1);
+        border-left: 2px dashed rgba(62, 39, 35, 0.2);
+        border-right: 2px dashed rgba(62, 39, 35, 0.2);
       }
 
-      .hero-info-col {
-        flex: 1;
-        overflow: hidden;
+      .profile-header-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
 
-        .hero-name-row {
+        .profile-avatar {
+          width: 68px;
+          height: 68px;
+          border-radius: 18px;
+          object-fit: cover;
+          border: 1.5px solid #ebd9c5;
+          flex-shrink: 0;
+          box-shadow: 0 2px 8px rgba(62, 39, 35, 0.06);
+        }
+
+        .profile-info-col {
+          flex: 1;
           display: flex;
-          align-items: center;
-          margin-bottom: 4px;
+          flex-direction: column;
+          gap: 6px;
 
-          .hero-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #3e2723;
-            margin-right: 8px;
-          }
+          .profile-name-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
 
-          .hero-gender-icon {
-            font-size: 13px;
-            font-weight: 700;
-
-            &.female {
-              color: #ec4899;
+            .profile-name {
+              font-size: 19px;
+              font-weight: 700;
+              color: #3e2723;
             }
 
-            &.male {
-              color: #2563eb;
+            .gender-pill {
+              font-size: 11px;
+              padding: 2px 8px;
+              border-radius: 10px;
+              font-weight: 600;
+
+              &.female {
+                background: #fdf2f8;
+                color: #db2777;
+                border: 0.5px solid #fbcfe8;
+              }
+
+              &.male {
+                background: #eff6ff;
+                color: #2563eb;
+                border: 0.5px solid #bfdbfe;
+              }
+            }
+
+            .age-pill {
+              font-size: 11px;
+              background: #fbf5ea;
+              border: 1px solid #ebd9c5;
+              color: #8c5835;
+              padding: 1px 8px;
+              border-radius: 10px;
+              font-weight: 600;
             }
           }
 
-          .hero-age-pill {
-            font-size: 11px;
-            background: #fbf5ea;
-            border: 1px solid #ebd9c5;
-            color: #8c5835;
-            padding: 1px 6px;
-            border-radius: 8px;
-            font-weight: 500;
-            margin-left: 6px;
-          }
-        }
+          .profile-dist-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
 
-        .hero-sub-text {
-          font-size: 12px;
-          color: #8c7e74;
-          margin-top: 2px;
-          display: block;
-        }
+            .dist-pill {
+              font-size: 11px;
+              background: #fbf5ea;
+              border: 1px solid #ebd9c5;
+              color: #8c5835;
+              padding: 2px 8px;
+              border-radius: 10px;
+              font-weight: 500;
+            }
 
-        .hero-distance-pill {
-          margin-top: 8px;
-          display: inline-flex;
-          align-items: center;
-          background-color: #fbf5ea;
-          border: 1px solid #ebd9c5;
-          padding: 3px 10px;
-          border-radius: 12px;
-
-          .pill-dot {
-            font-size: 11px;
-            margin-right: 4px;
-          }
-
-          .pill-text {
-            font-size: 11px;
-            color: #8c5835;
-            font-weight: 500;
+            .city-text {
+              font-size: 12px;
+              color: #8c7e74;
+            }
           }
         }
       }
-    }
 
-    .wechat-cells-group {
-      margin-top: 10px;
-      background-color: #ffffff;
-      border-top: 0.5px solid #dcdcdc;
-      border-bottom: 0.5px solid #dcdcdc;
+      /* 签名框 */
+      .profile-bio-box {
+        margin-top: 16px;
+        background: #fdfcf9;
+        border: 1px dashed #ebd9c5;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        gap: 6px;
 
-      .wechat-cell-row {
+        .bio-quote-mark {
+          font-size: 18px;
+          color: #c25b38;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .bio-content-text {
+          font-size: 13px;
+          color: #5d4037;
+          line-height: 1.5;
+          flex: 1;
+        }
+      }
+
+      /* 电话 */
+      .profile-phone-row {
+        margin-top: 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 16px;
-        border-bottom: 0.5px solid #ededed;
-        background-color: #ffffff;
+        background: #fbf5ea;
+        border: 1px solid #ebd9c5;
+        padding: 10px 14px;
+        border-radius: 12px;
+        cursor: pointer;
 
-        &:last-child {
-          border-bottom: none;
-        }
-
-        .cell-label {
-          font-size: 16px;
-          color: #191919;
-          flex-shrink: 0;
-          width: 80px;
-        }
-
-        .cell-right-box {
-          flex: 1;
+        .phone-left {
           display: flex;
           align-items: center;
-          justify-content: flex-end;
-          overflow: hidden;
+          gap: 8px;
 
-          .cell-desc-text {
+          .phone-ico { font-size: 14px; }
+          .phone-num { font-size: 13px; font-weight: 600; color: #3e2723; }
+        }
+
+        .phone-dial-badge {
+          font-size: 12px;
+          font-weight: 600;
+          color: #c25b38;
+        }
+      }
+
+      /* 行动按钮群 */
+      .profile-quick-actions {
+        margin-top: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        .action-btn-desk {
+          margin: 0;
+          width: 100%;
+          height: 46px;
+          background: #fbf5ea;
+          border: 1.5px solid #ebd9c5;
+          border-radius: 23px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(62, 39, 35, 0.06);
+          transition: all 0.15s ease;
+
+          &:active {
+            transform: scale(0.98);
+            background: #f5ece0;
+          }
+
+          &::after { border: none; }
+
+          .action-svg-icon {
+            width: 18px;
+            height: 18px;
+            color: #8c5835;
+          }
+
+          .action-btn-txt {
             font-size: 14px;
-            color: #555555;
-            text-align: right;
-            line-height: 1.4;
+            font-weight: 700;
+            color: #8c5835;
+          }
+        }
+
+        .action-btn-sub {
+          margin: 0;
+          width: 100%;
+          height: 44px;
+          background: #5c715e;
+          color: #ffffff;
+          border-radius: 22px;
+          font-size: 14px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 3px 10px rgba(92, 113, 94, 0.25);
+          transition: all 0.15s ease;
+
+          &:active {
+            transform: scale(0.98);
+            background: #4b5d4d;
           }
 
-          .cell-dim-text {
-            font-size: 14px;
-            color: #7f7f7f;
-          }
-
-          .cell-arrow {
-            font-size: 18px;
-            color: #b2b2b2;
-            margin-left: 8px;
-            line-height: 1;
-          }
-
-          .phone-call-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-
-            .phone-num-text {
-              font-size: 15px;
-              color: #191919;
-              font-weight: 500;
-              letter-spacing: 0.5px;
-            }
-
-            .phone-call-btn {
-              margin: 0;
-              padding: 3px 10px;
-              font-size: 12px;
-              background-color: #07c160;
-              color: #ffffff;
-              border-radius: 4px;
-              border: none;
-              line-height: 1.4;
-              height: auto;
-              cursor: pointer;
-
-              &::after {
-                border: none;
-              }
-            }
-          }
+          &::after { border: none; }
         }
       }
     }
 
-    .wechat-user-statuses-section {
-      margin-top: 10px;
+    /* 发表的动态流 */
+    .user-statuses-section {
+      margin: 0 16px 36px;
 
       .section-heading {
-        padding: 4px 16px 8px;
+        margin-bottom: 12px;
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
+        padding: 0 4px;
 
         .section-title {
-          font-size: 13px;
-          color: #7f7f7f;
-          font-weight: 500;
+          font-size: 14px;
+          font-weight: 700;
+          color: #3e2723;
         }
 
         .section-subtitle {
-          font-size: 11px;
-          color: #999999;
+          font-size: 12px;
+          color: #8c7e74;
         }
       }
 
-      .user-status-card-cell {
-        padding: 12px 16px;
-        background-color: #ffffff;
-        border-bottom: 0.5px solid #ededed;
-        cursor: pointer;
+      .statuses-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
 
-        &:last-child {
-          border-bottom: none;
-        }
+        .status-washi-card {
+          padding: 16px;
+          background: #ffffff;
+          border: 1px solid #ebd9c5;
+          border-radius: 16px;
+          box-shadow: 0 2px 8px rgba(62, 39, 35, 0.04);
+          cursor: pointer;
+          transition: all 0.15s ease;
 
-        &:active {
-          background-color: #f7f7f7;
-        }
+          &:active {
+            transform: scale(0.99);
+            background: #fbf5ea;
+          }
 
-        .card-cell-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 6px;
-
-          .card-badges {
+          .status-top-row {
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: space-between;
+            margin-bottom: 8px;
 
-            .badge-acgn {
-              font-size: 10px;
-              color: #db2777;
-              background-color: #fdf2f8;
-              border: 0.5px solid #fbcfe8;
-              padding: 1px 6px;
-              border-radius: 4px;
+            .card-badges {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+
+              .badge-acgn {
+                font-size: 10px;
+                color: #db2777;
+                background-color: #fdf2f8;
+                border: 0.5px solid #fbcfe8;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 500;
+              }
+
+              .badge-sos {
+                font-size: 10px;
+                background-color: #fee2e2;
+                color: #dc2626;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 600;
+              }
+
+              .badge-help {
+                font-size: 10px;
+                background-color: #fef3c7;
+                color: #d97706;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-weight: 600;
+              }
+            }
+
+            .card-time {
+              font-size: 11px;
+              color: #a89f91;
+            }
+          }
+
+          .card-content-text {
+            font-size: 14px;
+            color: #3e2723;
+            line-height: 1.5;
+            margin-bottom: 10px;
+            word-break: break-all;
+          }
+
+          .card-images-grid {
+            display: flex;
+            gap: 6px;
+            position: relative;
+            margin-bottom: 10px;
+
+            .card-thumb {
+              width: 68px;
+              height: 68px;
+              border-radius: 8px;
+              background-color: #f1f5f9;
+            }
+
+            .more-images-mask {
+              width: 68px;
+              height: 68px;
+              border-radius: 8px;
+              background-color: rgba(62, 39, 35, 0.6);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+
+              .more-text {
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 600;
+              }
+            }
+          }
+
+          .card-cell-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .card-interactions {
+              display: flex;
+              gap: 12px;
+
+              .interact-item {
+                font-size: 12px;
+                color: #8c7e74;
+              }
+            }
+
+            .card-enter-hint {
+              font-size: 12px;
+              color: #8c5835;
               font-weight: 500;
             }
-
-            .badge-sos {
-              font-size: 10px;
-              background-color: #fee2e2;
-              color: #dc2626;
-              padding: 1px 6px;
-              border-radius: 4px;
-              font-weight: 600;
-            }
-
-            .badge-help {
-              font-size: 10px;
-              background-color: #fef3c7;
-              color: #d97706;
-              padding: 1px 6px;
-              border-radius: 4px;
-              font-weight: 600;
-            }
-          }
-
-          .card-time {
-            font-size: 11px;
-            color: #999999;
-          }
-        }
-
-        .card-content-text {
-          font-size: 14px;
-          color: #191919;
-          line-height: 1.45;
-          margin-bottom: 8px;
-          word-break: break-all;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .card-images-grid {
-          display: flex;
-          gap: 6px;
-          position: relative;
-          margin-bottom: 8px;
-
-          .card-thumb {
-            width: 60px;
-            height: 60px;
-            border-radius: 4px;
-            background-color: #f7f7f7;
-          }
-
-          .more-images-mask {
-            width: 60px;
-            height: 60px;
-            border-radius: 4px;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            .more-text {
-              color: #ffffff;
-              font-size: 13px;
-              font-weight: 600;
-            }
-          }
-        }
-
-        .card-cell-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          .card-interactions {
-            display: flex;
-            gap: 12px;
-
-            .interact-item {
-              font-size: 12px;
-              color: #888888;
-            }
-          }
-
-          .card-enter-hint {
-            font-size: 12px;
-            color: #576b95;
           }
         }
       }
 
       .user-empty-statuses {
         background-color: #ffffff;
-        padding: 24px 16px;
+        border: 1px dashed #ebd9c5;
+        border-radius: 16px;
+        padding: 28px 16px;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 6px;
 
-        .empty-icon {
-          font-size: 28px;
-        }
-
-        .empty-text {
-          font-size: 13px;
-          color: #999999;
-        }
-      }
-    }
-
-    .wechat-contact-actions {
-      margin-top: 24px;
-      padding: 0 16px 32px;
-
-      .wechat-btn {
-        width: 100%;
-        height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 24px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        margin-bottom: 12px;
-        transition: all 0.15s ease;
-
-        &::after {
-          border: none;
-        }
-
-        &.btn-primary {
-          background-color: #5c715e;
-          color: #ffffff;
-          box-shadow: 0 4px 12px rgba(92, 113, 94, 0.2);
-
-          &:active {
-            background-color: #4b5d4d;
-            transform: scale(0.98);
-          }
-        }
-
-        &.btn-secondary {
-          background-color: #ffffff;
-          color: #3e2723;
-          border: 1px solid #ebd9c5;
-
-          &:active {
-            background-color: #fbf5ea;
-            transform: scale(0.98);
-          }
-        }
-
-        &.btn-desk-card {
-          background-color: #fbf5ea;
-          color: #8c5835;
-          border: 1px solid #ebd9c5;
-          box-shadow: 0 2px 8px rgba(62, 39, 35, 0.05);
-
-          &:active {
-            background-color: #f5ece0;
-            transform: scale(0.98);
-          }
-        }
+        .empty-icon { font-size: 28px; }
+        .empty-text { font-size: 13px; color: #a89f91; }
       }
     }
   }

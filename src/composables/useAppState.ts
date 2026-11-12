@@ -96,6 +96,12 @@ const targetVisitingDesk = ref<{ userId: string; name: string; avatar: string } 
 
 function visitDesk(userId: string, name: string, avatar: string) {
   targetVisitingDesk.value = { userId, name, avatar };
+  // 彻底关闭所有可能覆盖在顶层的全屏弹窗，确保桌洞视口完全露出
+  detailVisible.value = false;
+  userCardVisible.value = false;
+  chatSheetVisible.value = false;
+  clusterVisible.value = false;
+  myProfileVisible.value = false;
   mainTab.value = "deskHole";
 }
 
