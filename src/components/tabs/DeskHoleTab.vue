@@ -1,5 +1,5 @@
 <template>
-  <view class="desk-hole-container" :class="'theme-' + currentDesk.theme">
+  <view class="desk-hole-container" :style="themeVars">
     <!-- 顶部状态与访客信息栏 -->
     <view class="desk-top-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="desk-user-info" @tap="handleViewOwnerProfile" title="点击查看资料">
@@ -27,12 +27,11 @@
       </view>
     </view>
 
-    <!-- 主体区域：面对窗户的写字台拟物全景 -->
-    <view class="desk-scene-viewport">
-      <!-- 1. 吉卜力治愈系窗户与窗外景致 -->
-      <view class="ghibli-window" :class="'weather-' + currentDesk.weather">
-        <!-- 窗外自然景致层 -->
-        <view class="sky-scenery">
+    <!-- 主体区域：v1 重设计 · 面对窗户的写字台拟物全景 -->
+    <view class="window-zone">
+      <view class="window-frame">
+        <view class="sky" :class="'weather-' + currentDesk.weather">
+          <!-- 窗外自然景致层 (沿用原有天气结构) -->
           <view v-if="currentDesk.weather === 'sunny'" class="sun-glow" />
           <view v-if="currentDesk.weather === 'sunny'" class="sun-flare-rays" />
           <view v-if="currentDesk.weather === 'night'" class="night-sky">
@@ -47,197 +46,189 @@
           <view class="distant-landscape" />
           <view class="soft-cloud cloud-1" />
           <view class="soft-cloud cloud-2" />
-        </view>
+          <view class="bird bird-1" />
+          <view class="bird bird-2" />
 
-        <!-- 飘动的两翼轻盈半透明白纱窗帘 -->
-        <view class="sheer-curtain curtain-left" />
-        <view class="sheer-curtain curtain-right" />
+          <!-- 窗棂十字实木格条 -->
+          <view class="window-wood-frame">
+            <view class="crossbar-h" />
+            <view class="crossbar-v" />
+          </view>
 
-        <!-- 窗棂十字实木格条 -->
-        <view class="window-wood-frame">
-          <view class="crossbar-h" />
-          <view class="crossbar-v" />
-        </view>
+          <!-- 纸飞机折纸飞入动画 (写完手写纸条时的沉浸动效) -->
+          <view v-if="isFoldingFlying" class="paper-airplane-anim">
+            <view class="airplane-body">✈️</view>
+            <text class="airplane-trail">正在折起飞向窗台...</text>
+          </view>
 
-        <!-- 纸飞机折纸飞入动画 (写完手写纸条时的沉浸动效) -->
-        <view v-if="isFoldingFlying" class="paper-airplane-anim">
-          <view class="airplane-body">✈️</view>
-          <text class="airplane-trail">正在折起飞向窗台...</text>
-        </view>
-
-        <!-- 窗户上的手绘和纸便签墙 (支持真实手写真迹渲染与微翘撕取) -->
-        <view class="window-notes-stream">
-          <view
-            v-for="note in currentDesk.windowNotes"
-            :key="note.id"
-            class="washi-sticky-note"
-            :class="['paper-' + note.color, { 'my-note': note.isMine, 'note-peeling': peelingNoteId === note.id }]"
-            :style="{ transform: 'rotate(' + note.rotationDeg + 'deg)' }"
-            @tap="peelAndInspectNote(note)"
-          >
-            <view class="washi-tape-strip" />
-            <view class="note-author-row">
-              <text class="note-author-txt">{{ note.authorName }}</text>
-              <text class="note-heart">❤️ {{ note.likes }}</text>
+          <!-- 便签墙：v1 slot 错落散贴 (保留撕取动效与手写真迹) -->
+          <view class="window-notes-stream">
+            <view
+              v-for="(note, idx) in visibleNotes"
+              :key="note.id"
+              class="washi-sticky-note"
+              :class="['paper-' + note.color, { 'my-note': note.isMine, 'note-peeling': peelingNoteId === note.id }]"
+              :style="noteSlots[idx]"
+              @tap="peelAndInspectNote(note)"
+            >
+              <view class="washi-tape-strip" />
+              <view class="note-author-row">
+                <text class="note-author-txt">{{ note.authorName }}</text>
+                <text class="note-heart">❤️ {{ note.likes }}</text>
+              </view>
+              <image
+                v-if="isHandwritingImg(note.content)"
+                class="handwritten-note-img"
+                :src="note.content"
+                mode="aspectFit"
+              />
+              <text v-else class="note-body-txt hand">{{ note.content }}</text>
             </view>
 
-            <!-- 如果是真实手写图片，展示手写真迹 -->
-            <image
-              v-if="isHandwritingImg(note.content)"
-              class="handwritten-note-img"
-              :src="note.content"
-              mode="aspectFit"
-            />
-            <!-- 普通文字便签 -->
-            <text v-else class="note-body-txt">{{ note.content }}</text>
-          </view>
-        </view>
-
-        <!-- 窗台搁板与生活情调摆件 -->
-        <view class="window-shelf">
-          <view class="shelf-left-item">
-            <text class="item-emoji">🪴</text>
-            <text class="shelf-label">春日多肉</text>
-          </view>
-          <view class="shelf-right-item">
-            <view class="coffee-steaming">
-              <view class="steam steam-1" />
-              <view class="steam steam-2" />
-              <text class="coffee-cup">☕</text>
+            <!-- 贴便签入口：和纸 "+" slot (D1，唯一发贴入口 HandwritingPad) -->
+            <view class="washi-sticky-note note-plus" :style="noteSlots[visibleNotes.length]" @tap="openHandwritingPad">
+              <text class="plus-ic">＋</text>
+              <text class="plus-tx hand">贴一张</text>
             </view>
-            <text class="shelf-label">热手冲</text>
+
+            <!-- 便签换批 chip (D2) -->
+            <view v-if="remainingNotes > 0" class="batch-chip" @tap="cycleNoteBatch">
+              <text class="batch-tx">+{{ remainingNotes }} 换一批</text>
+            </view>
+          </view>
+
+          <!-- 飘动的两翼轻盈半透明白纱窗帘 -->
+          <view class="sheer-curtain curtain-left" />
+          <view class="sheer-curtain curtain-right" />
+
+          <!-- 窗台木搁板 (v1 四件生活摆件) -->
+          <view class="window-shelf">
+            <view class="shelf-item"><text class="item-emoji">🪴</text><text class="shelf-label">春日多肉</text></view>
+            <view class="shelf-item">
+              <view class="books"><view class="bk b1" /><view class="bk b2" /><view class="bk b3" /></view>
+              <text class="shelf-label">未读完的书</text>
+            </view>
+            <view class="shelf-item">
+              <view class="coffee-steaming">
+                <view class="steam steam-1" />
+                <view class="steam steam-2" />
+                <text class="coffee-cup">☕</text>
+              </view>
+              <text class="shelf-label">热手冲</text>
+            </view>
+            <view class="shelf-item"><text class="item-emoji">🕯️</text><text class="shelf-label">香薰烛</text></view>
           </view>
         </view>
       </view>
+    </view>
 
-      <!-- 2. 实木写字台面与实体跟手拖拽滑出抽屉 -->
-      <view class="solid-wood-desk">
-        <!-- 窗外柔和阳光投射在桌面的斜向光束与光斑 -->
+    <!-- 桌面：v1 第一人称摆置 (去卡片框) -->
+    <view class="desk-zone">
+      <view class="desk-top">
         <view v-if="currentDesk.weather === 'sunny'" class="desk-sunlight-beam" pointer-events="none" />
-
-        <view class="desk-linen-mat">
-          <!-- 桌面物件行：生活回忆录日记本 + 真实手写笔筒 -->
-          <view class="desk-items-row">
-            <!-- 📖 生活回忆录日记本 (复古装订缝线与侧边多层纸质感) -->
+        <view class="linen-mat">
+          <!-- 📖 生活回忆录日记本 (沿用原有装订结构) -->
+          <view class="obj obj-journal">
             <view class="vintage-journal-book" @tap="diaryModalVisible = true">
               <view class="journal-spine-leather" />
               <view class="journal-stitch-line" />
               <view class="journal-ribbon" />
               <view class="deckled-pages-edge" />
               <view class="journal-cover-title">
-                <text class="journal-icon">📖</text>
                 <text class="journal-txt">生活回忆录</text>
                 <text class="journal-meta">{{ currentDesk.diaryEntries.length }} 篇便签足迹 ›</text>
               </view>
             </view>
-
-            <!-- ✍️ 真实手写笔筒 (点击立即弹出真迹画板) -->
-            <view class="desk-pen-caddy" @tap="openHandwritingPad">
-              <view class="pen-caddy-brim" />
-              <text class="caddy-icon">✍️</text>
-              <view class="caddy-meta">
-                <text class="caddy-title">手写新纸条</text>
-                <text class="caddy-tip">真迹笔画涂鸦</text>
-              </view>
-            </view>
+            <text class="obj-cap">回忆录</text>
           </view>
 
-          <!-- 🗄️ 实木拟物抽屉 (点击拉开 / 推回闭合，直观物理手账交互) -->
-          <view class="physical-drawer-unit" :class="{ 'drawer-is-pulled': isDrawerPulled }">
-            <!-- 1. 抽屉闭合状态下的面板：实木面板与黄铜拉手 -->
-            <view
-              v-if="!isDrawerPulled"
-              class="drawer-face-panel drawer-closed-face"
-              @tap="openDrawer"
-            >
-              <view class="brass-handle-box">
-                <view class="brass-curved-pull" />
-                <view class="brass-label-plate">
-                  <text class="drawer-plate-text">📥 桌洞抽屉</text>
-                  <text class="drawer-count-badge">{{ currentDesk.drawerNotes.length }} 封信</text>
-                </view>
-              </view>
-              <view class="drawer-action-pill open-pill">
-                <text class="action-pill-icon">📂</text>
-                <text class="action-pill-text">点击拉开 ›</text>
-              </view>
+          <!-- 桌面小物：墨水瓶 / 和纸胶带 / 铅笔 (纯装饰) -->
+          <view class="obj obj-middles">
+            <view class="middles">
+              <view class="ink" />
+              <view class="tapes"><view class="tape t1" /><view class="tape t2" /></view>
+              <view class="pencil" />
             </view>
-
-            <!-- 2. 抽屉拉开后：露出的暗红丝绒暗格与内部信物 -->
-            <view v-else class="drawer-open-wrapper">
-              <view class="drawer-inner-compartment">
-                <view class="compartment-header">
-                  <view class="comp-title-box">
-                    <text class="comp-icon">🕯️</text>
-                    <text class="comp-title">桌洞暗格 · 私密小纸条信物</text>
-                    <text class="comp-badge">{{ currentDesk.drawerNotes.length }} 封</text>
-                  </view>
-                  <view class="comp-close-pill" @tap.stop="closeDrawer">
-                    <text class="close-pill-text">✕ 推回收起</text>
-                  </view>
-                </view>
-
-                <scroll-view scroll-y class="drawer-letters-scroll">
-                  <view v-if="currentDesk.drawerNotes.length === 0" class="drawer-empty-state">
-                    <text class="empty-icon">📮</text>
-                    <text class="empty-txt">抽屉内铺着柔软毛毡，等待朋友塞进第一封手写纸条～</text>
-                  </view>
-
-                  <view
-                    v-for="dn in currentDesk.drawerNotes"
-                    :key="dn.id"
-                    class="drawer-letter-envelope"
-                    :class="{ 'wax-sealed': dn.isSealed }"
-                    @tap="openDrawerNoteDetail(dn)"
-                  >
-                    <view class="envelope-stamp-box">
-                      <image class="letter-avatar" :src="dn.senderAvatar" mode="aspectFill" />
-                      <view v-if="dn.isSealed" class="real-wax-seal">印</view>
-                    </view>
-                    <view class="envelope-body">
-                      <view class="env-top">
-                        <text class="env-sender">{{ dn.senderName }}</text>
-                        <text class="env-time">{{ dn.receivedTime }}</text>
-                      </view>
-                      <text class="env-preview">{{ dn.preview }}</text>
-                    </view>
-                    <view class="env-open-arrow">›</view>
-                  </view>
-                </scroll-view>
-              </view>
-
-              <!-- 拉出状态下的底部抽屉前面板 (点击同样可推回闭合) -->
-              <view class="drawer-face-panel drawer-opened-face" @tap="closeDrawer">
-                <view class="brass-handle-box">
-                  <view class="brass-curved-pull" />
-                  <view class="brass-label-plate">
-                    <text class="drawer-plate-text">📥 桌洞抽屉已拉开</text>
-                  </view>
-                </view>
-                <view class="drawer-action-pill close-pill">
-                  <text class="action-pill-icon">▲</text>
-                  <text class="action-pill-text">点击推回抽屉</text>
-                </view>
-              </view>
-            </view>
+            <text class="obj-cap">墨水瓶 · 和纸胶带</text>
           </view>
 
-          <!-- 访客模式下的底部快捷操作条 (仅在客座他人桌洞时显示；自己书桌直接点击桌面手写便签本道具) -->
-          <view v-if="isVisitingOther" class="desk-action-dock">
-            <button class="cozy-dock-btn post-btn" @tap="openHandwritingPad">
-              <text class="dock-btn-icon">✍️</text>
-              <text class="dock-btn-label">在TA窗台写便签</text>
-            </button>
-            <button class="cozy-dock-btn send-btn" @tap="openSendPaperToUser">
-              <text class="dock-btn-icon">✉️</text>
-              <text class="dock-btn-label">给TA塞小纸条</text>
-            </button>
+          <!-- ✍️ 真实手写笔筒 (点击立即弹出真迹画板) -->
+          <view class="obj obj-caddy" @tap="openHandwritingPad">
+            <view class="caddy">
+              <view class="pens"><view class="pen p1" /><view class="pen p2" /><view class="pen p3" /></view>
+              <view class="pot"><text class="pot-lb">✍️ 手写</text><text class="pot-lb2">真迹笔画涂鸦</text></view>
+            </view>
+            <text class="obj-cap">笔筒</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 桌前脸：抽屉内嵌 (v1 木纹连续 + 黄铜拉手 + 火漆徽章) -->
+      <view class="desk-front">
+        <view class="drawer-face-panel drawer-closed-face" @tap="openDrawer">
+          <view class="brass-handle-box">
+            <view class="brass-curved-pull" />
+            <view class="brass-label-plate">
+              <text class="drawer-plate-text">📥 桌洞抽屉</text>
+              <text class="drawer-count-badge">{{ currentDesk.drawerNotes.length }} 封</text>
+            </view>
+          </view>
+          <view class="drawer-right-box">
+            <view v-if="isVisitingOther" class="secret-pill" @tap.stop="openSendPaperToUser">
+              <text class="secret-tx">💌 给TA塞纸条</text>
+            </view>
+            <view class="drawer-action-pill open-pill">
+              <text class="action-pill-icon">📂</text>
+              <text class="action-pill-text">点击拉开 ›</text>
+            </view>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 真实手写笔迹画板组件 (Handwriting Canvas) -->
+    <!-- 抽屉拉开：overlay 下滑 (D3 保一屏)，开合逻辑沿用 isDrawerPulled -->
+    <view v-if="isDrawerPulled" class="drawer-open-overlay" @tap="closeDrawer">
+      <view class="drawer-inner-compartment drawer-open-panel" @tap.stop>
+        <view class="compartment-header">
+          <view class="comp-title-box">
+            <text class="comp-icon">🕯️</text>
+            <text class="comp-title">桌洞暗格 · 私密小纸条信物</text>
+            <text class="comp-badge">{{ currentDesk.drawerNotes.length }} 封</text>
+          </view>
+          <view class="comp-close-pill" @tap.stop="closeDrawer">
+            <text class="close-pill-text">✕ 推回收起</text>
+          </view>
+        </view>
+
+        <scroll-view scroll-y class="drawer-letters-scroll">
+          <view v-if="currentDesk.drawerNotes.length === 0" class="drawer-empty-state">
+            <text class="empty-icon">📮</text>
+            <text class="empty-txt">抽屉内铺着柔软毛毡，等待朋友塞进第一封手写纸条～</text>
+          </view>
+
+          <view
+            v-for="dn in currentDesk.drawerNotes"
+            :key="dn.id"
+            class="drawer-letter-envelope"
+            :class="{ 'wax-sealed': dn.isSealed }"
+            @tap="openDrawerNoteDetail(dn)"
+          >
+            <view class="envelope-stamp-box">
+              <image class="letter-avatar" :src="dn.senderAvatar" mode="aspectFill" />
+              <view v-if="dn.isSealed" class="real-wax-seal">印</view>
+            </view>
+            <view class="envelope-body">
+              <view class="env-top">
+                <text class="env-sender">{{ dn.senderName }}</text>
+                <text class="env-time">{{ dn.receivedTime }}</text>
+              </view>
+              <text class="env-preview">{{ dn.preview }}</text>
+            </view>
+            <view class="env-open-arrow">›</view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>    <!-- 真实手写笔迹画板组件 (Handwriting Canvas) -->
     <HandwritingPad
       v-if="handwritingPadVisible"
       actionConfirmText="💌 折起贴上窗台"
@@ -511,6 +502,42 @@ const weatherLabel = computed(() => {
   }
 });
 
+// ===== v1 重设计：便签 slot / 换批 / 主题木色变量 =====
+const noteBatch = ref(0);
+// slot 表：索引 = 可见便签数（表内项数 = 便签数 + 1 个 "+" 入口）
+const NOTE_SLOTS: { top: string; left: string; width: string }[][] = [
+  [{ top: '26%', left: '28%', width: '44%' }],
+  [{ top: '14%', left: '6%', width: '44%' }, { top: '40%', left: '50%', width: '44%' }],
+  [{ top: '10%', left: '4%', width: '44%' }, { top: '8%', left: '52%', width: '44%' }, { top: '46%', left: '28%', width: '44%' }],
+  [{ top: '10%', left: '4%', width: '44%' }, { top: '8%', left: '52%', width: '44%' }, { top: '44%', left: '4%', width: '44%' }, { top: '46%', left: '52%', width: '44%' }],
+  [{ top: '8%', left: '4%', width: '30%' }, { top: '8%', left: '35%', width: '30%' }, { top: '8%', left: '66%', width: '30%' }, { top: '44%', left: '6%', width: '44%' }, { top: '46%', left: '52%', width: '44%' }],
+  [{ top: '8%', left: '4%', width: '30%' }, { top: '8%', left: '35%', width: '30%' }, { top: '8%', left: '66%', width: '30%' }, { top: '44%', left: '4%', width: '30%' }, { top: '44%', left: '35%', width: '30%' }, { top: '44%', left: '66%', width: '30%' }],
+  [{ top: '8%', left: '2%', width: '22%' }, { top: '8%', left: '26%', width: '22%' }, { top: '8%', left: '50%', width: '22%' }, { top: '8%', left: '74%', width: '22%' }, { top: '44%', left: '4%', width: '30%' }, { top: '44%', left: '35%', width: '30%' }, { top: '44%', left: '66%', width: '30%' }],
+];
+const visibleNotes = computed(() => currentDesk.value.windowNotes.slice(noteBatch.value * 6, noteBatch.value * 6 + 6));
+const noteBatchCount = computed(() => Math.max(1, Math.ceil(currentDesk.value.windowNotes.length / 6)));
+const remainingNotes = computed(() => Math.max(0, currentDesk.value.windowNotes.length - (noteBatch.value + 1) * 6));
+function cycleNoteBatch() {
+  noteBatch.value = (noteBatch.value + 1) % noteBatchCount.value;
+}
+const noteSlots = computed(() => {
+  const n = visibleNotes.value.length;
+  const table = NOTE_SLOTS[Math.min(6, n)];
+  return table.map((s, i) => ({
+    top: s.top,
+    left: s.left,
+    width: s.width,
+    transform: `rotate(${i < n ? (visibleNotes.value[i].rotationDeg || 0) : -2}deg)`,
+  }));
+});
+// 主题木色变量：窗框/搁板/桌/抽屉整屋换色（修现状 theme 只改背景色的缺陷）
+const THEME_WOOD: Record<string, Record<string, string>> = {
+  wood: { '--wood-dark': '#5d3a20', '--wood': '#7a5236', '--wood-mid': '#8a5a38', '--wood-light': '#9a6b45' },
+  cherry: { '--wood-dark': '#4a2620', '--wood': '#6b3a30', '--wood-mid': '#7d4438', '--wood-light': '#8f5244' },
+  retro: { '--wood-dark': '#20301f', '--wood': '#33482c', '--wood-mid': '#3f5636', '--wood-light': '#4c6542' },
+  modern: { '--wood-dark': '#232a35', '--wood': '#37414f', '--wood-mid': '#425061', '--wood-light': '#4f5f73' },
+};
+const themeVars = computed(() => THEME_WOOD[currentDesk.value.theme] || THEME_WOOD.wood);
 function cycleWeather() {
   const weathers: DeskHoleData["weather"][] = ["sunny", "rainy", "night", "cloudy"];
   const currIdx = weathers.indexOf(currentDesk.value.weather);
@@ -673,188 +700,198 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+/* ==================== 桌洞 v1 重设计 · 场景样式 ==================== */
+/* 设计基准: desk-hole-prototype-v1.html · 木色由 themeVars 注入整屋换色 */
 .desk-hole-container {
   width: 100%;
   height: 100%;
   height: 100dvh;
+  --brass: #c9a227;
+  --brass-hi: #e8c96a;
+  --linen: #f3ead9;
+  --paper: #efe7db;
+  --ink: #4a3728;
+  --ink-soft: #7a6a58;
+  --wax: #a83232;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
-  /* 严格预留底部 TabBar（56px + 安全区）的高度，彻底告别遮盖 */
+  /* 严格预留底部 TabBar（56px + 安全区）的高度 */
   padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
-  background: #2b1f1d;
+  background: var(--wood-dark);
   color: #333;
 }
 
-.theme-wood   { background: #3b2823; }
-.theme-cherry { background: #45242d; }
-.theme-retro  { background: #1a2f26; }
-.theme-modern { background: #232a35; }
+.hand {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", cursive;
+}
 
-/* 顶部信息条 */
+/* ===== 顶栏 (v1 木色顶栏) ===== */
 .desk-top-bar {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, var(--wood), var(--wood-dark));
+  position: relative;
   z-index: 25;
+  box-shadow: 0 2px 8px rgba(50, 30, 15, 0.35);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 2px, transparent 2px 9px);
+  }
 }
 
 .desk-user-info {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.15s ease;
   user-select: none;
 
-  &:active {
-    transform: scale(0.97);
-    opacity: 0.88;
-  }
+  &:active { transform: scale(0.97); opacity: 0.88; }
 }
 
 .owner-avatar {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 2px solid #ffd54f;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex: none;
+  border: 2px solid var(--brass-hi);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-.owner-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.owner-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.owner-meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.owner-name-row { display: flex; align-items: center; gap: 6px; }
 
 .owner-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
+  letter-spacing: 0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .desk-tag {
-  font-size: 10px;
-  background: rgba(255, 213, 79, 0.25);
-  color: #ffd54f;
-  border: 0.5px solid #ffd54f;
-  padding: 1px 6px;
-  border-radius: 10px;
+  flex: none;
+  font-size: 9px;
+  color: #6b4a12;
+  background: linear-gradient(180deg, #ffe9a3, #f5d478);
+  padding: 2px 7px;
+  border-radius: 8px;
   font-weight: 600;
+  box-shadow: inset 0 -1px 0 rgba(120, 80, 10, 0.3);
 }
 
-.owner-sub {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-}
+.owner-sub { font-size: 10px; color: rgba(255, 246, 225, 0.72); }
 
-.desk-actions-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.desk-actions-top { flex: none; display: flex; align-items: center; gap: 6px; }
 
 .action-pill-btn {
-  background: rgba(255, 255, 255, 0.18);
-  border: 0.5px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 11px;
   display: flex;
   align-items: center;
   gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff8e8;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   cursor: pointer;
 }
 
+.pill-icon { font-size: 12px; }
+.pill-text { font-size: 11px; }
+
 .theme-btn {
-  background: rgba(255, 183, 77, 0.3);
-  border-color: #ffb74d;
-  color: #ffe0b2;
+  background: linear-gradient(180deg, #ffe9a3, #f0cd6d);
+  border-color: transparent;
+  color: #6b4a12;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
-/* 主视口 */
-.desk-scene-viewport {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+/* ===== 窗户区 (v1 压缩窗高) ===== */
+.window-zone {
+  flex: none;
+  padding: 10px 12px 0;
+  margin-bottom: -8px; /* 窗台出檐压住桌背缘，消除窗/桌断带 */
   position: relative;
+  z-index: 10;
+}
+
+.window-frame {
+  position: relative;
+  height: clamp(240px, 37vh, 344px);
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+  padding: 9px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 6px 16px -6px rgba(70, 45, 20, 0.5);
+}
+
+.sky {
+  position: relative;
+  height: 100%;
+  border-radius: 11px;
   overflow: hidden;
 }
 
-/* 1. 吉卜力治愈窗户 */
-.ghibli-window {
-  flex: 1.15;
-  position: relative;
-  margin: 8px 12px 0;
-  border-radius: 16px 16px 0 0;
-  border: 6px solid #6d4c41;
-  border-bottom: 8px solid #5d4037;
-  overflow: hidden;
-  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.45);
-}
-
-.weather-sunny .sky-scenery {
-  background: linear-gradient(180deg, #64b5f6 0%, #bbdefb 50%, #fff9c4 85%, #dcedc8 100%);
-}
-
-.weather-night .sky-scenery {
-  background: linear-gradient(180deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%);
-}
-
-.weather-rainy .sky-scenery {
-  background: linear-gradient(180deg, #455a64 0%, #607d8b 55%, #90a4ae 100%);
-}
-
-.weather-cloudy .sky-scenery {
-  background: linear-gradient(180deg, #90caf9 0%, #e3f2fd 55%, #f1f8e9 100%);
-}
-
-.sky-scenery {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
+.weather-sunny .sky, .sky.weather-sunny { background: linear-gradient(180deg, #a9d7e8 0%, #c8e6d4 55%, #f6ecd2 100%); }
+.weather-cloudy .sky, .sky.weather-cloudy { background: linear-gradient(180deg, #b8c9d4 0%, #d3dcd4 55%, #ece8d8 100%); }
+.weather-rainy .sky, .sky.weather-rainy { background: linear-gradient(180deg, #7d94a8 0%, #93a6b2 55%, #b8c2c4 100%); }
+.weather-night .sky, .sky.weather-night { background: linear-gradient(180deg, #26355c 0%, #3a4a74 60%, #5a5a80 100%); }
 
 .sun-glow {
   position: absolute;
-  top: 18px;
-  right: 32px;
-  width: 44px;
-  height: 44px;
+  top: 16px;
+  right: 26px;
+  width: 74px;
+  height: 74px;
   border-radius: 50%;
-  background: #fff59d;
-  box-shadow: 0 0 35px #fff176, 0 0 60px rgba(255, 238, 88, 0.6);
+  background: radial-gradient(circle, #fff8d8 0%, #ffe9a0 45%, rgba(255, 233, 160, 0) 72%);
+  animation: sun-breathe 4.5s ease-in-out infinite;
+}
+
+@keyframes sun-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.12); opacity: 1; }
 }
 
 .sun-flare-rays {
   position: absolute;
   top: 0;
   right: 0;
-  width: 140px;
-  height: 140px;
-  background: radial-gradient(circle at top right, rgba(255, 245, 157, 0.35) 0%, transparent 70%);
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle at top right, rgba(255, 245, 157, 0.3) 0%, transparent 70%);
   pointer-events: none;
 }
 
+.night-sky { position: absolute; inset: 0; }
+
 .crescent-moon {
   position: absolute;
-  top: 22px;
-  right: 36px;
+  top: 68%;
+  left: 10%;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  box-shadow: 5px 5px 0 0 #fff9c4;
+  background: radial-gradient(circle at 35% 35%, #fbf4dc, #e6d9b4 72%);
+  box-shadow: 0 0 24px 8px rgba(244, 236, 208, 0.3);
 }
 
 .star {
@@ -865,19 +902,16 @@ defineExpose({
   animation: star-blink 2s infinite ease-in-out alternate;
 }
 
-.star-1 { top: 25px; left: 40px; }
-.star-2 { top: 60px; left: 120px; animation-delay: 0.8s; }
-.star-3 { top: 35px; right: 90px; animation-delay: 1.4s; }
+.star-1 { top: 78%; left: 24%; }
+.star-2 { top: 78%; left: 40%; animation-delay: 0.8s; }
+.star-3 { top: 78%; left: 86%; animation-delay: 1.4s; }
 
 @keyframes star-blink {
   0% { opacity: 0.3; transform: scale(0.8); }
   100% { opacity: 1; transform: scale(1.15); }
 }
 
-.rain-canvas {
-  position: absolute;
-  inset: 0;
-}
+.rain-canvas { position: absolute; inset: 0; pointer-events: none; }
 
 .rain-line {
   position: absolute;
@@ -889,28 +923,22 @@ defineExpose({
 }
 
 @keyframes rain-fall {
-  to { transform: translateY(260px); }
+  to { transform: translateY(340px); }
 }
 
 .soft-cloud {
   position: absolute;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 20px;
-  filter: blur(4px);
+  filter: blur(2px);
 }
 
-.cloud-1 {
-  top: 45px;
-  left: 20px;
-  width: 90px;
-  height: 26px;
-}
+.cloud-1 { top: 40px; left: -70px; width: 64px; height: 16px; animation: cloud-drift 34s linear infinite; }
+.cloud-2 { top: 88px; left: -60px; width: 48px; height: 13px; opacity: 0.6; animation: cloud-drift 46s linear infinite 6s; }
 
-.cloud-2 {
-  top: 70px;
-  right: 40px;
-  width: 70px;
-  height: 20px;
+@keyframes cloud-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(560px); }
 }
 
 .distant-landscape {
@@ -919,13 +947,41 @@ defineExpose({
   left: 0;
   right: 0;
   height: 35px;
-  background: linear-gradient(to top, rgba(104, 159, 56, 0.45), transparent);
+  background: linear-gradient(to top, rgba(104, 159, 56, 0.35), transparent);
 }
 
-/* 折纸飞机飞行动画 */
+.bird {
+  position: absolute;
+  width: 16px;
+  height: 8px;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 9px;
+    height: 7px;
+    border-top: 2px solid rgba(80, 100, 120, 0.55);
+    border-radius: 60% 60% 0 0;
+  }
+  &::before { left: 0; transform: rotate(-14deg); }
+  &::after { left: 7px; transform: rotate(14deg); }
+}
+
+.bird-1 { top: 56px; left: 110px; animation: bird-fly 22s linear infinite; }
+.bird-2 { top: 80px; left: 160px; transform: scale(0.75); animation: bird-fly 26s linear infinite 4s; }
+
+.weather-rainy .bird, .weather-night .bird { display: none; }
+
+@keyframes bird-fly {
+  from { margin-left: 0; }
+  to { margin-left: 240px; }
+}
+
+/* 折纸飞机飞行动画 (保留) */
 .paper-airplane-anim {
   position: absolute;
-  bottom: 30px;
+  bottom: 60px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -935,9 +991,7 @@ defineExpose({
   animation: airplane-soar 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-.airplane-body {
-  font-size: 38px;
-}
+.airplane-body { font-size: 38px; }
 
 .airplane-trail {
   font-size: 11px;
@@ -955,550 +1009,658 @@ defineExpose({
   100% { transform: translate(-20%, -140px) scale(0.8); opacity: 0; }
 }
 
-/* 窗帘 */
+/* 纱帘 */
 .sheer-curtain {
   position: absolute;
   top: 0;
-  bottom: 24px;
-  width: 32px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.15));
-  backdrop-filter: blur(1px);
-  z-index: 3;
+  bottom: 52px;
+  width: 40px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
+  z-index: 6;
   pointer-events: none;
 }
 
 .curtain-left {
   left: 0;
-  border-radius: 0 16px 16px 0;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
+  border-radius: 0 40% 60% 0 / 0 30% 30% 0;
+  animation: curtain-sway 6s ease-in-out infinite alternate;
 }
 
 .curtain-right {
   right: 0;
-  border-radius: 16px 0 0 16px;
-  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
+  border-radius: 40% 0 0 60% / 30% 0 0 30%;
+  animation: curtain-sway 7s ease-in-out infinite alternate-reverse;
 }
 
-/* 窗框木条 */
-.window-wood-frame {
+@keyframes curtain-sway {
+  from { transform: skewY(0deg); }
+  to { transform: skewY(1.2deg); }
+}
+
+/* 窗棂 */
+.window-wood-frame { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+
+.crossbar-h, .crossbar-v {
   position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
+  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 2px 4px rgba(40, 25, 10, 0.3);
 }
 
-.crossbar-h {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: #6d4c41;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
+.crossbar-h { left: 0; right: 0; top: 54%; height: 9px; }
+.crossbar-v { top: 0; bottom: 0; left: 50%; width: 9px; margin-left: -4.5px; }
 
-.crossbar-v {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #6d4c41;
-  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
-}
-
-/* 便签流 */
+/* ===== 便签墙：slot 错落散贴 (v1) ===== */
 .window-notes-stream {
   position: absolute;
-  inset: 8px 14px 28px 14px;
+  inset: 8px 10px 56px 10px;
   z-index: 4;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  overflow-y: auto;
-  align-content: flex-start;
 }
 
 .washi-sticky-note {
-  width: 102px;
-  min-height: 82px;
+  position: absolute;
   border-radius: 4px;
-  padding: 8px 7px 6px;
-  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.22);
+  padding: 8px 9px 7px;
+  box-shadow: 0 5px 12px rgba(80, 55, 25, 0.28), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
   display: flex;
   flex-direction: column;
-  position: relative;
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
+  box-sizing: border-box;
 
-  &:active {
-    transform: scale(0.96);
-  }
+  &:active { transform: scale(0.96); }
 }
 
 .note-peeling {
   transform: rotate(-10deg) scale(1.15) !important;
   box-shadow: 6px 12px 20px rgba(0, 0, 0, 0.35) !important;
+  z-index: 9;
 }
+
+.my-note { box-shadow: 0 5px 12px rgba(80, 55, 25, 0.28), 0 0 0 1.5px var(--brass-hi); }
 
 .washi-tape-strip {
   position: absolute;
   top: -6px;
   left: 50%;
-  transform: translateX(-50%);
-  width: 38px;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  border-left: 1px dashed rgba(0, 0, 0, 0.2);
-  border-right: 1px dashed rgba(0, 0, 0, 0.2);
+  transform: translateX(-50%) rotate(-3deg);
+  width: 44px;
+  height: 13px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 1px 2px rgba(90, 60, 30, 0.18);
+  border-left: 1px dashed rgba(0, 0, 0, 0.15);
+  border-right: 1px dashed rgba(0, 0, 0, 0.15);
 }
 
-.paper-yellow { background: #fff9c4; color: #4e342e; }
-.paper-pink   { background: #fce4ec; color: #4a148c; }
-.paper-blue   { background: #e1f5fe; color: #01579b; }
-.paper-green  { background: #e8f5e9; color: #1b5e20; }
-.paper-kraft  { background: #efebe9; color: #3e2723; }
+.paper-yellow { background: #fff6c2; color: #4d3d2c; }
+.paper-pink   { background: #fde4ee; color: #4d3d2c; }
+.paper-blue   { background: #e2f0fa; color: #4d3d2c; }
+.paper-green  { background: #e6f4e4; color: #4d3d2c; }
+.paper-kraft  { background: #f5ece1; color: #4d3d2c; }
 
 .note-author-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 9px;
+  gap: 4px;
+  font-size: 10px;
   margin-top: 3px;
   font-weight: 700;
-  opacity: 0.85;
 }
 
 .note-author-txt {
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 60px;
+  color: #5b4632;
 }
+
+.note-heart { flex: none; font-size: 9px; color: #c25555; font-weight: 600; }
 
 .handwritten-note-img {
   width: 100%;
-  height: 48px;
+  height: 44px;
   margin-top: 4px;
   border-radius: 3px;
   object-fit: contain;
   background: rgba(255, 255, 255, 0.45);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .note-body-txt {
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 10.5px;
+  line-height: 1.45;
   margin-top: 4px;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+/* "+" 贴便签入口 (D1) */
+.note-plus {
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1.5px dashed rgba(90, 60, 30, 0.4);
+  box-shadow: 0 3px 8px rgba(80, 55, 25, 0.18);
+
+  .washi-tape-strip { display: none; }
+}
+
+.plus-ic { font-size: 18px; color: #6b4a12; line-height: 1; }
+.plus-tx { font-size: 10px; color: #6b4a12; font-weight: 600; }
+
+/* 换批 chip (D2) */
+.batch-chip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 8;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 5px rgba(80, 55, 25, 0.25);
+  cursor: pointer;
+}
+
+.batch-tx { font-size: 9px; font-weight: 700; color: #6b4a12; }
+
+/* ===== 窗台木搁板 (v1) ===== */
 .window-shelf {
   position: absolute;
-  bottom: 0;
   left: 0;
   right: 0;
-  height: 24px;
-  background: #5d4037;
-  border-top: 2px solid #795548;
+  bottom: 0;
+  height: 52px;
+  background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 30%, var(--wood-dark) 100%);
+  box-shadow: 0 -3px 8px rgba(60, 35, 15, 0.3), inset 0 2px 0 rgba(255, 235, 200, 0.35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  padding: 0 14px 5px;
   z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.25);
-}
 
-.shelf-left-item, .shelf-right-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.item-emoji {
-  font-size: 15px;
-}
-
-.shelf-label {
-  font-size: 9px;
-  color: #d7ccc8;
-  font-weight: 500;
-}
-
-.coffee-steaming {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.coffee-cup {
-  font-size: 15px;
-}
-
-.steam {
-  position: absolute;
-  top: -8px;
-  width: 4px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
-  filter: blur(1px);
-  animation: steam-rise 1.5s infinite ease-out;
-}
-
-.steam-1 { left: 4px; }
-.steam-2 { left: 10px; animation-delay: 0.7s; }
-
-@keyframes steam-rise {
-  0% { transform: translateY(0) scale(0.8); opacity: 0.7; }
-  100% { transform: translateY(-10px) scale(1.4); opacity: 0; }
-}
-
-/* 2. 实木写字台面与实体滑动抽屉 */
-.solid-wood-desk {
-  flex: 0.95;
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 60%, #4e342e 100%);
-  border-top: 6px solid #a1887f;
-  box-shadow: inset 0 8px 16px rgba(0, 0, 0, 0.35);
-  padding: 10px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-}
-
-/* 窗外阳光漫射在桌面的柔和光束 */
-.desk-sunlight-beam {
-  position: absolute;
-  top: -40px;
-  left: 20%;
-  width: 140px;
-  height: 220px;
-  background: linear-gradient(135deg, rgba(255, 249, 196, 0.28) 0%, rgba(255, 238, 88, 0.08) 60%, transparent 100%);
-  transform: rotate(-25deg);
-  pointer-events: none;
-  filter: blur(8px);
-  z-index: 2;
-}
-
-.desk-linen-mat {
-  background: rgba(255, 248, 240, 0.95);
-  border-radius: 12px;
-  padding: 10px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-  border: 1px solid #d7ccc8;
-  position: relative;
-  z-index: 3;
-}
-
-.desk-items-row {
-  display: flex;
-  gap: 10px;
-}
-
-.vintage-journal-book {
-  flex: 1.3;
-  background: linear-gradient(135deg, #4e342e 0%, #3e2723 60%, #2e1c18 100%);
-  border-radius: 6px 10px 10px 6px;
-  padding: 10px 12px 10px 18px;
-  display: flex;
-  align-items: center;
-  position: relative;
-  box-shadow: 3px 5px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  overflow: hidden;
-
-  &:active {
-    transform: scale(0.97);
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(180deg, var(--wood-light), var(--wood));
+    border-radius: 3px 3px 0 0;
   }
 }
 
-/* 书脊皮革包边与金属暗纹 */
+.shelf-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  position: relative;
+}
+
+.item-emoji {
+  font-size: 24px;
+  line-height: 1;
+  filter: drop-shadow(0 3px 3px rgba(40, 20, 5, 0.4));
+}
+
+.shelf-label { font-size: 8.5px; color: rgba(255, 240, 215, 0.85); }
+
+.books {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5px;
+  filter: drop-shadow(0 3px 3px rgba(40, 20, 5, 0.4));
+}
+
+.bk { display: block; border-radius: 1.5px; }
+.bk.b1 { width: 34px; height: 6px; background: #b8574f; }
+.bk.b2 { width: 30px; height: 6px; background: #4f7d9e; margin-left: -3px; }
+.bk.b3 { width: 36px; height: 6px; background: #7d9457; margin-left: 2px; }
+
+.coffee-steaming { position: relative; display: flex; align-items: center; }
+.coffee-cup { font-size: 24px; line-height: 1; filter: drop-shadow(0 3px 3px rgba(40, 20, 5, 0.4)); }
+
+.steam {
+  position: absolute;
+  top: -10px;
+  width: 2.5px;
+  height: 11px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.8);
+  animation: steam-rise 2.4s ease-in-out infinite;
+}
+
+.steam-1 { left: 8px; }
+.steam-2 { left: 15px; animation-delay: 1.1s; }
+
+@keyframes steam-rise {
+  0% { transform: translateY(3px); opacity: 0; }
+  35% { opacity: 0.9; }
+  100% { transform: translateY(-8px); opacity: 0; }
+}
+
+/* ===== 桌面区 (v1 第一人称摆置) ===== */
+.desk-zone {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 210px;
+}
+
+.desk-top {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 40%, var(--wood-mid) 100%);
+  box-shadow: inset 0 6px 14px rgba(60, 35, 15, 0.35);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(70, 40, 15, 0.08) 0 3px, transparent 3px 26px);
+    pointer-events: none;
+  }
+}
+
+.desk-sunlight-beam {
+  position: absolute;
+  top: -30px;
+  left: 16%;
+  width: 46%;
+  height: 150%;
+  background: linear-gradient(105deg, rgba(255, 244, 200, 0.34), rgba(255, 244, 200, 0) 70%);
+  transform: rotate(14deg);
+  pointer-events: none;
+  filter: blur(4px);
+  z-index: 2;
+}
+
+.linen-mat {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 10px;
+  bottom: 6px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 82% 16%, transparent 26px, rgba(150, 110, 60, 0.10) 27px 30px, transparent 31px),
+    radial-gradient(circle at 12% 80%, rgba(90, 60, 120, 0.08) 0 6px, transparent 7px),
+    repeating-linear-gradient(45deg, rgba(150, 120, 80, 0.06) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(-45deg, rgba(150, 120, 80, 0.05) 0 2px, transparent 2px 6px),
+    var(--linen);
+  box-shadow: 0 3px 10px rgba(70, 45, 20, 0.3), inset 0 0 0 1px rgba(150, 120, 80, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 12px;
+  gap: 6px;
+  z-index: 3;
+}
+
+.obj {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+}
+
+.obj-cap {
+  font-size: 9px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.obj-journal, .obj-caddy {
+  cursor: pointer;
+  transition: transform 0.15s;
+  &:active { transform: scale(0.96); }
+}
+
+/* 回忆录皮面本 (v1 比例) */
+.vintage-journal-book {
+  width: 128px;
+  height: 96px;
+  border-radius: 5px 8px 8px 5px;
+  position: relative;
+  background: linear-gradient(135deg, #5a3a24, #472c19);
+  box-shadow: 0 6px 12px rgba(50, 28, 10, 0.45), inset 0 1px 0 rgba(255, 220, 170, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s;
+  overflow: hidden;
+
+  &:active { transform: scale(0.97); }
+}
+
 .journal-spine-leather {
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 10px;
-  background: linear-gradient(90deg, #6d4c41 0%, #8d6e63 50%, #4e342e 100%);
-  border-right: 1px solid rgba(0, 0, 0, 0.3);
-  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.25);
+  width: 11px;
+  background: linear-gradient(90deg, #3a2312, #5a3a24);
+  border-radius: 5px 0 0 5px;
 }
 
-/* 缝合线质感 */
 .journal-stitch-line {
   position: absolute;
-  left: 13px;
-  top: 4px;
-  bottom: 4px;
+  left: 15px;
+  top: 7px;
+  bottom: 7px;
   width: 1px;
-  border-left: 1px dashed rgba(255, 213, 79, 0.4);
+  border-left: 1.5px dashed rgba(230, 200, 150, 0.5);
 }
 
-/* 侧边多层做旧米色纸张层叠效果 */
 .deckled-pages-edge {
   position: absolute;
   right: 0;
-  top: 3px;
-  bottom: 3px;
+  top: 5px;
+  bottom: 5px;
   width: 5px;
-  background: repeating-linear-gradient(
-    180deg,
-    #fff8e1,
-    #fff8e1 1.5px,
-    #d7ccc8 1.5px,
-    #d7ccc8 3px
-  );
-  border-radius: 0 4px 4px 0;
-  box-shadow: inset 1px 0 2px rgba(0, 0, 0, 0.25);
+  background: repeating-linear-gradient(180deg, #f2e8d5 0 2px, #d9cbb2 2px 3px);
+  border-radius: 0 2px 2px 0;
 }
 
 .journal-ribbon {
   position: absolute;
   top: 0;
-  right: 18px;
-  width: 8px;
-  height: 22px;
-  background: linear-gradient(180deg, #d32f2f, #b71c1c);
+  right: 16px;
+  width: 7px;
+  height: 26px;
+  background: #b8433c;
   border-radius: 0 0 3px 3px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
 }
 
 .journal-cover-title {
+  position: absolute;
+  left: 24px;
+  top: 24px;
   display: flex;
   flex-direction: column;
   z-index: 2;
 }
 
-.journal-icon {
-  font-size: 20px;
-}
-
 .journal-txt {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  color: #fff8e1;
-  letter-spacing: 0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  margin-top: 2px;
+  color: #e8d3ac;
+  letter-spacing: 1px;
 }
 
-.journal-meta {
-  font-size: 10px;
-  color: #ffe082;
-  margin-top: 2px;
-  opacity: 0.9;
-}
+.journal-meta { font-size: 9px; color: rgba(232, 211, 172, 0.75); margin-top: 4px; }
 
-.desk-pen-caddy {
-  flex: 0.9;
-  background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
-  border-radius: 10px;
-  padding: 10px;
-  border: 1px solid #ffd54f;
-  box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.8);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* 桌面小物 */
+.middles { display: flex; align-items: flex-end; gap: 8px; padding-bottom: 2px; }
+
+.ink {
+  width: 26px;
+  height: 30px;
+  border-radius: 6px 6px 8px 8px;
+  background: linear-gradient(180deg, rgba(90, 60, 120, 0.25), #4a3560 40%);
   position: relative;
-  cursor: pointer;
-  transition: transform 0.15s;
+  box-shadow: 0 4px 8px rgba(50, 28, 10, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.35);
 
-  &:active {
-    transform: scale(0.97);
+  &::before {
+    content: ''; position: absolute; top: -7px; left: 8px; width: 14px; height: 8px;
+    background: #2e2140; border-radius: 3px;
+  }
+  &::after {
+    content: ''; position: absolute; top: 6px; left: 5px; width: 6px; height: 12px;
+    background: rgba(255, 255, 255, 0.4); border-radius: 3px; transform: rotate(8deg);
   }
 }
 
-.pen-caddy-brim {
+.tapes { display: flex; flex-direction: column; gap: 4px; }
+
+.tape {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 3px 6px rgba(50, 28, 10, 0.35);
+
+  &::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: var(--linen); }
+  /* 多端安全: repeating-linear 替代原型 repeating-conic */
+  &.t1 { background: repeating-linear-gradient(45deg, #e8a7b8 0 4px, #f6d3dc 4px 8px); }
+  &.t2 { background: repeating-linear-gradient(45deg, #9db87a 0 4px, #cfe0b8 4px 8px); margin-left: 6px; }
+}
+
+.pencil {
+  width: 56px;
+  height: 7px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #e8b64c 0 78%, #d9a06a 78% 88%, #3a3a3a 88%);
+  transform: rotate(-9deg);
+  box-shadow: 0 3px 5px rgba(50, 28, 10, 0.35);
+}
+
+/* 笔筒 (v1 木 pot + 插三笔) */
+.caddy { width: 84px; height: 96px; position: relative; }
+
+.pens { position: absolute; left: 12px; top: -24px; display: flex; gap: 6px; }
+
+.pen {
+  width: 6px;
+  height: 44px;
+  border-radius: 3px;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+  &.p1 { background: linear-gradient(180deg, #3a3a3a 0 30%, #c96f4a 30%); transform: rotate(-8deg); }
+  &.p2 { background: linear-gradient(180deg, #e8d3ac 0 22%, #7a5236 22%); height: 50px; }
+  &.p3 { background: linear-gradient(180deg, #b8433c 0 26%, #e8b64c 26%); transform: rotate(7deg); height: 40px; }
+}
+
+.pot {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #ffa000, #ffd54f, #ffa000);
-  border-radius: 10px 10px 0 0;
+  height: 66px;
+  border-radius: 8px 8px 12px 12px;
+  background: linear-gradient(180deg, var(--wood-light), var(--wood) 60%, var(--wood-dark));
+  box-shadow: 0 6px 12px rgba(50, 28, 10, 0.45), inset 0 3px 0 rgba(255, 235, 200, 0.3);
+
+  &::before {
+    content: ''; position: absolute; top: -6px; left: -3px; right: -3px; height: 11px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, var(--wood-light), var(--wood-mid));
+    box-shadow: 0 2px 4px rgba(50, 28, 10, 0.4);
+  }
 }
 
-.caddy-icon {
-  font-size: 22px;
+.pot-lb {
+  position: absolute; left: 0; right: 0; top: 24px; text-align: center;
+  color: #f2e2c4; font-size: 11px; font-weight: 700; letter-spacing: 1px;
 }
 
-.caddy-meta {
-  display: flex;
-  flex-direction: column;
+.pot-lb2 {
+  position: absolute; left: 0; right: 0; top: 41px; text-align: center;
+  color: rgba(242, 226, 196, 0.7); font-size: 8px;
 }
 
-.caddy-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #e65100;
-}
+/* ===== 桌前脸 + 内嵌抽屉 (v1) ===== */
+.desk-front {
+  flex: none;
+  height: 96px;
+  position: relative;
+  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+  box-shadow: inset 0 4px 10px rgba(30, 15, 5, 0.45);
 
-.caddy-tip {
-  font-size: 9px;
-  color: #bf360c;
-  margin-top: 1px;
-}
-
-/* 🗄️ 实木拟物抽屉 (点击拉开 / 推回收起) */
-.physical-drawer-unit {
-  margin-top: 10px;
-  border-radius: 12px;
-  background: #3e2723;
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.25);
-  padding: 6px;
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  border: 1px solid #5d4037;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(30, 15, 5, 0.1) 0 3px, transparent 3px 30px);
+    pointer-events: none;
+  }
 }
 
 .drawer-face-panel {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 50%, #4e342e 100%);
-  border-radius: 8px;
-  padding: 10px 14px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.35);
-  border: 1px solid #a1887f;
-  cursor: pointer;
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 12px;
+  height: 72px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+  box-shadow: inset 0 2px 5px rgba(25, 12, 4, 0.55), inset 0 -1px 0 rgba(255, 220, 170, 0.2), 0 1px 0 rgba(255, 220, 170, 0.15);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 16px;
+  cursor: pointer;
   user-select: none;
-  transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: transform 0.15s;
+  box-sizing: border-box;
 
-  &:active {
-    transform: scale(0.985);
-    background: linear-gradient(180deg, #795548 0%, #5d4037 50%, #3e2723 100%);
-  }
+  &:active { transform: scale(0.985); }
 }
 
-.drawer-closed-face {
-  /* 闭合状态：正面展示黄铜把手与拉开按钮 */
+.brass-handle-box { display: flex; align-items: center; gap: 10px; position: relative; }
+
+/* 拉手安装底板：让黄铜拉手有"装在抽屉上"的附着感 */
+.brass-handle-box::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 54px;
+  height: 34px;
+  border-radius: 7px;
+  background: rgba(25, 12, 4, 0.28);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 220, 170, 0.18);
 }
 
-.drawer-opened-face {
-  /* 拉开状态：作为抽屉滑出后的底缘面板，提供推回操作 */
-  margin-top: 8px;
-  padding: 8px 14px;
-  background: linear-gradient(180deg, #6d4c41 0%, #5d4037 100%);
-  opacity: 0.95;
-}
-
-.drawer-action-pill {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border-radius: 14px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-}
-
-.drawer-action-pill.open-pill {
-  background: linear-gradient(135deg, rgba(255, 213, 79, 0.28), rgba(255, 179, 0, 0.18));
-  border: 1px solid rgba(255, 213, 79, 0.55);
-  color: #fff9c4;
-
-  &:hover {
-    background: linear-gradient(135deg, rgba(255, 213, 79, 0.38), rgba(255, 179, 0, 0.28));
-  }
-}
-
-.drawer-action-pill.close-pill {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #efebe9;
-}
-
-.action-pill-icon {
-  font-size: 12px;
-}
-
-.drawer-open-wrapper {
-  animation: drawer-slide-down 0.28s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.brass-handle-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* 黄铜立体拉手 */
 .brass-curved-pull {
-  width: 26px;
-  height: 12px;
-  border-radius: 0 0 13px 13px;
-  border: 3.5px solid;
-  border-color: #ffd54f #ffb300 #ff8f00 #ffd54f;
+  width: 40px;
+  height: 20px;
+  border-radius: 0 0 20px 20px;
+  border: 4px solid var(--brass);
   border-top: none;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45), inset 0 -2px 0 rgba(255, 255, 255, 0.3);
   position: relative;
+  flex: none;
 
   &::before, &::after {
-    content: "";
+    content: '';
     position: absolute;
-    top: -3px;
-    width: 6px;
-    height: 4px;
-    background: #ffd54f;
-    border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    top: -4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #e8c96a, #8a6a1a);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
-  &::before { left: -4px; }
-  &::after { right: -4px; }
+  &::before { left: -5px; }
+  &::after { right: -5px; }
 }
 
-.brass-label-plate {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 0.5px solid rgba(255, 213, 79, 0.3);
-}
+.brass-label-plate { display: flex; align-items: center; gap: 7px; }
 
 .drawer-plate-text {
   font-size: 12px;
   font-weight: 700;
-  color: #fff9c4;
+  color: #f2e2c4;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* 火漆封信数徽章 (v1) */
 .drawer-count-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex: none;
+  background: radial-gradient(circle at 35% 30%, #c9524a, #8e2723 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffe9d8;
   font-size: 9px;
-  background: linear-gradient(135deg, #e65100, #bf360c);
-  color: #fff;
-  padding: 1px 6px;
-  border-radius: 8px;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 -2px 4px rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.25);
+  transform: rotate(-8deg);
+}
+
+.drawer-right-box { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+.secret-pill {
+  background: rgba(255, 233, 163, 0.16);
+  border: 1px solid rgba(255, 233, 163, 0.5);
+  border-radius: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+
+.secret-tx { font-size: 10px; font-weight: 700; color: #ffe9a3; }
+
+.drawer-action-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border-radius: 13px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.drawer-action-pill.open-pill {
+  background: linear-gradient(180deg, #ffe9a3, #f0cd6d);
+  color: #6b4a12;
+}
+
+.action-pill-icon { font-size: 12px; }
+.action-pill-text { font-size: 11px; }
+
+/* ===== 抽屉展开 overlay (D3) ===== */
+.drawer-open-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 10, 5, 0.45);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  /* 面板整体抬到底部 TabBar 之上，避免信封列表被导航裁切 */
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  animation: overlay-fade 0.2s ease-out;
+}
+
+@keyframes overlay-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.drawer-open-panel {
+  width: 100%;
+  max-height: 52vh;
+  border-radius: 16px 16px 0 0;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  animation: drawer-slide-up 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes drawer-slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .drawer-inner-compartment {
   background: #2b1117; /* 暗红色复古丝绒内衬 */
-  border-radius: 8px;
-  padding: 10px 12px;
-  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.75);
+  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.75), 0 -6px 20px rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 213, 79, 0.2);
-}
-
-@keyframes drawer-slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .compartment-header {
@@ -1509,22 +1671,9 @@ defineExpose({
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.15);
 }
 
-.comp-title-box {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.comp-icon {
-  font-size: 13px;
-}
-
-.comp-title {
-  font-size: 12px;
-  color: #ffe082;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-}
+.comp-title-box { display: flex; align-items: center; gap: 6px; }
+.comp-icon { font-size: 13px; }
+.comp-title { font-size: 12px; color: #ffe082; font-weight: 700; letter-spacing: 0.3px; }
 
 .comp-badge {
   font-size: 9px;
@@ -1544,28 +1693,25 @@ defineExpose({
   cursor: pointer;
   transition: all 0.2s;
 
-  &:active {
-    transform: scale(0.95);
-    background: rgba(255, 213, 79, 0.3);
-  }
+  &:active { transform: scale(0.95); background: rgba(255, 213, 79, 0.3); }
 }
 
-.close-pill-text {
-  font-size: 11px;
-  font-weight: 700;
-}
+.close-pill-text { font-size: 11px; font-weight: 700; }
 
-.drawer-letters-scroll {
-  max-height: 220px;
-  margin-top: 8px;
-}
+.drawer-letters-scroll { max-height: 32vh; margin-top: 8px; }
 
 .drawer-empty-state {
   padding: 16px;
   text-align: center;
   color: #bcaaa4;
   font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
+
+.empty-icon { font-size: 22px; }
 
 .drawer-letter-envelope {
   display: flex;
@@ -1579,15 +1725,8 @@ defineExpose({
   cursor: pointer;
 }
 
-.envelope-stamp-box {
-  position: relative;
-}
-
-.letter-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-}
+.envelope-stamp-box { position: relative; }
+.letter-avatar { width: 28px; height: 28px; border-radius: 50%; }
 
 .real-wax-seal {
   position: absolute;
@@ -1605,25 +1744,10 @@ defineExpose({
   font-weight: bold;
 }
 
-.envelope-body {
-  flex: 1;
-}
-
-.env-top {
-  display: flex;
-  justify-content: space-between;
-}
-
-.env-sender {
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.env-time {
-  font-size: 9px;
-  color: #d7ccc8;
-}
+.envelope-body { flex: 1; min-width: 0; }
+.env-top { display: flex; justify-content: space-between; }
+.env-sender { font-size: 11px; font-weight: 700; color: #fff; }
+.env-time { font-size: 9px; color: #d7ccc8; }
 
 .env-preview {
   font-size: 10px;
@@ -1635,53 +1759,7 @@ defineExpose({
   margin-top: 2px;
 }
 
-.env-open-arrow {
-  color: #ffb74d;
-  font-size: 14px;
-}
-
-/* 底部防遮盖快捷操作条 */
-.desk-action-dock {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-  padding-bottom: 2px;
-}
-
-.cozy-dock-btn {
-  flex: 1;
-  height: 38px;
-  border-radius: 20px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-  cursor: pointer;
-}
-
-.post-btn {
-  background: linear-gradient(135deg, #ff9800 0%, #e65100 100%);
-  color: #fff;
-}
-
-.send-btn {
-  background: linear-gradient(135deg, #43a047 0%, #1b5e20 100%);
-  color: #fff;
-}
-
-.dock-btn-icon {
-  font-size: 15px;
-}
-
-.dock-btn-label {
-  line-height: 1;
-}
-
-/* ==================== 📖 全窗口手账阅读器 (Full-Window Diary) ==================== */
+.env-open-arrow { color: #ffb74d; font-size: 14px; }/* ==================== 📖 全窗口手账阅读器 (Full-Window Diary) ==================== */
 .diary-full-page {
   position: fixed;
   inset: 0;
