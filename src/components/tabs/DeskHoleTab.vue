@@ -67,7 +67,7 @@
           <view class="window-wood-frame" @tap="toggleWindow" title="轻触窗框推窗/关窗">
             <view class="crossbar-h" />
             <view class="crossbar-v" />
-            <view class="window-sash-handle">
+            <view class="window-sash-handle" @tap.stop="toggleWindow">
               <text class="sash-tip-text">{{ isWindowOpen ? '🍃 窗已敞开' : '🪟 轻触开窗' }}</text>
             </view>
           </view>
@@ -251,8 +251,222 @@
               <text class="secret-tx">💌 给TA塞纸条</text>
             </view>
             <view class="drawer-action-pill open-pill">
-              <text class="action-pill-icon">📂</text>
-              <text class="action-pill-text">点击拉开 ›</text>
+              <text class="action-pill-icon">🕳️</text>
+              <text class="action-pill-text">进入桌洞 ›</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 🕳️ 桌洞镜头潜入穿透转场动效 (Hole Zoom Animation) -->
+    <view v-if="isHoleZooming" class="hole-zoom play" />
+
+    <!-- 🌌 深度沉浸式「桌洞里」次级页面 (Desk Hole Interior Page) -->
+    <view v-if="isHolePageActive" class="hole-page" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <!-- 左右木纹侧边立柱质感阴影 -->
+      <view class="hole-side-pillar pillar-left" />
+      <view class="hole-side-pillar pillar-right" />
+
+      <!-- 顶栏：返回桌前与标题 -->
+      <view class="hole-top-bar">
+        <view class="hole-back-btn" @tap="closeHolePage">
+          <text class="back-ic">‹</text>
+          <text class="back-tx">回到桌前</text>
+        </view>
+        <view class="hole-title-wrap">
+          <text class="hole-title">桌 洞 里</text>
+          <text class="hole-sub">私密心情铁盒与收到的纸条手账</text>
+        </view>
+        <view class="hole-empty-right" />
+      </view>
+
+      <!-- 桌洞深处悬浮丁达尔微尘 -->
+      <view class="hole-air-motes" pointer-events="none">
+        <view class="mote m1" />
+        <view class="mote m2" />
+        <view class="mote m3" />
+        <view class="mote m4" />
+      </view>
+
+      <!-- 场景底座阴影 -->
+      <view class="hole-stage-shadow" />
+
+      <!-- 主互动区：左侧心情铁盒 + 右侧收到的纸条翻页册 -->
+      <view class="hole-diorama-stage">
+        <!-- 🗝️ 物件一：拟物心情铁盒 (BigBox) -->
+        <view class="bigbox" :class="{ 'open': isBoxOpen, 'unlocked': isBoxUnlocked }" @tap="toggleBigBox">
+          <!-- 金属铰链 -->
+          <view class="bb-hinge" />
+
+          <!-- 3D 翻转盒盖 -->
+          <view class="bb-lid">
+            <!-- 盒盖正面 (外表金属光泽 + 复古凹凸徽标 + 黄铜锁扣) -->
+            <view class="lf">
+              <view class="bb-lock-wrap" @tap.stop="toggleBigBox">
+                <view class="bb-lock" />
+              </view>
+              <view class="bb-lid-badge">
+                <text class="badge-title">心情盒子</text>
+                <text class="badge-sub">MOOD & MEMORIES · EST. 2026</text>
+              </view>
+              <view class="lid-click-tip">
+                <text class="tip-txt">{{ isBoxUnlocked ? (isBoxOpen ? '轻触合上' : '轻触掀盖') : '轻触解锁' }}</text>
+              </view>
+            </view>
+
+            <!-- 盒盖背面 (翻开后露出 HUD 时间轴刻度) -->
+            <view class="li" @tap.stop>
+              <view class="hud-tl">
+                <text class="hm">11月</text>
+                <view
+                  v-for="(dateStr, dIdx) in holeTimelineDates"
+                  :key="dateStr"
+                  class="hud-node"
+                  :class="{ 'on': selectedHoleDateIdx === dIdx }"
+                  @tap="selectHoleDate(dIdx)"
+                >
+                  <text class="hf-icon">✦</text>
+                  <text class="hd-text">{{ dateStr === '全部' ? '全部' : (dateStr.split('月')[1] || dateStr) }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 盒底与内衬深处 (盛放散落的纸卷) -->
+          <view class="bb-inside" @tap.stop>
+            <view class="rolls-container">
+              <view
+                v-for="roll in renderedHoleRolls"
+                :key="roll.id"
+                class="roll-item"
+                :class="{ 'dim': roll.isDim }"
+                :style="roll.style"
+                @tap="openHoleRoll(roll)"
+              >
+                <!-- 3D 卷纸横截面质感 -->
+                <view class="rc-roll" :class="'roll-paper-' + (roll.color || 'yellow')">
+                  <view class="spiral-core" />
+                </view>
+                <view class="rtag-chip">
+                  <text class="rtag-text">{{ roll.cleanDate }}</text>
+                </view>
+              </view>
+            </view>
+
+            <view v-if="renderedHoleRolls.filter(r => !r.isDim).length === 0" class="hole-empty-tip">
+              <text class="empty-txt">那天没写字，静待沉淀～</text>
+            </view>
+          </view>
+
+          <!-- 盒身正面与立体阴影 -->
+          <view class="bb-body">
+            <view class="bb-body-label">
+              <text class="body-lbl-txt">PRIVATE NOTES · DESK HOLE</text>
+            </view>
+          </view>
+          <view class="bb-depth" />
+        </view>
+
+        <!-- 📖 物件二：收到的纸条翻页手账本 (Book) -->
+        <view class="hole-book" :class="{ 'open': isBookOpen, 'flipping': isBookFlipping }">
+          <view class="bk-backboard" />
+
+          <!-- 内页纸张 (展示当前日期的信笺折页) -->
+          <view class="bk-sheet" @tap.stop>
+            <view class="bk-pagehead">
+              <text class="pg-date">{{ currentBookPage.date }}</text>
+              <text class="pg-num">{{ (bookDateIdx + 1) + ' / ' + bookDateGroups.length }}</text>
+            </view>
+
+            <view class="bk-hearts-list">
+              <view
+                v-for="note in currentBookPage.notes"
+                :key="note.id"
+                class="bk-heart-slip"
+                @tap="openBookNoteSlip(note)"
+              >
+                <view class="crease-line" />
+                <view v-if="note.isSealed && !note.read" class="bs-seal-badge">印</view>
+                <text class="bh-time">{{ note.receivedTime }}</text>
+                <text class="bh-author">{{ note.senderName }}</text>
+              </view>
+              <view v-if="currentBookPage.notes.length === 0" class="bk-empty-page">
+                <text class="bk-empty-txt">今日暂无塞入纸条</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 3D 纸张翻折过渡层 -->
+          <view class="bk-turn" />
+
+          <!-- 手账封面 (点击翻开) -->
+          <view class="bk-cover" @tap="toggleBook">
+            <view class="bcf-front">
+              <text class="bcf-title">收到的纸条</text>
+              <text class="bcf-sub">FRIENDS LETTERS</text>
+              <text class="bcf-hint">{{ isBookOpen ? '点击合上' : '点击翻开 ›' }}</text>
+            </view>
+            <view class="bcb-back" />
+          </view>
+
+          <!-- 翻页控制箭头 -->
+          <view v-if="isBookOpen" class="bk-nav prev" @tap.stop="flipBook(-1)">
+            <text class="nav-arrow">‹</text>
+          </view>
+          <view v-if="isBookOpen" class="bk-nav next" @tap.stop="flipBook(1)">
+            <text class="nav-arrow">›</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部操作与温馨提示 -->
+      <view class="hole-bottom-bar">
+        <view class="hole-tip-pill">
+          <text class="tip-dot">✦</text>
+          <text class="tip-info">轻触铁盒解开锁扣，点击纸卷可舒展阅览随笔</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 📜 原型精髓：纸卷舒展检视弹窗 (Paper Unroll Inspection Modal) -->
+    <view v-if="unrollModalVisible && activeUnrollData" class="unroll-modal-overlay" @tap.self="closeUnrollModal">
+      <view class="unroll-wrap" :class="{ 'go': isUnrolling }">
+        <view
+          class="unroll-paper washi-detail-sheet"
+          :class="['paper-' + activeUnrollData.color, { 'go': isUnrolling }]"
+        >
+          <!-- 和纸胶带 -->
+          <view class="unroll-washi-tape" />
+
+          <view class="unroll-sheet-header">
+            <view class="unroll-author-row">
+              <image v-if="activeUnrollData.avatar" class="unroll-avatar" :src="activeUnrollData.avatar" mode="aspectFill" />
+              <view class="unroll-meta">
+                <text class="unroll-author-name">{{ activeUnrollData.author }}</text>
+                <text class="unroll-date-str">{{ activeUnrollData.date }}</text>
+              </view>
+            </view>
+            <text class="unroll-close-ic" @tap="closeUnrollModal">✕</text>
+          </view>
+
+          <view class="unroll-sheet-body">
+            <text v-if="activeUnrollData.title" class="unroll-body-title">{{ activeUnrollData.title }}</text>
+            <text class="unroll-body-content">{{ activeUnrollData.content }}</text>
+          </view>
+
+          <view class="unroll-sheet-footer">
+            <view v-if="activeUnrollData.type === 'diary'" class="unroll-act-btn pin-btn" @tap="pinDiaryToWindow">
+              <text class="btn-ic">📌</text>
+              <text class="btn-tx">贴到窗台</text>
+            </view>
+            <view v-if="activeUnrollData.type === 'letter'" class="unroll-act-btn reply-btn" @tap="replyToUnrollSender">
+              <text class="btn-ic">💬</text>
+              <text class="btn-tx">提笔回信</text>
+            </view>
+            <view class="unroll-act-btn fold-btn" @tap="closeUnrollModal">
+              <text class="btn-ic">📜</text>
+              <text class="btn-tx">卷起收回</text>
             </view>
           </view>
         </view>
@@ -408,53 +622,55 @@
 
     <!-- 🔍 窗台便签放大展开检视弹窗 (支持查看手写真迹、撕下带走、点赞) -->
     <view v-if="inspectModalVisible && inspectingNote" class="note-inspect-overlay" @tap.self="closeInspectModal">
-      <view class="note-inspect-modal" :class="['paper-' + inspectingNote.color]">
-        <!-- 和纸胶带 -->
-        <view class="inspect-washi-tape" />
+      <view class="unroll-wrap go">
+        <view class="note-inspect-modal unroll-paper go" :class="['paper-' + inspectingNote.color]">
+          <!-- 和纸胶带 -->
+          <view class="inspect-washi-tape" />
 
-        <!-- 便签头部：作者信息与发布时间 -->
-        <view class="inspect-header">
-          <view class="inspect-author-info clickable" @tap="handleViewNoteAuthorProfile" title="点击查看作者资料">
-            <image class="inspect-avatar" :src="inspectingNote.authorAvatar" mode="aspectFill" />
-            <view class="inspect-meta">
-              <text class="inspect-author-name">{{ inspectingNote.authorName }}</text>
-              <text class="inspect-time">{{ formatRelativeTime(inspectingNote.createdAt) }} 贴在窗台上</text>
+          <!-- 便签头部：作者信息与发布时间 -->
+          <view class="inspect-header">
+            <view class="inspect-author-info clickable" @tap="handleViewNoteAuthorProfile" title="点击查看作者资料">
+              <image class="inspect-avatar" :src="inspectingNote.authorAvatar" mode="aspectFill" />
+              <view class="inspect-meta">
+                <text class="inspect-author-name">{{ inspectingNote.authorName }}</text>
+                <text class="inspect-time">{{ formatRelativeTime(inspectingNote.createdAt) }} 贴在窗台上</text>
+              </view>
+            </view>
+            <text class="inspect-close-btn" @tap="closeInspectModal">✕</text>
+          </view>
+
+          <!-- 便签主体：手写真迹大图 或 规整纸张手写文本 -->
+          <view class="inspect-body">
+            <!-- 如果是真迹手写图片 -->
+            <view v-if="isHandwritingImg(inspectingNote.content)" class="inspect-handwriting-wrapper">
+              <image
+                class="inspect-full-hw-img"
+                :src="inspectingNote.content"
+                mode="widthFix"
+              />
+            </view>
+            <!-- 如果是纯文字便签 -->
+            <view v-else class="inspect-text-wrapper">
+              <text class="inspect-full-text">{{ inspectingNote.content }}</text>
             </view>
           </view>
-          <text class="inspect-close-btn" @tap="closeInspectModal">✕</text>
-        </view>
 
-        <!-- 便签主体：手写真迹大图 或 规整纸张手写文本 -->
-        <view class="inspect-body">
-          <!-- 如果是真迹手写图片 -->
-          <view v-if="isHandwritingImg(inspectingNote.content)" class="inspect-handwriting-wrapper">
-            <image
-              class="inspect-full-hw-img"
-              :src="inspectingNote.content"
-              mode="widthFix"
-            />
-          </view>
-          <!-- 如果是纯文字便签 -->
-          <view v-else class="inspect-text-wrapper">
-            <text class="inspect-full-text">{{ inspectingNote.content }}</text>
-          </view>
-        </view>
+          <!-- 便签底部操作栏：点赞 ❤️、撕下带走/删除 🗑️、贴回窗台 📌 -->
+          <view class="inspect-footer">
+            <view class="inspect-action-btn like-btn" @tap="likeInspectingNote">
+              <text class="action-icon">❤️</text>
+              <text class="action-label">{{ inspectingNote.likes }} 喜欢</text>
+            </view>
 
-        <!-- 便签底部操作栏：点赞 ❤️、撕下带走/删除 🗑️、贴回窗台 📌 -->
-        <view class="inspect-footer">
-          <view class="inspect-action-btn like-btn" @tap="likeInspectingNote">
-            <text class="action-icon">❤️</text>
-            <text class="action-label">{{ inspectingNote.likes }} 喜欢</text>
-          </view>
+            <view v-if="inspectingNote.isMine" class="inspect-action-btn delete-btn" @tap="removeInspectingNote">
+              <text class="action-icon">🗑️</text>
+              <text class="action-label">撕下带走</text>
+            </view>
 
-          <view v-if="inspectingNote.isMine" class="inspect-action-btn delete-btn" @tap="removeInspectingNote">
-            <text class="action-icon">🗑️</text>
-            <text class="action-label">撕下带走</text>
-          </view>
-
-          <view class="inspect-action-btn close-btn" @tap="closeInspectModal">
-            <text class="action-icon">📌</text>
-            <text class="action-label">贴回窗台</text>
+            <view class="inspect-action-btn close-btn" @tap="closeInspectModal">
+              <text class="action-icon">📌</text>
+              <text class="action-label">贴回窗台</text>
+            </view>
           </view>
         </view>
       </view>
@@ -462,37 +678,39 @@
 
     <!-- 💌 桌洞私密信纸阅读与快捷回信弹窗 -->
     <view v-if="drawerSecretModalVisible && activeSecretNote" class="secret-letter-overlay" @tap.self="drawerSecretModalVisible = false">
-      <view class="secret-letter-card">
-        <!-- 信封顶部火漆封口 / 邮戳 -->
-        <view class="letter-top-row">
-          <view class="letter-sender-info clickable" @tap="handleViewSecretSenderProfile" title="点击查看资料">
-            <image class="letter-modal-avatar" :src="activeSecretNote.senderAvatar" mode="aspectFill" />
-            <view class="letter-sender-meta">
-              <text class="letter-sender-name">{{ activeSecretNote.senderName }}</text>
-              <text class="letter-send-time">悄悄塞入桌洞 · {{ activeSecretNote.receivedTime }}</text>
+      <view class="unroll-wrap go">
+        <view class="secret-letter-card unroll-paper go">
+          <!-- 信封顶部火漆封口 / 邮戳 -->
+          <view class="letter-top-row">
+            <view class="letter-sender-info clickable" @tap="handleViewSecretSenderProfile" title="点击查看资料">
+              <image class="letter-modal-avatar" :src="activeSecretNote.senderAvatar" mode="aspectFill" />
+              <view class="letter-sender-meta">
+                <text class="letter-sender-name">{{ activeSecretNote.senderName }}</text>
+                <text class="letter-send-time">悄悄塞入桌洞 · {{ activeSecretNote.receivedTime }}</text>
+              </view>
             </view>
+            <view v-if="activeSecretNote.isSealed" class="letter-seal-tag">
+              <text class="seal-glyph">🔏</text>
+              <text class="seal-text">火漆印密封</text>
+            </view>
+            <text class="letter-close-btn" @tap="drawerSecretModalVisible = false">✕</text>
           </view>
-          <view v-if="activeSecretNote.isSealed" class="letter-seal-tag">
-            <text class="seal-glyph">🔏</text>
-            <text class="seal-text">火漆印密封</text>
+
+          <!-- 信笺纸正文 -->
+          <view class="letter-sheet-body">
+            <text class="letter-text">{{ activeSecretNote.fullContent }}</text>
           </view>
-          <text class="letter-close-btn" @tap="drawerSecretModalVisible = false">✕</text>
-        </view>
 
-        <!-- 信笺纸正文 -->
-        <view class="letter-sheet-body">
-          <text class="letter-text">{{ activeSecretNote.fullContent }}</text>
-        </view>
-
-        <!-- 底部快捷动作：提笔给TA回信 (一键跳转小纸条慢聊) + 收回抽屉 -->
-        <view class="letter-actions-row">
-          <button class="letter-reply-btn" @tap="replyToSecretSender(activeSecretNote)">
-            <text class="reply-icon">💬</text>
-            <text class="reply-text">提笔给TA回小纸条</text>
-          </button>
-          <button class="letter-fold-btn" @tap="drawerSecretModalVisible = false">
-            <text class="fold-text">收回抽屉</text>
-          </button>
+          <!-- 底部快捷动作：提笔给TA回信 (一键跳转小纸条慢聊) + 收回抽屉 -->
+          <view class="letter-actions-row">
+            <button class="letter-reply-btn" @tap="replyToSecretSender(activeSecretNote)">
+              <text class="reply-icon">💬</text>
+              <text class="reply-text">提笔给TA回小纸条</text>
+            </button>
+            <button class="letter-fold-btn" @tap="drawerSecretModalVisible = false">
+              <text class="fold-text">收回抽屉</text>
+            </button>
+          </view>
         </view>
       </view>
     </view>
@@ -706,21 +924,254 @@ function exitVisiting() {
   isVisitingOther.value = false;
 }
 
-// 🗄️ 实木抽屉物理交互：点击拉开 / 推回闭合
+// ===== 🕳️ 桌洞深度沉浸式次级交互世界 =====
+const isHoleZooming = ref(false);
+const isHolePageActive = ref(false);
+
+// 铁盒 (BigBox) 状态
+const isBoxUnlocked = ref(false);
+const isBoxOpen = ref(false);
+const selectedHoleDateIdx = ref(0);
+
+// 手账册 (Book) 状态
+const isBookOpen = ref(false);
+const bookDateIdx = ref(0);
+const isBookFlipping = ref(false);
+
+// 纸卷舒展阅读弹窗 (Unroll Paper Modal) 状态
+const unrollModalVisible = ref(false);
+const isUnrolling = ref(false);
+const activeUnrollData = ref<{
+  title: string;
+  author: string;
+  avatar?: string;
+  date: string;
+  content: string;
+  color: string;
+  type: 'diary' | 'letter';
+  rawItem?: any;
+} | null>(null);
+
+// 铁盒内时间轴日期计算
+const holeTimelineDates = computed(() => {
+  const dates: string[] = [];
+  currentDesk.value.diaryEntries.forEach(d => {
+    const cleanDate = d.dateStr.split("·")[0].trim();
+    if (cleanDate && !dates.includes(cleanDate)) dates.push(cleanDate);
+  });
+  return ["全部", ...dates];
+});
+
+// 计算铁盒内的纸卷位置与状态 (3D 错落摆放)
+const renderedHoleRolls = computed(() => {
+  const dates = holeTimelineDates.value;
+  const selectedDate = dates[selectedHoleDateIdx.value] || "全部";
+  const list = currentDesk.value.diaryEntries;
+  const cells = [
+    { left: 14, top: 12 },
+    { left: 68, top: 8 },
+    { left: 122, top: 14 },
+    { left: 20, top: 56 },
+    { left: 74, top: 52 },
+    { left: 126, top: 58 },
+  ];
+  return list.map((item, idx) => {
+    const cleanDate = item.dateStr.split("·")[0].trim();
+    const isDim = selectedDate !== "全部" && cleanDate !== selectedDate;
+    const baseCell = cells[idx % cells.length];
+    const seed = (idx + 1) * 31;
+    const rot = -16 + ((seed * 11) % 32);
+    const scale = 0.92 + ((seed * 7) % 15) / 100;
+    return {
+      ...item,
+      cleanDate,
+      isDim,
+      style: {
+        left: `${baseCell.left}px`,
+        top: `${baseCell.top}px`,
+        transform: `rotate(${rot}deg) scale(${scale})`,
+        zIndex: 2 + (idx % 3),
+      }
+    };
+  });
+});
+
+// 计算收到的纸条分组 (按日期)
+const bookDateGroups = computed(() => {
+  const groups: { date: string; notes: DrawerSecretNote[] }[] = [];
+  currentDesk.value.drawerNotes.forEach(dn => {
+    const datePart = dn.receivedTime.split(" ")[0] || "今天";
+    let grp = groups.find(g => g.date === datePart);
+    if (!grp) {
+      grp = { date: datePart, notes: [] };
+      groups.push(grp);
+    }
+    grp.notes.push(dn);
+  });
+  if (groups.length === 0) {
+    groups.push({ date: "暂无纸条", notes: [] });
+  }
+  return groups;
+});
+
+const currentBookPage = computed(() => {
+  if (bookDateGroups.value.length === 0) return { date: "暂无", notes: [] };
+  const idx = Math.min(Math.max(0, bookDateIdx.value), bookDateGroups.value.length - 1);
+  return bookDateGroups.value[idx];
+});
+
+// 🗄️ 实木抽屉交互：潜入桌洞镜头穿透动画
 function openDrawer() {
-  isDrawerPulled.value = true;
-  uni.showToast({ title: "咔嗒 · 抽屉滑开 📬", icon: "none" });
+  isHoleZooming.value = true;
+  uni.showToast({ title: "潜入桌洞中...", icon: "none", duration: 800 });
+  setTimeout(() => {
+    isHoleZooming.value = false;
+    isHolePageActive.value = true;
+    isBoxUnlocked.value = false;
+    isBoxOpen.value = false;
+    isBookOpen.value = false;
+  }, 480);
 }
 
 function closeDrawer() {
   isDrawerPulled.value = false;
 }
 
+function closeHolePage() {
+  isHolePageActive.value = false;
+  isBoxOpen.value = false;
+  isBoxUnlocked.value = false;
+  isBookOpen.value = false;
+}
+
 function toggleDrawerPull() {
-  if (isDrawerPulled.value) {
-    closeDrawer();
+  openDrawer();
+}
+
+// 铁盒：解开黄铜锁扣与 3D 掀盖
+function toggleBigBox() {
+  if (isBoxOpen.value) {
+    isBoxOpen.value = false;
+    uni.showToast({ title: "铁盒合上了 📦", icon: "none" });
+    return;
+  }
+  if (!isBoxUnlocked.value) {
+    isBoxUnlocked.value = true;
+    uni.showToast({ title: "咔哒 · 黄铜锁开了 🗝️", icon: "none" });
+    setTimeout(() => {
+      isBoxOpen.value = true;
+    }, 450);
   } else {
-    openDrawer();
+    isBoxOpen.value = true;
+  }
+}
+
+// 盒盖内侧时间轴筛选
+function selectHoleDate(idx: number) {
+  selectedHoleDateIdx.value = idx;
+  const d = holeTimelineDates.value[idx];
+  uni.showToast({
+    title: d === "全部" ? "显示全部心情纸卷" : `时间线：${d}`,
+    icon: "none"
+  });
+}
+
+// 收到的纸条手账册：封面翻开与左右 3D 翻页
+function toggleBook() {
+  isBookOpen.value = !isBookOpen.value;
+  if (isBookOpen.value) {
+    uni.showToast({ title: "翻开手账，查看收到的纸条 📖", icon: "none" });
+  }
+}
+
+function flipBook(dir: number) {
+  const next = bookDateIdx.value + dir;
+  if (next < 0 || next >= bookDateGroups.value.length) {
+    uni.showToast({
+      title: dir < 0 ? "已经是第一页了" : "已经是最后一页了",
+      icon: "none"
+    });
+    return;
+  }
+  isBookFlipping.value = true;
+  setTimeout(() => {
+    bookDateIdx.value = next;
+  }, 180);
+  setTimeout(() => {
+    isBookFlipping.value = false;
+  }, 460);
+}
+
+// 纸卷与信笺：展开物理舒展弹窗阅读
+function openHoleRoll(item: any) {
+  activeUnrollData.value = {
+    title: item.title,
+    author: currentDesk.value.ownerName,
+    avatar: currentDesk.value.ownerAvatar,
+    date: item.dateStr,
+    content: item.content,
+    color: item.color || "yellow",
+    type: "diary",
+    rawItem: item
+  };
+  unrollModalVisible.value = true;
+  isUnrolling.value = false;
+  setTimeout(() => {
+    isUnrolling.value = true;
+  }, 30);
+}
+
+function openBookNoteSlip(note: DrawerSecretNote) {
+  note.read = true;
+  saveMyDeskData(currentDesk.value);
+  activeUnrollData.value = {
+    title: "桌洞收到的私密纸条",
+    author: note.senderName,
+    avatar: note.senderAvatar,
+    date: note.receivedTime,
+    content: note.fullContent,
+    color: "pink",
+    type: "letter",
+    rawItem: note
+  };
+  unrollModalVisible.value = true;
+  isUnrolling.value = false;
+  setTimeout(() => {
+    isUnrolling.value = true;
+  }, 30);
+}
+
+function closeUnrollModal() {
+  unrollModalVisible.value = false;
+  isUnrolling.value = false;
+  activeUnrollData.value = null;
+}
+
+function pinDiaryToWindow() {
+  if (!activeUnrollData.value || !activeUnrollData.value.rawItem) return;
+  const d = activeUnrollData.value.rawItem;
+  postWindowNote({
+    authorId: currentDesk.value.ownerId,
+    authorName: currentDesk.value.ownerName,
+    authorAvatar: currentDesk.value.ownerAvatar,
+    content: d.content,
+    color: d.color,
+    isMine: true
+  });
+  currentDesk.value = getMyDeskData();
+  closeUnrollModal();
+  closeHolePage();
+  uni.showToast({ title: "已将心情纸条贴上窗台！📌", icon: "none" });
+}
+
+function replyToUnrollSender() {
+  if (!activeUnrollData.value) return;
+  const senderName = activeUnrollData.value.author;
+  const avatar = activeUnrollData.value.avatar;
+  closeUnrollModal();
+  uni.showToast({ title: `提笔给 ${senderName} 写回信...`, icon: "none" });
+  if (openChatWithFriend) {
+    openChatWithFriend("friend_auto", senderName, avatar || "");
   }
 }
 
@@ -1305,7 +1756,7 @@ defineExpose({
 .window-wood-frame {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   cursor: pointer;
 }
 
@@ -1323,13 +1774,14 @@ defineExpose({
   left: 50%;
   top: 54%;
   transform: translate(-50%, -50%);
-  background: rgba(60, 40, 20, 0.65);
-  border: 1px solid rgba(255, 230, 180, 0.4);
-  padding: 2px 8px;
-  border-radius: 10px;
+  background: rgba(60, 40, 20, 0.75);
+  border: 1px solid rgba(255, 230, 180, 0.5);
+  padding: 3px 10px;
+  border-radius: 12px;
   backdrop-filter: blur(4px);
-  z-index: 6;
+  z-index: 10;
   transition: transform 0.2s, background 0.2s;
+  pointer-events: auto;
 
   &:active {
     transform: translate(-50%, -50%) scale(0.92);
@@ -1348,6 +1800,11 @@ defineExpose({
   position: absolute;
   inset: 8px 10px 56px 10px;
   z-index: 4;
+  pointer-events: none;
+}
+
+.washi-sticky-note, .batch-chip {
+  pointer-events: auto;
 }
 
 .washi-sticky-note {
@@ -3012,4 +3469,948 @@ defineExpose({
     font-weight: 600;
   }
 }
+
+/* =================================================================
+   🌟 深度沉浸式「桌洞里 (Page Hole)」拟物物理交互动效系统
+   ================================================================= */
+
+/* 🕳️ 桌洞镜头穿透潜入放大转场 */
+.hole-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: radial-gradient(circle at 50% 64%, #4A3826 0%, #241A10 62%);
+  transform-origin: 50% 64%;
+  pointer-events: none;
+}
+.hole-zoom.play {
+  animation: holezoom 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes holezoom {
+  from { opacity: 0; transform: scale(0.12); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* 🌌 深度沉浸式「桌洞里」次级页面 */
+.hole-page {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background:
+    radial-gradient(80% 42% at 50% 0%, rgba(255, 214, 150, 0.14), transparent 55%),
+    radial-gradient(90% 70% at 50% 40%, #4A3A29 0%, #33261A 55%, #221810 100%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  animation: hole-fade-in 0.3s ease;
+}
+
+@keyframes hole-fade-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.hole-side-pillar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 26px;
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgba(30, 20, 10, 0.8), rgba(70, 48, 28, 0.6)),
+    repeating-linear-gradient(90deg, rgba(90, 66, 40, 0.5) 0 3px, rgba(60, 44, 28, 0.5) 3px 9px);
+  pointer-events: none;
+}
+.pillar-left { left: 0; box-shadow: 6px 0 16px rgba(0, 0, 0, 0.5); }
+.pillar-right { right: 0; box-shadow: -6px 0 16px rgba(0, 0, 0, 0.5); }
+
+.hole-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px 8px;
+  z-index: 10;
+}
+
+.hole-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(58, 44, 30, 0.85);
+  border: 1px solid rgba(201, 169, 111, 0.5);
+  color: #F6EBD8;
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+    background: rgba(80, 58, 38, 0.95);
+  }
+}
+
+.back-ic { font-size: 14px; font-weight: bold; }
+.back-tx { font-size: 12px; font-weight: 600; }
+
+.hole-title-wrap {
+  text-align: center;
+}
+
+.hole-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #F6E7D0;
+  letter-spacing: 0.35em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.hole-sub {
+  display: block;
+  font-size: 9px;
+  color: rgba(246, 231, 208, 0.6);
+  margin-top: 2px;
+}
+
+.hole-empty-right {
+  width: 78px;
+}
+
+.hole-air-motes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+
+  .mote {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(255, 230, 160, 0.45);
+    filter: blur(1px);
+    animation: hole-mote-float 8s ease-in-out infinite alternate;
+  }
+  .m1 { left: 25%; top: 35%; animation-duration: 9s; }
+  .m2 { left: 45%; top: 60%; animation-duration: 7s; animation-delay: 1s; }
+  .m3 { left: 75%; top: 40%; animation-duration: 8.5s; animation-delay: 2s; }
+  .m4 { left: 60%; top: 75%; animation-duration: 6.5s; animation-delay: 0.5s; }
+}
+
+@keyframes hole-mote-float {
+  0%   { transform: translate(0, 0); opacity: 0.2; }
+  50%  { transform: translate(10px, -15px); opacity: 0.7; }
+  100% { transform: translate(-8px, -28px); opacity: 0.1; }
+}
+
+.hole-stage-shadow {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  bottom: 80px;
+  height: 40px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.7) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hole-diorama-stage {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 0 16px;
+  z-index: 5;
+}
+
+/* 🗝️ 物件一：拟物心情铁盒 (BigBox) */
+.bigbox {
+  position: relative;
+  width: 175px;
+  height: 200px;
+  perspective: 600px;
+  cursor: pointer;
+  flex: none;
+}
+
+.bb-hinge {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: -8px;
+  height: 9px;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #C8BFA9, #A19684);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  z-index: 4;
+}
+
+.bb-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 84px;
+  border-radius: 10px;
+  border: 2px solid #968B76;
+  background:
+    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.3) 46%, rgba(255, 255, 255, 0.08) 54%, transparent 66%),
+    linear-gradient(180deg, #CFC7B7 0%, #BFB6A4 55%, #A89D87 100%);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -4px 8px rgba(70, 60, 45, 0.3);
+  z-index: 1;
+}
+
+.bb-body-label {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 14px;
+  bottom: 12px;
+  border: 1px solid rgba(122, 94, 49, 0.45);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(246, 238, 220, 0.55);
+}
+
+.body-lbl-txt {
+  font-size: 7px;
+  color: rgba(112, 84, 44, 0.85);
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+
+.bb-depth {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -7px;
+  height: 8px;
+  background: linear-gradient(180deg, #8E8268, #6B6250);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
+  z-index: 0;
+}
+
+.bb-inside {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 2px;
+  height: 112px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #6B6152, #4E4638);
+  box-shadow: inset 0 8px 18px rgba(0, 0, 0, 0.55), inset 0 -2px 0 rgba(255, 255, 255, 0.12);
+  z-index: 2;
+  overflow: hidden;
+}
+
+.bb-lid {
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: -4px;
+  height: 120px;
+  transform-style: preserve-3d;
+  transform-origin: top center;
+  transition: transform 0.85s cubic-bezier(0.3, 0.75, 0.3, 1);
+  z-index: 3;
+}
+
+.bigbox.open .bb-lid {
+  transform: rotateX(-152deg);
+}
+
+.bb-lid .lf, .bb-lid .li {
+  position: absolute;
+  inset: 0;
+  border-radius: 9px;
+  backface-visibility: hidden;
+}
+
+.bb-lid .lf {
+  border: 2px solid #9A8F7B;
+  background:
+    linear-gradient(100deg, transparent 26%, rgba(255, 255, 255, 0.34) 44%, rgba(255, 255, 255, 0.1) 52%, transparent 64%),
+    linear-gradient(165deg, #DCD6CA, #C4BCA9 55%, #B0A48D);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 5px rgba(80, 70, 55, 0.28);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.bb-lock-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 22px;
+  z-index: 5;
+  transition: transform 0.5s ease 0.1s, opacity 0.5s ease 0.15s;
+}
+
+.bb-lock {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #E8C778, #C9A24B);
+  border-radius: 4px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -8px;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    border: 3px solid #C9A24B;
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
+  }
+}
+
+.bigbox.unlocked .bb-lock-wrap {
+  transform: translateX(-50%) rotate(-55deg) translateY(12px);
+  opacity: 0;
+}
+
+.bb-lid-badge {
+  text-align: center;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background:
+    radial-gradient(60% 70% at 50% 40%, rgba(201, 112, 90, 0.22), rgba(201, 112, 90, 0.06) 70%, transparent),
+    linear-gradient(180deg, #F6EFD9, #EBDFBC);
+  border: 1px solid rgba(122, 94, 49, 0.45);
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.5), inset 0 0 0 4px rgba(122, 94, 49, 0.28), 0 1px 2px rgba(90, 70, 45, 0.25);
+}
+
+.badge-title {
+  display: block;
+  font-size: 13px;
+  color: #7A5A2E;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.badge-sub {
+  display: block;
+  font-size: 6.5px;
+  color: rgba(112, 84, 44, 0.85);
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+.lid-click-tip {
+  margin-top: 6px;
+  background: rgba(122, 94, 49, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.lid-click-tip .tip-txt {
+  font-size: 8px;
+  color: #7A5A2E;
+  font-weight: 600;
+}
+
+.bb-lid .li {
+  transform: rotateX(180deg);
+  border: 2px solid #B4A78F;
+  background:
+    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.4) 47%, rgba(255, 255, 255, 0.1) 55%, transparent 66%),
+    linear-gradient(180deg, #EFE7D6, #DFD4BE);
+  box-shadow: inset 0 0 14px rgba(120, 100, 70, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+  padding: 10px 8px;
+  box-sizing: border-box;
+}
+
+.hud-tl {
+  position: absolute;
+  inset: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    background: linear-gradient(90deg, transparent, rgba(201, 140, 60, 0.55) 5%, rgba(201, 140, 60, 0.55) 95%, transparent);
+    box-shadow: 0 0 8px rgba(255, 200, 120, 0.5);
+  }
+}
+
+.hud-tl .hm {
+  font-size: 7px;
+  color: rgba(122, 94, 49, 0.85);
+  font-weight: 700;
+  z-index: 1;
+}
+
+.hud-node {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.25s, transform 0.25s;
+
+  &.on {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.hf-icon {
+  display: block;
+  font-size: 8px;
+  color: #C9A24B;
+  text-shadow: 0 0 4px rgba(255, 190, 110, 0.9);
+}
+
+.hd-text {
+  display: block;
+  font-size: 7px;
+  color: #7A4A1E;
+  margin-top: 1px;
+  font-weight: 600;
+}
+
+.rolls-container {
+  position: absolute;
+  inset: 6px;
+  z-index: 2;
+}
+
+.roll-item {
+  position: absolute;
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.2s;
+
+  &.dim {
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  &:active .rc-roll {
+    transform: scale(0.9);
+  }
+}
+
+.rc-roll {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  position: relative;
+  box-shadow:
+    0 6px 10px rgba(15, 10, 6, 0.5),
+    0 2px 3px rgba(15, 10, 6, 0.35),
+    inset 0 0 0 1px rgba(118, 94, 60, 0.35),
+    inset 0 -4px 8px rgba(88, 66, 38, 0.35),
+    inset 0 3px 6px rgba(255, 255, 255, 0.7);
+}
+
+.roll-paper-yellow { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #F6E69F; }
+.roll-paper-pink   { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #F7D4E4; }
+.roll-paper-green  { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #D5E8D4; }
+.roll-paper-kraft  { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #E8DCBE; }
+.roll-paper-blue   { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #D0E4F2; }
+
+.rtag-chip {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FDFBF4;
+  border: 1px solid #D8CCB8;
+  border-radius: 3px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+  z-index: 3;
+}
+
+.rtag-text {
+  font-size: 6.5px;
+  color: #6E6455;
+  font-weight: 600;
+}
+
+.hole-empty-tip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hole-empty-tip .empty-txt {
+  font-size: 10px;
+  color: rgba(246, 231, 208, 0.6);
+}
+
+/* 📖 物件二：收到的纸条翻页手账本 (Book) */
+.hole-book {
+  position: relative;
+  width: 145px;
+  height: 190px;
+  perspective: 520px;
+  cursor: pointer;
+  flex: none;
+}
+
+.bk-backboard {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #8A6A44, #6E5232);
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 246, 228, 0.25);
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    background: repeating-linear-gradient(90deg, #7A5C38 0 3px, #93724A 3px 6px);
+    border-radius: 4px 0 0 4px;
+  }
+}
+
+.bk-sheet {
+  position: absolute;
+  left: 14px;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  background: #FBF6E8;
+  border-radius: 2px 6px 6px 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(120, 95, 60, 0.12);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bk-pagehead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed rgba(160, 130, 90, 0.35);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.pg-date { font-size: 8px; color: #8A6538; font-weight: 700; }
+.pg-num  { font-size: 7px; color: #B09268; }
+
+.bk-hearts-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.bk-heart-slip {
+  position: relative;
+  background: #FFF9F0;
+  border: 1px solid #E4D5BC;
+  border-radius: 4px;
+  padding: 6px 6px 6px 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.crease-line {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: linear-gradient(180deg, #D4C3A3, #EFE2CB);
+  border-radius: 1px;
+}
+
+.bs-seal-badge {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #B33939;
+  color: #fff;
+  font-size: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.bh-time {
+  display: block;
+  font-size: 7px;
+  color: #9E8565;
+}
+
+.bh-author {
+  display: block;
+  font-size: 9px;
+  font-weight: bold;
+  color: #5A3E22;
+  margin-top: 1px;
+}
+
+.bk-empty-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bk-empty-txt {
+  font-size: 9px;
+  color: #B5A082;
+}
+
+.bk-turn {
+  position: absolute;
+  left: 14px;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  background: #EFE4CC;
+  border-radius: 2px 6px 6px 2px;
+  transform-origin: left center;
+  transition: transform 0.45s ease;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+}
+
+.hole-book.flipping .bk-turn {
+  opacity: 1;
+  transform: rotateY(-180deg);
+}
+
+.bk-cover {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.25, 0.85, 0.3, 1);
+  z-index: 4;
+}
+
+.hole-book.open .bk-cover {
+  transform: rotateY(-160deg);
+}
+
+.bcf-front, .bcb-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px 10px 10px 4px;
+  backface-visibility: hidden;
+}
+
+.bcf-front {
+  background:
+    radial-gradient(circle at 75% 25%, rgba(255, 230, 180, 0.2), transparent 40%),
+    linear-gradient(160deg, #A88358, #7E5832);
+  border: 2px solid #5A3D1E;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.bcf-title {
+  font-size: 13px;
+  color: #FDF4E3;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.bcf-sub {
+  font-size: 6.5px;
+  color: rgba(253, 244, 227, 0.7);
+  letter-spacing: 0.15em;
+  margin-top: 3px;
+}
+
+.bcf-hint {
+  margin-top: 14px;
+  font-size: 8px;
+  color: #FFE4A0;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.bcb-back {
+  transform: rotateY(180deg);
+  background: #6E4D2A;
+  border: 2px solid #5A3D1E;
+}
+
+.bk-nav {
+  position: absolute;
+  bottom: -28px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(58, 44, 30, 0.9);
+  border: 1px solid rgba(201, 169, 111, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+
+  &.prev { left: 16px; }
+  &.next { right: 16px; }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.nav-arrow {
+  color: #F6EBD8;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.hole-bottom-bar {
+  padding: 10px 18px 20px;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+}
+
+.hole-tip-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(40, 28, 18, 0.75);
+  border: 1px solid rgba(201, 169, 111, 0.3);
+  padding: 4px 12px;
+  border-radius: 14px;
+}
+
+.tip-dot { font-size: 8px; color: #E8C778; }
+.tip-info { font-size: 9px; color: rgba(246, 231, 208, 0.8); }
+
+/* 📜 纸卷舒展阅读弹窗 (Unroll Paper Modal) */
+.unroll-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(30, 22, 14, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.unroll-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+}
+
+.unroll-wrap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  width: 62%;
+  height: 16px;
+  margin-left: -31%;
+  z-index: 10;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #F6EDD8, #D9C9A8);
+  box-shadow: 0 3px 6px rgba(90, 70, 45, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.6);
+  opacity: 0;
+}
+
+.unroll-wrap.go::before {
+  animation: curlmove 0.75s ease both;
+}
+
+@keyframes curlmove {
+  0%   { opacity: 1; transform: translateY(0) rotate(-2deg); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(28px) rotate(2deg); }
+}
+
+.unroll-paper {
+  transform-origin: top center;
+  transform: scaleY(0.05) scaleX(0.85);
+}
+
+.unroll-paper.go {
+  animation: paperunroll 0.75s cubic-bezier(0.25, 0.85, 0.3, 1) both;
+}
+
+@keyframes paperunroll {
+  0%   { transform: scaleY(0.05) scaleX(0.85); }
+  35%  { transform: scaleY(0.3) scaleX(0.96); }
+  70%  { transform: scaleY(0.86) scaleX(1.02); }
+  100% { transform: scaleY(1) scaleX(1); }
+}
+
+.washi-detail-sheet {
+  border-radius: 8px;
+  padding: 18px 16px 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 2px 0 rgba(255, 255, 255, 0.8) inset;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.unroll-washi-tape {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1deg);
+  width: 58px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1px 3px rgba(90, 60, 30, 0.2);
+  border-left: 1px dashed rgba(0, 0, 0, 0.15);
+  border-right: 1px dashed rgba(0, 0, 0, 0.15);
+}
+
+.unroll-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(120, 90, 50, 0.25);
+}
+
+.unroll-author-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unroll-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(120, 90, 50, 0.3);
+}
+
+.unroll-author-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4D3D2C;
+}
+
+.unroll-date-str {
+  display: block;
+  font-size: 9px;
+  color: #8C755E;
+}
+
+.unroll-close-ic {
+  font-size: 16px;
+  color: #8C755E;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.unroll-sheet-body {
+  padding: 14px 4px;
+  min-height: 80px;
+}
+
+.unroll-body-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4D3D2C;
+  margin-bottom: 8px;
+}
+
+.unroll-body-content {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4D3D2C;
+}
+
+.unroll-sheet-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(120, 90, 50, 0.25);
+}
+
+.unroll-act-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.pin-btn {
+    background: #E8D9B8;
+    color: #5A4022;
+  }
+
+  &.reply-btn {
+    background: #8A5A38;
+    color: #FFF;
+  }
+
+  &.fold-btn {
+    background: rgba(0, 0, 0, 0.08);
+    color: #6B5640;
+  }
+}
+
+.btn-ic { font-size: 11px; }
+.btn-tx { font-size: 10.5px; font-weight: 600; }
+
 </style>
