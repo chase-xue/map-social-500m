@@ -876,7 +876,7 @@ function formatRelativeTime(ts: number): string {
   .statusbar .right{ display:flex; gap:5px; align-items:center; }
   .screen{ position:relative; flex:1; overflow:hidden; }
 
-  .page{ position:absolute; inset:0; display:none; animation:pgin .28s ease both; }
+  .page{ position:absolute; inset:0; display:flex; flex-direction:column; animation:pgin .28s ease both; }
   .page.active{ display:flex; flex-direction:column; }
   @keyframes pgin{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
 
@@ -2326,15 +2326,12 @@ function formatRelativeTime(ts: number): string {
 
 
 .desk-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 50px;
   width: 100%;
-  height: 100vh;
-  background:
-    radial-gradient(1200px 600px at 20% 10%, #FDFDFB 0%, transparent 60%),
-    radial-gradient(900px 500px at 90% 90%, #EFEDE8 0%, transparent 60%),
-    #E8E7E3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -2342,13 +2339,9 @@ function formatRelativeTime(ts: number): string {
 .desk-phone {
   position: relative;
   width: 100%;
-  max-width: 420px;
   height: 100%;
-  max-height: 844px;
-  border-radius: 36px;
   background: var(--bg);
   overflow: hidden;
-  box-shadow: 0 30px 80px rgba(90, 70, 45, 0.25), 0 0 0 1px rgba(120, 100, 75, 0.12);
   display: flex;
   flex-direction: column;
 }
