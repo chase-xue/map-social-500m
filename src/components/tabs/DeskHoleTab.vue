@@ -1,322 +1,180 @@
 <template>
-  <view class="desk-hole-container" :style="themeVars">
-    <!-- 顶部状态与访客信息栏 -->
-    <view class="desk-top-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="desk-user-info" @tap="handleViewOwnerProfile" title="点击查看资料">
-        <image class="owner-avatar" :src="currentDesk.ownerAvatar" mode="aspectFill" />
-        <view class="owner-meta">
-          <view class="owner-name-row">
-            <text class="owner-name">{{ currentDesk.ownerName }}</text>
-            <text class="desk-tag">{{ isVisitingOther ? '客座桌洞' : '我的书桌' }}</text>
-          </view>
-          <text class="owner-sub">访客 {{ currentDesk.visitorCount }} · 天气 {{ weatherLabel }}</text>
-        </view>
-      </view>
+  <view class="desk-container" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="desk-phone" :class="{ 'lamp-on': isLampLit, 'windy': isWindowOpen }">
+      <!-- 1. 书桌小景全貌 (Diorama Desk View) -->
+      <view v-show="!isHolePageActive" class="page desk-page">
+        <view class="wall"><view class="tex tex-noise" /></view>
 
-      <view class="desk-actions-top">
-        <view v-if="isVisitingOther" class="action-pill-btn" @tap="exitVisiting">
-          <text>‹ 回我桌洞</text>
-        </view>
-        <view v-else class="action-pill-btn" @tap="cycleWeather" title="切换窗外天气">
-          <text class="pill-icon">{{ weatherIcon }}</text>
-          <text class="pill-text">{{ weatherLabel }}</text>
-        </view>
-        <view v-if="!isVisitingOther" class="action-pill-btn theme-btn" @tap="themeSelectorVisible = !themeSelectorVisible">
-          <text>🎨 装扮</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 主体区域：v1 重设计 · 面对窗户的写字台拟物全景 -->
-    <view class="window-zone">
-      <view class="window-frame" :class="{ 'is-open': isWindowOpen, 'is-windy': isWindowOpen }">
-        <view class="sky" :class="'weather-' + currentDesk.weather">
-          <!-- 窗外自然景致层 (沿用原有天气结构) -->
-          <view v-if="currentDesk.weather === 'sunny'" class="sun-glow" />
-          <view v-if="currentDesk.weather === 'sunny'" class="sun-flare-rays" />
-          <view v-if="currentDesk.weather === 'night'" class="night-sky">
-            <view class="crescent-moon" />
-            <view class="star star-1">✦</view>
-            <view class="star star-2">★</view>
-            <view class="star star-3">✦</view>
-          </view>
-          <view v-if="currentDesk.weather === 'rainy'" class="rain-canvas">
-            <view v-for="i in 16" :key="i" class="rain-line" :style="{ left: (i * 6.2) + '%', animationDelay: (i * 0.12) + 's' }" />
-          </view>
-          <view class="distant-landscape" />
-          <view class="soft-cloud cloud-1" />
-          <view class="soft-cloud cloud-2" />
-          <view class="bird bird-1" />
-          <view class="bird bird-2" />
-
-          <!-- 丁达尔微尘浮游微粒 (Motes) -->
-          <view class="air-motes" pointer-events="none">
-            <view class="mote m1" />
-            <view class="mote m2" />
-            <view class="mote m3" />
-            <view class="mote m4" />
-            <view class="mote m5" />
-          </view>
-
-          <!-- 窗外漂流信件 (点击拾取慢寄语) -->
-          <view class="drift-air-letter" @tap.stop="catchDriftLetter" title="窗外飘来的信">
-            <text class="drift-envelope-icon">✉️</text>
-          </view>
-
-          <!-- 窗棂十字实木格条 (轻触开窗/关窗) -->
-          <view class="window-wood-frame" @tap="toggleWindow" title="轻触窗框推窗/关窗">
-            <view class="crossbar-h" />
-            <view class="crossbar-v" />
-            <view class="window-sash-handle" @tap.stop="toggleWindow">
-              <text class="sash-tip-text">{{ isWindowOpen ? '🍃 窗已敞开' : '🪟 轻触开窗' }}</text>
+        <!-- 顶栏信息与状态 -->
+        <view class="desk-header">
+          <view class="desk-meta-box" @tap="handleViewOwnerProfile" title="点击查看资料">
+            <image class="owner-ava" :src="currentDesk.ownerAvatar" mode="aspectFill" />
+            <view class="meta-texts">
+              <view class="title-row">
+                <text class="desk-title">{{ isVisitingOther ? (currentDesk.ownerName + '的桌洞') : '我的桌洞' }}</text>
+                <text class="desk-tag">{{ isVisitingOther ? '客座' : '书房' }}</text>
+              </view>
+              <text class="sub-text">访客 {{ currentDesk.visitorCount }} · {{ weatherLabel }}</text>
             </view>
           </view>
 
-          <!-- 窗户 3D 左右活动窗扇 (带玻璃反光与实木内框) -->
-          <view class="window-sash sash-left">
-            <view class="sash-glass" />
+          <view class="desk-top-actions">
+            <view v-if="isVisitingOther" class="back-pill-btn" @tap="exitVisiting">
+              <text>‹ 回我桌洞</text>
+            </view>
+            <view class="gear-btn" @tap="gearMenuVisible = !gearMenuVisible" title="设置">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.36a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/>
+              </svg>
+            </view>
           </view>
-          <view class="window-sash sash-right">
-            <view class="sash-glass" />
-          </view>
+        </view>
 
-          <!-- 纸飞机折纸飞入动画 (写完手写纸条时的沉浸动效) -->
-          <view v-if="isFoldingFlying" class="paper-airplane-anim">
-            <view class="airplane-body">✈️</view>
-            <text class="airplane-trail">正在折起飞向窗台...</text>
-          </view>
+        <!-- 窗帘：轻触换款式 -->
+        <view class="curtains" :data-style="curtainStyle" title="点一下换窗帘" @tap="cycleCurtain">
+          <view class="curtain cl"><view class="tex tex-noise" /></view>
+          <view class="curtain cr"><view class="tex tex-noise" /></view>
+        </view>
 
-          <!-- 便签墙：v1 slot 错落散贴 (保留撕取动效与手写真迹) -->
-          <view class="window-notes-stream">
+        <!-- 窗户与风景 -->
+        <view
+          class="window-frame"
+          :class="{ 'open': isWindowOpen }"
+          :data-w="currentDesk.weather"
+          title="点一下推窗 / 关窗"
+          @tap="toggleWindow"
+        >
+          <view class="scenery">
+            <view class="svgsun" />
+            <view class="cloud c1" />
+            <view class="cloud c2" />
+            <view class="stars" />
+            <view class="rainlayer" />
+            <view class="sc-hill h1" />
+            <view class="sc-hill h2" />
+            <view class="sc-tree t1" />
+            <view class="sc-tree t2" />
+            <view class="sc-tree t3" />
+            <view class="sc-birds"><view /><view /><view /></view>
+            <view class="drift-letter" title="窗外飘来一封信" @tap.stop="catchDriftLetter">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#8B6F4E" stroke-width="1.6"><rect x="3" y="5.5" width="18" height="13" rx="2" fill="#F6EEDB"/><path d="m3 7 9 6 9-6"/></svg>
+            </view>
+          </view>
+          <view class="sash left"><view class="pane" /></view>
+          <view class="sash right"><view class="pane" /></view>
+        </view>
+
+        <view class="windowsill" />
+        <view class="motes"><view /><view /><view /><view /><view /></view>
+
+        <!-- 春日多肉 (可浇水) -->
+        <view class="succulent" :class="{ 'watering': isWatering }" title="点一下浇水" @tap="waterSucculent">
+          <view class="foliage">
+            <view class="blf l" /><view class="blf r" /><view class="blf c" />
+            <view class="lf lf1" /><view class="lf lf2" /><view class="lf lf3" />
+            <view class="lf lf4" /><view class="lf lf5" /><view class="lf lf6" />
+          </view>
+          <view class="plant-pot" />
+          <view class="water-can">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7B8B94" stroke-width="1.5"><path d="M7 9h8v10H7z" fill="#E8EEF2"/><path d="M15 11l5-3.5v8L15 13"/><path d="M9.5 9V5.5h3.5V9"/><path d="M7 12h8"/></svg>
+          </view>
+          <view class="drop d1" />
+          <view class="drop d2" />
+          <view class="drop d3" />
+        </view>
+
+        <!-- 墙上木质便签板 (留言板) -->
+        <view class="board" title="桌洞留言板" @tap="boardModalVisible = true">
+          <view class="bd">
             <view
-              v-for="(note, idx) in visibleNotes"
-              :key="note.id"
-              class="washi-sticky-note"
-              :class="['paper-' + note.color, { 'my-note': note.isMine, 'note-peeling': peelingNoteId === note.id }]"
-              :style="noteSlots[idx]"
-              @tap.stop="peelAndInspectNote(note)"
+              v-for="(n, i) in previewBoardNotes"
+              :key="n.id"
+              class="mini"
+              :class="'m' + (i + 1)"
             >
-              <view class="washi-tape-strip" />
-              <view class="note-author-row">
-                <text class="note-author-txt">{{ note.authorName }}</text>
-                <text class="note-heart">❤️ {{ note.likes }}</text>
-              </view>
-              <image
-                v-if="isHandwritingImg(note.content)"
-                class="handwritten-note-img"
-                :src="note.content"
-                mode="aspectFit"
-              />
-              <text v-else class="note-body-txt hand">{{ note.content }}</text>
-            </view>
-
-            <!-- 贴便签入口：和纸 "+" slot (D1，唯一发贴入口 HandwritingPad) -->
-            <view class="washi-sticky-note note-plus" :style="noteSlots[visibleNotes.length]" @tap.stop="openHandwritingPad">
-              <text class="plus-ic">＋</text>
-              <text class="plus-tx hand">贴一张</text>
-            </view>
-
-            <!-- 便签换批 chip (D2) -->
-            <view v-if="remainingNotes > 0" class="batch-chip" @tap.stop="cycleNoteBatch">
-              <text class="batch-tx">+{{ remainingNotes }} 换一批</text>
-            </view>
-          </view>
-
-          <!-- 飘动的两翼轻盈半透明白纱窗帘 -->
-          <view class="sheer-curtain curtain-left" />
-          <view class="sheer-curtain curtain-right" />
-
-          <!-- 窗台木搁板 (拟物治愈交互摆件) -->
-          <view class="window-shelf">
-            <!-- 🪴 春日多肉 (可互动浇水) -->
-            <view class="shelf-item shelf-succulent" :class="{ 'is-watering': isWatering }" @tap.stop="waterSucculent" title="点击给多肉浇水">
-              <view class="succulent-wrap">
-                <text class="item-emoji succulent-plant">🪴</text>
-                <view class="watering-can-anim">
-                  <text class="watering-can-icon">🫖</text>
-                  <view class="water-drops">
-                    <view class="drop d1" />
-                    <view class="drop d2" />
-                    <view class="drop d3" />
-                  </view>
-                </view>
-              </view>
-              <text class="shelf-label">春日多肉{{ isWatering ? ' · 润泽中' : '' }}</text>
-            </view>
-
-            <!-- 📚 未读完的书 -->
-            <view class="shelf-item">
-              <view class="books"><view class="bk b1" /><view class="bk b2" /><view class="bk b3" /></view>
-              <text class="shelf-label">未读完的书</text>
-            </view>
-
-            <!-- ☕ 热手冲咖啡 (袅袅热气) -->
-            <view class="shelf-item">
-              <view class="coffee-steaming">
-                <view class="steam steam-1" />
-                <view class="steam steam-2" />
-                <text class="coffee-cup">☕</text>
-              </view>
-              <text class="shelf-label">热手冲</text>
-            </view>
-
-            <!-- 🕯️ 香薰烛 (摇曳真实火苗与柔光，可点击开关) -->
-            <view class="shelf-item shelf-candle" @tap.stop="toggleCandle" title="点击开关香薰烛">
-              <view class="candle-box">
-                <view v-if="isCandleLit" class="candle-flame">
-                  <view class="flame-core" />
-                  <view class="flame-glow" />
-                </view>
-                <text class="item-emoji candle-base">🕯️</text>
-              </view>
-              <text class="shelf-label">香薰烛</text>
+              {{ n.content }}
             </view>
           </view>
         </view>
-      </view>
-    </view>
 
-    <!-- 桌面：v1 第一人称摆置 (去卡片框) -->
-    <view class="desk-zone">
-      <view class="desk-top">
-        <view v-if="currentDesk.weather === 'sunny'" class="desk-sunlight-beam" pointer-events="none" />
-        <!-- 台灯暖光漫反射层 (由台灯开关控制) -->
-        <view v-if="isLampLit" class="lamp-ambient-glow" pointer-events="none" />
+        <!-- 拟物写字课桌主体 -->
+        <view class="school-desk">
+          <view class="lamp-glow" />
+          <view class="osh" style="left:124px;bottom:388px;width:74px" />
+          <view class="osh" style="left:44px;bottom:374px;width:68px" />
+          <view class="osh" style="right:166px;bottom:348px;width:38px" />
+          <view class="osh" style="right:52px;bottom:328px;width:54px" />
 
-        <view class="linen-mat">
-          <!-- 📖 生活回忆录日记本 (3D 翻开动效) -->
-          <view class="obj obj-journal">
-            <view
-              class="vintage-journal-book"
-              :class="{ 'is-opening': isJournalOpening }"
-              @tap="openJournalWithAnim"
-            >
-              <view class="journal-spine-leather" />
-              <view class="journal-stitch-line" />
-              <view class="journal-ribbon" />
-              <view class="deckled-pages-edge" />
-              <view class="journal-cover-title">
-                <text class="journal-txt">生活回忆录</text>
-                <text class="journal-meta">{{ currentDesk.diaryEntries.length }} 篇便签足迹 ›</text>
-              </view>
-            </view>
-            <text class="obj-cap">回忆录</text>
+          <!-- 折纸小飞机 -->
+          <view class="sd-plane" />
+
+          <!-- 复古黄铜台灯 (点一下开关灯) -->
+          <view class="desk-lamp" :class="{ 'lit': isLampLit }" title="点一下开关灯" @tap="toggleLamp">
+            <view class="shade" />
+            <view class="stem" />
+            <view class="base" />
           </view>
 
-          <!-- 💡 复古黄铜台灯 (可点击开关灯，映射全桌暖光) -->
-          <view class="obj obj-lamp" @tap.stop="toggleLamp" title="点击开关台灯">
-            <view class="brass-lamp" :class="{ 'is-lit': isLampLit }">
-              <view class="lamp-shade">
-                <view class="lamp-bulb-glow" />
-              </view>
-              <view class="lamp-stem" />
-              <view class="lamp-base" />
+          <!-- 桌面日记手账本 (写今天的日记) -->
+          <view class="notebook" title="写今天的日记" @tap="openJournalWithAnim" />
+
+          <!-- 桌面小画架 (天气与心情) -->
+          <view class="wboard" title="切换天气" @tap="cycleWeather">
+            <view class="wb-face">
+              <view class="wb-icon">{{ weatherIcon }}</view>
+              <view class="wb-text">{{ weatherLabel }}</view>
             </view>
-            <text class="obj-cap">黄铜台灯</text>
+            <view class="wb-leg l" />
+            <view class="wb-leg r" />
           </view>
 
-          <!-- 桌面小物：墨水瓶 / 和纸胶带 / 铅笔 (纯装饰) -->
-          <view class="obj obj-middles">
-            <view class="middles">
-              <view class="ink" />
-              <view class="tapes"><view class="tape t1" /><view class="tape t2" /></view>
-              <view class="pencil" />
-            </view>
-            <text class="obj-cap">墨水瓶 · 和纸胶带</text>
+          <view class="pen" />
+          <view class="cup">
+            <view class="cup-css" />
           </view>
 
-          <!-- ✍️ 真实手写笔筒 (点击立即弹出真迹画板) -->
-          <view class="obj obj-caddy" @tap="openHandwritingPad">
-            <view class="caddy">
-              <view class="pens"><view class="pen p1" /><view class="pen p2" /><view class="pen p3" /></view>
-              <view class="pot"><text class="pot-lb">✍️ 手写</text><text class="pot-lb2">真迹笔画涂鸦</text></view>
-            </view>
-            <text class="obj-cap">笔筒</text>
+          <!-- 足迹册 -->
+          <view class="album" title="足迹册" @tap="albumModalVisible = true">
+            <text>足迹册</text>
+          </view>
+
+          <!-- 课桌面板与前脸几何 -->
+          <view class="sd-top" />
+          <view class="sd-front" />
+          <view class="sd-leg l" />
+          <view class="sd-leg r" />
+
+          <!-- 🕳️ 立体桌洞暗格入口 (点击穿透潜入) -->
+          <view class="desk-hole" title="点击潜入桌洞" @tap="openDrawer">
+            <view class="hole-book" />
+            <view class="hole-slip hs1" />
+            <view class="hole-slip hs2" />
+            <view class="hb-side" />
           </view>
         </view>
       </view>
 
-      <!-- 桌前脸：抽屉内嵌 (v1 木纹连续 + 黄铜拉手 + 火漆徽章) -->
-      <view class="desk-front">
-        <view class="drawer-face-panel drawer-closed-face" @tap="openDrawer">
-          <view class="brass-handle-box">
-            <view class="brass-curved-pull" />
-            <view class="brass-label-plate">
-              <text class="drawer-plate-text">📥 桌洞抽屉</text>
-              <text class="drawer-count-badge">{{ currentDesk.drawerNotes.length }} 封</text>
-            </view>
-          </view>
-          <view class="drawer-right-box">
-            <view v-if="isVisitingOther" class="secret-pill" @tap.stop="openSendPaperToUser">
-              <text class="secret-tx">💌 给TA塞纸条</text>
-            </view>
-            <view class="drawer-action-pill open-pill">
-              <text class="action-pill-icon">🕳️</text>
-              <text class="action-pill-text">进入桌洞 ›</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
+      <!-- 2. 镜头潜入放大转场 -->
+      <view v-if="isHoleZooming" class="hole-zoom play" />
 
-    <!-- 🕳️ 桌洞镜头潜入穿透转场动效 (Hole Zoom Animation) -->
-    <view v-if="isHoleZooming" class="hole-zoom play" />
+      <!-- 3. 「桌洞里」次级拟物空间 (Page Hole) -->
+      <view v-if="isHolePageActive" class="page hole-page">
+        <view class="tex tex-noise" />
+        <button class="hole-back" @tap="closeHolePage">‹ 回到桌前</button>
+        <view class="hole-title">桌 洞 里</view>
+        <view class="bshadow" />
 
-    <!-- 🌌 深度沉浸式「桌洞里」次级页面 (Desk Hole Interior Page) -->
-    <view v-if="isHolePageActive" class="hole-page" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <!-- 左右木纹侧边立柱质感阴影 -->
-      <view class="hole-side-pillar pillar-left" />
-      <view class="hole-side-pillar pillar-right" />
-
-      <!-- 顶栏：返回桌前与标题 -->
-      <view class="hole-top-bar">
-        <view class="hole-back-btn" @tap="closeHolePage">
-          <text class="back-ic">‹</text>
-          <text class="back-tx">回到桌前</text>
-        </view>
-        <view class="hole-title-wrap">
-          <text class="hole-title">桌 洞 里</text>
-          <text class="hole-sub">私密心情铁盒与收到的纸条手账</text>
-        </view>
-        <view class="hole-empty-right" />
-      </view>
-
-      <!-- 桌洞深处悬浮丁达尔微尘 -->
-      <view class="hole-air-motes" pointer-events="none">
-        <view class="mote m1" />
-        <view class="mote m2" />
-        <view class="mote m3" />
-        <view class="mote m4" />
-      </view>
-
-      <!-- 场景底座阴影 -->
-      <view class="hole-stage-shadow" />
-
-      <!-- 主互动区：左侧心情铁盒 + 右侧收到的纸条翻页册 -->
-      <view class="hole-diorama-stage">
-        <!-- 🗝️ 物件一：拟物心情铁盒 (BigBox) -->
+        <!-- 拟物心情铁盒 (BigBox) -->
         <view class="bigbox" :class="{ 'open': isBoxOpen, 'unlocked': isBoxUnlocked }" @tap="toggleBigBox">
-          <!-- 金属铰链 -->
           <view class="bb-hinge" />
-
-          <!-- 3D 翻转盒盖 -->
           <view class="bb-lid">
-            <!-- 盒盖正面 (外表金属光泽 + 复古凹凸徽标 + 黄铜锁扣) -->
             <view class="lf">
-              <view class="bb-lock-wrap" @tap.stop="toggleBigBox">
-                <view class="bb-lock" />
-              </view>
-              <view class="bb-lid-badge">
-                <text class="badge-title">心情盒子</text>
-                <text class="badge-sub">MOOD & MEMORIES · EST. 2026</text>
-              </view>
-              <view class="lid-click-tip">
-                <text class="tip-txt">{{ isBoxUnlocked ? (isBoxOpen ? '轻触合上' : '轻触掀盖') : '轻触解锁' }}</text>
-              </view>
+              <view class="tex tex-metal" />
+              <view class="bb-lock" />
             </view>
-
-            <!-- 盒盖背面 (翻开后露出 HUD 时间轴刻度) -->
             <view class="li" @tap.stop>
+              <view class="tex tex-metal" />
               <view class="hud-tl">
                 <text class="hm">11月</text>
                 <view
@@ -326,396 +184,196 @@
                   :class="{ 'on': selectedHoleDateIdx === dIdx }"
                   @tap="selectHoleDate(dIdx)"
                 >
-                  <text class="hf-icon">✦</text>
-                  <text class="hd-text">{{ dateStr === '全部' ? '全部' : (dateStr.split('月')[1] || dateStr) }}</text>
+                  <view class="hf">✦</view>
+                  <view class="hd">{{ dateStr === '全部' ? '全部' : (dateStr.split('月')[1] || dateStr) }}</view>
                 </view>
               </view>
             </view>
           </view>
 
-          <!-- 盒底与内衬深处 (盛放散落的纸卷) -->
           <view class="bb-inside" @tap.stop>
-            <view class="rolls-container">
+            <view class="rolls">
               <view
                 v-for="roll in renderedHoleRolls"
                 :key="roll.id"
-                class="roll-item"
+                class="roll"
                 :class="{ 'dim': roll.isDim }"
                 :style="roll.style"
                 @tap="openHoleRoll(roll)"
               >
-                <!-- 3D 卷纸横截面质感 -->
-                <view class="rc-roll" :class="'roll-paper-' + (roll.color || 'yellow')">
-                  <view class="spiral-core" />
-                </view>
-                <view class="rtag-chip">
-                  <text class="rtag-text">{{ roll.cleanDate }}</text>
-                </view>
+                <view class="rc" :style="{ '--mc': getPaperMoodColor(roll.color) }" />
+                <view class="rtag">{{ roll.cleanDate }}</view>
               </view>
             </view>
-
-            <view v-if="renderedHoleRolls.filter(r => !r.isDim).length === 0" class="hole-empty-tip">
-              <text class="empty-txt">那天没写字，静待沉淀～</text>
-            </view>
+            <view v-if="renderedHoleRolls.filter(r => !r.isDim).length === 0" class="hole-empty">那天没写字</view>
           </view>
 
-          <!-- 盒身正面与立体阴影 -->
-          <view class="bb-body">
-            <view class="bb-body-label">
-              <text class="body-lbl-txt">PRIVATE NOTES · DESK HOLE</text>
-            </view>
-          </view>
+          <view class="bb-body"><view class="tex tex-metal" /></view>
           <view class="bb-depth" />
         </view>
 
-        <!-- 📖 物件二：收到的纸条翻页手账本 (Book) -->
-        <view class="hole-book" :class="{ 'open': isBookOpen, 'flipping': isBookFlipping }">
-          <view class="bk-backboard" />
+        <!-- 悬浮微光微尘 -->
+        <view class="motes" style="left:64px;top:340px;width:270px;height:200px">
+          <view /><view /><view /><view />
+        </view>
 
-          <!-- 内页纸张 (展示当前日期的信笺折页) -->
+        <!-- 「收到的纸条」手账翻页册 (Book) -->
+        <view class="book" :class="{ 'open': isBookOpen, 'flipping': isBookFlipping }">
+          <view class="bk-backboard" />
           <view class="bk-sheet" @tap.stop>
             <view class="bk-pagehead">
-              <text class="pg-date">{{ currentBookPage.date }}</text>
-              <text class="pg-num">{{ (bookDateIdx + 1) + ' / ' + bookDateGroups.length }}</text>
+              <text class="d">{{ currentBookPage.date }}</text>
+              <text class="pg">{{ (bookDateIdx + 1) + '/' + bookDateGroups.length }}</text>
             </view>
-
-            <view class="bk-hearts-list">
+            <view class="bk-hearts">
               <view
                 v-for="note in currentBookPage.notes"
                 :key="note.id"
-                class="bk-heart-slip"
+                class="bk-heart"
+                style="--mc:#F7D4E4"
                 @tap="openBookNoteSlip(note)"
               >
-                <view class="crease-line" />
-                <view v-if="note.isSealed && !note.read" class="bs-seal-badge">印</view>
-                <text class="bh-time">{{ note.receivedTime }}</text>
-                <text class="bh-author">{{ note.senderName }}</text>
-              </view>
-              <view v-if="currentBookPage.notes.length === 0" class="bk-empty-page">
-                <text class="bk-empty-txt">今日暂无塞入纸条</text>
+                <view class="crease" />
+                <view v-if="note.isSealed && !note.read" class="bs-seal" />
+                <text class="bh-label">{{ note.receivedTime }}</text>
               </view>
             </view>
           </view>
-
-          <!-- 3D 纸张翻折过渡层 -->
           <view class="bk-turn" />
-
-          <!-- 手账封面 (点击翻开) -->
           <view class="bk-cover" @tap="toggleBook">
-            <view class="bcf-front">
-              <text class="bcf-title">收到的纸条</text>
-              <text class="bcf-sub">FRIENDS LETTERS</text>
-              <text class="bcf-hint">{{ isBookOpen ? '点击合上' : '点击翻开 ›' }}</text>
-            </view>
-            <view class="bcb-back" />
+            <view class="bcf"><text>收到的纸条</text></view>
+            <view class="bcb" />
           </view>
-
-          <!-- 翻页控制箭头 -->
-          <view v-if="isBookOpen" class="bk-nav prev" @tap.stop="flipBook(-1)">
-            <text class="nav-arrow">‹</text>
-          </view>
-          <view v-if="isBookOpen" class="bk-nav next" @tap.stop="flipBook(1)">
-            <text class="nav-arrow">›</text>
-          </view>
+          <button class="bk-nav prev" @tap.stop="flipBook(-1)">‹</button>
+          <button class="bk-nav next" @tap.stop="flipBook(1)">›</button>
         </view>
       </view>
 
-      <!-- 底部操作与温馨提示 -->
-      <view class="hole-bottom-bar">
-        <view class="hole-tip-pill">
-          <text class="tip-dot">✦</text>
-          <text class="tip-info">轻触铁盒解开锁扣，点击纸卷可舒展阅览随笔</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 📜 原型精髓：纸卷舒展检视弹窗 (Paper Unroll Inspection Modal) -->
-    <view v-if="unrollModalVisible && activeUnrollData" class="unroll-modal-overlay" @tap.self="closeUnrollModal">
-      <view class="unroll-wrap" :class="{ 'go': isUnrolling }">
-        <view
-          class="unroll-paper washi-detail-sheet"
-          :class="['paper-' + activeUnrollData.color, { 'go': isUnrolling }]"
-        >
-          <!-- 和纸胶带 -->
-          <view class="unroll-washi-tape" />
-
-          <view class="unroll-sheet-header">
-            <view class="unroll-author-row">
-              <image v-if="activeUnrollData.avatar" class="unroll-avatar" :src="activeUnrollData.avatar" mode="aspectFill" />
-              <view class="unroll-meta">
-                <text class="unroll-author-name">{{ activeUnrollData.author }}</text>
-                <text class="unroll-date-str">{{ activeUnrollData.date }}</text>
+      <!-- 4. 纸卷舒展阅读弹窗 (Unroll Modal) -->
+      <view v-if="unrollModalVisible && activeUnrollData" class="modal show" id="rollModal" @tap.self="closeUnrollModal">
+        <view class="backdrop" @tap="closeUnrollModal" />
+        <view class="card" id="rollCard">
+          <view class="unroll-wrap go">
+            <view class="paper detail-paper unroll-paper go" :style="{ background: getPaperMoodColor(activeUnrollData.color) }">
+              <view class="dhead">
+                <image v-if="activeUnrollData.avatar" class="dhead-ava" :src="activeUnrollData.avatar" mode="aspectFill" />
+                <text class="dhead-author">{{ activeUnrollData.author }}</text>
+              </view>
+              <view class="dtxt">{{ activeUnrollData.content }}</view>
+              <view class="dmeta">
+                <text>{{ activeUnrollData.date }}</text>
+                <text>{{ activeUnrollData.type === 'diary' ? ' · 心情随笔' : ' · 邻里来信' }}</text>
               </view>
             </view>
-            <text class="unroll-close-ic" @tap="closeUnrollModal">✕</text>
           </view>
-
-          <view class="unroll-sheet-body">
-            <text v-if="activeUnrollData.title" class="unroll-body-title">{{ activeUnrollData.title }}</text>
-            <text class="unroll-body-content">{{ activeUnrollData.content }}</text>
-          </view>
-
-          <view class="unroll-sheet-footer">
-            <view v-if="activeUnrollData.type === 'diary'" class="unroll-act-btn pin-btn" @tap="pinDiaryToWindow">
-              <text class="btn-ic">📌</text>
-              <text class="btn-tx">贴到窗台</text>
-            </view>
-            <view v-if="activeUnrollData.type === 'letter'" class="unroll-act-btn reply-btn" @tap="replyToUnrollSender">
-              <text class="btn-ic">💬</text>
-              <text class="btn-tx">提笔回信</text>
-            </view>
-            <view class="unroll-act-btn fold-btn" @tap="closeUnrollModal">
-              <text class="btn-ic">📜</text>
-              <text class="btn-tx">卷起收回</text>
-            </view>
+          <view class="act-grid" style="margin-top:14px">
+            <button v-if="activeUnrollData.type === 'diary'" class="act" @tap="pinDiaryToWindow">贴到窗台</button>
+            <button v-if="activeUnrollData.type === 'letter'" class="act" @tap="replyToUnrollSender">提笔回信</button>
+            <button class="act danger" @tap="closeUnrollModal">收回去</button>
           </view>
         </view>
       </view>
-    </view>
 
-    <!-- 抽屉拉开：overlay 下滑 (D3 保一屏)，开合逻辑沿用 isDrawerPulled -->
-    <view v-if="isDrawerPulled" class="drawer-open-overlay" @tap="closeDrawer">
-      <view class="drawer-inner-compartment drawer-open-panel" @tap.stop>
-        <view class="compartment-header">
-          <view class="comp-title-box">
-            <text class="comp-icon">🕯️</text>
-            <text class="comp-title">桌洞暗格 · 私密小纸条信物</text>
-            <text class="comp-badge">{{ currentDesk.drawerNotes.length }} 封</text>
-          </view>
-          <view class="comp-close-pill" @tap.stop="closeDrawer">
-            <text class="close-pill-text">✕ 推回收起</text>
-          </view>
-        </view>
-
-        <scroll-view scroll-y class="drawer-letters-scroll">
-          <view v-if="currentDesk.drawerNotes.length === 0" class="drawer-empty-state">
-            <text class="empty-icon">📮</text>
-            <text class="empty-txt">抽屉内铺着柔软毛毡，等待朋友塞进第一封手写纸条～</text>
-          </view>
-
-          <view
-            v-for="dn in currentDesk.drawerNotes"
-            :key="dn.id"
-            class="drawer-letter-envelope"
-            :class="{ 'wax-sealed': dn.isSealed }"
-            @tap="openDrawerNoteDetail(dn)"
-          >
-            <view class="envelope-stamp-box">
-              <image class="letter-avatar" :src="dn.senderAvatar" mode="aspectFill" />
-              <view v-if="dn.isSealed" class="real-wax-seal">印</view>
-            </view>
-            <view class="envelope-body">
-              <view class="env-top">
-                <text class="env-sender">{{ dn.senderName }}</text>
-                <text class="env-time">{{ dn.receivedTime }}</text>
-              </view>
-              <text class="env-preview">{{ dn.preview }}</text>
-            </view>
-            <view class="env-open-arrow">›</view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>    <!-- 真实手写笔迹画板组件 (Handwriting Canvas) -->
-    <HandwritingPad
-      v-if="handwritingPadVisible"
-      actionConfirmText="💌 折起贴上窗台"
-      defaultPattern="yellow"
-      @confirm="onHandwritingConfirmed"
-      @close="handwritingPadVisible = false"
-    />
-
-    <!-- 装扮皮肤切换浮窗 -->
-    <view v-if="themeSelectorVisible" class="theme-selector-pop">
-      <view class="theme-pop-header">
-        <text class="pop-title">切换桌洞书桌风格</text>
-        <text class="pop-close" @tap="themeSelectorVisible = false">✕</text>
-      </view>
-      <view class="theme-options">
-        <view
-          v-for="t in themeList"
-          :key="t.key"
-          class="theme-chip"
-          :class="{ 'chip-active': currentDesk.theme === t.key }"
-          @tap="selectTheme(t.key)"
-        >
-          <text class="theme-chip-icon">{{ t.icon }}</text>
-          <text class="theme-chip-label">{{ t.name }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 📖 全窗口手账阅读器：生活回忆录 (Full Window Diary Memory Book) -->
-    <view v-if="diaryModalVisible" class="diary-full-page">
-      <!-- 顶部手账书脊导航栏 -->
-      <view class="diary-full-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
-        <view class="diary-nav-back" @tap="diaryModalVisible = false">
-          <text class="back-arrow">‹</text>
-          <text class="back-text">返回桌洞</text>
-        </view>
-        <view class="diary-nav-title-box">
-          <text class="diary-nav-title">📖 生活回忆录</text>
-          <text class="diary-nav-sub">手账足迹 · {{ currentDesk.diaryEntries.length }} 篇</text>
-        </view>
-        <view class="diary-nav-close" @tap="diaryModalVisible = false">
-          <text class="close-icon">✕</text>
-        </view>
-      </view>
-
-      <!-- 全窗口手账滚卷内容区 -->
-      <scroll-view scroll-y class="diary-full-scroll">
-        <view class="diary-scroll-content">
-          <!-- 顶部序言和纸卡片 -->
-          <view class="diary-intro-card">
-            <view class="washi-tape-strip" />
-            <view class="intro-quote">
-              <text class="quote-mark">“</text>
-              <text class="quote-text">生活慢下来，在500米圈里收集温暖随笔与手写信物。每一张翻过的纸条，都是真实的邻里慢时光。</text>
-              <text class="quote-mark right-mark">”</text>
-            </view>
-            <view class="intro-author-row">
-              <image class="intro-avatar" :src="currentDesk.ownerAvatar" mode="aspectFill" />
-              <text class="intro-author-name">来自 {{ currentDesk.ownerName }} 的随身手账</text>
-            </view>
-          </view>
-
-          <!-- 便签足迹列表 -->
-          <view class="diary-entries-flow">
+      <!-- 5. 墙上留言板弹窗 (Board Modal) -->
+      <view v-if="boardModalVisible" class="modal show" @tap.self="boardModalVisible = false">
+        <view class="backdrop" @tap="boardModalVisible = false" />
+        <view class="card">
+          <button class="mclose" @tap="boardModalVisible = false">✕</button>
+          <view class="modal-title"><h3>桌洞留言板</h3></view>
+          <view class="note-list">
             <view
-              v-for="d in currentDesk.diaryEntries"
-              :key="d.id"
-              class="diary-entry-fullcard"
-              :class="'paper-' + d.color"
+              v-for="note in currentDesk.windowNotes"
+              :key="note.id"
+              class="paper"
+              :style="{ background: getPaperMoodColor(note.color) }"
+              @tap="openNoteFromBoard(note)"
             >
-              <!-- 撕边胶带拟物点缀 -->
-              <view class="entry-tape-accent" />
-
-              <view class="entry-meta-row">
-                <text class="entry-date">{{ d.dateStr }}</text>
-                <text class="entry-loc">📍 {{ d.locationName }}</text>
-              </view>
-
-              <text class="entry-title">{{ d.title }}</text>
-              <text class="entry-body">{{ d.content }}</text>
-
-              <view class="entry-footer-row">
-                <text class="entry-tag"># {{ d.tag }}</text>
-                <view class="entry-stamp">
-                  <text class="stamp-text">慢足迹</text>
-                </view>
+              <view class="dtxt">{{ note.content }}</view>
+              <view class="dmeta">
+                <text>{{ note.authorName }} · {{ formatRelativeTime(note.createdAt) }}</text>
+                <text>❤️ {{ note.likes }}</text>
               </view>
             </view>
           </view>
-
-          <!-- 底部装订落款与留白 -->
-          <view class="diary-bottom-sign">
-            <view class="sign-divider">
-              <view class="line" />
-              <text class="sign-star">✦</text>
-              <view class="line" />
-            </view>
-            <text class="sign-text">小纸条 · 500米生活手账回忆录</text>
-            <text class="sign-sub">继续在窗台与桌洞收集慢生活记忆吧</text>
+          <view class="act-grid" style="margin-top:14px; grid-template-columns: 1fr;">
+            <button class="act" @tap="openHandwritingPad">✍️ 写一张贴上板子</button>
           </view>
         </view>
-      </scroll-view>
-    </view>
+      </view>
 
-    <!-- 🔍 窗台便签放大展开检视弹窗 (支持查看手写真迹、撕下带走、点赞) -->
-    <view v-if="inspectModalVisible && inspectingNote" class="note-inspect-overlay" @tap.self="closeInspectModal">
-      <view class="unroll-wrap go">
-        <view class="note-inspect-modal unroll-paper go" :class="['paper-' + inspectingNote.color]">
-          <!-- 和纸胶带 -->
-          <view class="inspect-washi-tape" />
-
-          <!-- 便签头部：作者信息与发布时间 -->
-          <view class="inspect-header">
-            <view class="inspect-author-info clickable" @tap="handleViewNoteAuthorProfile" title="点击查看作者资料">
-              <image class="inspect-avatar" :src="inspectingNote.authorAvatar" mode="aspectFill" />
-              <view class="inspect-meta">
-                <text class="inspect-author-name">{{ inspectingNote.authorName }}</text>
-                <text class="inspect-time">{{ formatRelativeTime(inspectingNote.createdAt) }} 贴在窗台上</text>
+      <!-- 6. 足迹册弹窗 (Album Modal) -->
+      <view v-if="albumModalVisible" class="modal show" @tap.self="albumModalVisible = false">
+        <view class="backdrop" @tap="albumModalVisible = false" />
+        <view class="card">
+          <button class="mclose" @tap="albumModalVisible = false">✕</button>
+          <view class="modal-title"><h3>足迹 · 时间线</h3></view>
+          <view class="tl">
+            <view class="tl-item">
+              <view class="node">📍</view>
+              <view class="date">11 月 02 日 · 15:40</view>
+              <view class="paper tl-slip" style="background:#DEE9DB">
+                <p>中央公园 · 长椅 No.7<br>帮传了 3 张纸条，收到 1 张谢谢帖</p>
+                <view class="foot"><text class="when">停留 2 小时</text><text class="share-flag">集到 1 枚邮票</text></view>
               </view>
             </view>
-            <text class="inspect-close-btn" @tap="closeInspectModal">✕</text>
-          </view>
-
-          <!-- 便签主体：手写真迹大图 或 规整纸张手写文本 -->
-          <view class="inspect-body">
-            <!-- 如果是真迹手写图片 -->
-            <view v-if="isHandwritingImg(inspectingNote.content)" class="inspect-handwriting-wrapper">
-              <image
-                class="inspect-full-hw-img"
-                :src="inspectingNote.content"
-                mode="widthFix"
-              />
+            <view class="tl-item">
+              <view class="node">☕</view>
+              <view class="date">10 月 18 日 · 11:02</view>
+              <view class="paper tl-slip" style="background:#FBE7C4">
+                <p>阳光咖啡馆 · 窗边位<br>捡到一张浅烘手冲配方，回贴了一张祈愿条</p>
+                <view class="foot"><text class="when">停留 1 小时</text><text class="share-flag">集到 1 枚邮票</text></view>
+              </view>
             </view>
-            <!-- 如果是纯文字便签 -->
-            <view v-else class="inspect-text-wrapper">
-              <text class="inspect-full-text">{{ inspectingNote.content }}</text>
-            </view>
-          </view>
-
-          <!-- 便签底部操作栏：点赞 ❤️、撕下带走/删除 🗑️、贴回窗台 📌 -->
-          <view class="inspect-footer">
-            <view class="inspect-action-btn like-btn" @tap="likeInspectingNote">
-              <text class="action-icon">❤️</text>
-              <text class="action-label">{{ inspectingNote.likes }} 喜欢</text>
-            </view>
-
-            <view v-if="inspectingNote.isMine" class="inspect-action-btn delete-btn" @tap="removeInspectingNote">
-              <text class="action-icon">🗑️</text>
-              <text class="action-label">撕下带走</text>
-            </view>
-
-            <view class="inspect-action-btn close-btn" @tap="closeInspectModal">
-              <text class="action-icon">📌</text>
-              <text class="action-label">贴回窗台</text>
+            <view class="tl-item">
+              <view class="node">🚲</view>
+              <view class="date">09 月 30 日 · 16:20</view>
+              <view class="paper tl-slip" style="background:#DDE4F0">
+                <p>镜湖绿道 · 驿站长椅<br>晚风很舒服，微风把纸条吹向了远方</p>
+                <view class="foot"><text class="when">停留 40 分钟</text><text class="share-flag">集到 1 枚邮票</text></view>
+              </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
 
-    <!-- 💌 桌洞私密信纸阅读与快捷回信弹窗 -->
-    <view v-if="drawerSecretModalVisible && activeSecretNote" class="secret-letter-overlay" @tap.self="drawerSecretModalVisible = false">
-      <view class="unroll-wrap go">
-        <view class="secret-letter-card unroll-paper go">
-          <!-- 信封顶部火漆封口 / 邮戳 -->
-          <view class="letter-top-row">
-            <view class="letter-sender-info clickable" @tap="handleViewSecretSenderProfile" title="点击查看资料">
-              <image class="letter-modal-avatar" :src="activeSecretNote.senderAvatar" mode="aspectFill" />
-              <view class="letter-sender-meta">
-                <text class="letter-sender-name">{{ activeSecretNote.senderName }}</text>
-                <text class="letter-send-time">悄悄塞入桌洞 · {{ activeSecretNote.receivedTime }}</text>
-              </view>
-            </view>
-            <view v-if="activeSecretNote.isSealed" class="letter-seal-tag">
-              <text class="seal-glyph">🔏</text>
-              <text class="seal-text">火漆印密封</text>
-            </view>
-            <text class="letter-close-btn" @tap="drawerSecretModalVisible = false">✕</text>
+      <!-- 7. 设置菜单浮层 (Gear Menu) -->
+      <view v-if="gearMenuVisible" class="gear-pop-overlay" @tap.self="gearMenuVisible = false">
+        <view class="gear-card">
+          <view class="gear-head">
+            <text class="gear-title">书桌小景设置</text>
+            <text class="gear-close" @tap="gearMenuVisible = false">✕</text>
           </view>
-
-          <!-- 信笺纸正文 -->
-          <view class="letter-sheet-body">
-            <text class="letter-text">{{ activeSecretNote.fullContent }}</text>
+          <view class="gear-row" @tap="cycleWeather">
+            <text class="row-label">切换天气氛围</text>
+            <text class="row-val">{{ weatherIcon }} {{ weatherLabel }} ›</text>
           </view>
-
-          <!-- 底部快捷动作：提笔给TA回信 (一键跳转小纸条慢聊) + 收回抽屉 -->
-          <view class="letter-actions-row">
-            <button class="letter-reply-btn" @tap="replyToSecretSender(activeSecretNote)">
-              <text class="reply-icon">💬</text>
-              <text class="reply-text">提笔给TA回小纸条</text>
-            </button>
-            <button class="letter-fold-btn" @tap="drawerSecretModalVisible = false">
-              <text class="fold-text">收回抽屉</text>
-            </button>
+          <view class="gear-row" @tap="cycleCurtain">
+            <text class="row-label">更换窗帘花色</text>
+            <text class="row-val">款式 {{ curtainStyle }} / 5 ›</text>
+          </view>
+          <view class="gear-row" @tap="toggleLamp">
+            <text class="row-label">台灯开关</text>
+            <text class="row-val">{{ isLampLit ? '亮起 💡' : '关闭 🌙' }}</text>
+          </view>
+          <view class="gear-row" @tap="openHandwritingPad">
+            <text class="row-label">写一张小纸条</text>
+            <text class="row-val">提笔书写 ✍️ ›</text>
           </view>
         </view>
       </view>
+
+      <!-- 8. 真迹画板手写纸条 -->
+      <HandwritingPad
+        v-if="handwritingPadVisible"
+        actionConfirmText="💌 折起放进桌洞"
+        defaultPattern="yellow"
+        @confirm="onHandwritingConfirmed"
+        @close="handwritingPadVisible = false"
+      />
     </view>
   </view>
 </template>
+
 
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
@@ -728,7 +386,8 @@ import {
   removeWindowNote,
   DeskHoleData,
   WindowNoteItem,
-  DrawerSecretNote
+  DrawerSecretNote,
+  DiaryMemoryItem
 } from "../../services/deskService";
 import { useAppState } from "../../composables/useAppState";
 import HandwritingPad from "../common/HandwritingPad.vue";
@@ -736,7 +395,6 @@ import HandwritingPad from "../common/HandwritingPad.vue";
 const {
   statusBarHeight,
   openChatWithFriend,
-  getFriendsList,
   targetVisitingDesk,
   openProfileByUserId,
   openMyProfileSheet
@@ -752,18 +410,63 @@ watch(targetVisitingDesk, (target) => {
   }
 }, { immediate: true });
 
-const isDrawerPulled = ref(false);
+function visitUserDesk(userId: string, name: string, avatar: string) {
+  currentDesk.value = getOtherUserDeskData(userId, name, avatar);
+  isVisitingOther.value = true;
+}
 
-// ===== 动效拟物系统交互状态 =====
+function exitVisiting() {
+  currentDesk.value = getMyDeskData();
+  isVisitingOther.value = false;
+}
+
+function handleViewOwnerProfile() {
+  if (isVisitingOther.value) {
+    openProfileByUserId && openProfileByUserId(currentDesk.value.ownerId);
+  } else {
+    openMyProfileSheet && openMyProfileSheet();
+  }
+}
+
+// 拟物状态
 const isWindowOpen = ref(false);
 const isWatering = ref(false);
-const isCandleLit = ref(true);
 const isLampLit = ref(true);
-const isJournalOpening = ref(false);
+const curtainStyle = ref(1);
+
+const gearMenuVisible = ref(false);
+const boardModalVisible = ref(false);
+const albumModalVisible = ref(false);
+const handwritingPadVisible = ref(false);
+
+// 🕳️ 桌洞次级空间状态
+const isHoleZooming = ref(false);
+const isHolePageActive = ref(false);
+
+const isBoxUnlocked = ref(false);
+const isBoxOpen = ref(false);
+const selectedHoleDateIdx = ref(0);
+
+const isBookOpen = ref(false);
+const bookDateIdx = ref(0);
+const isBookFlipping = ref(false);
+
+// 纸卷舒展阅读状态
+const unrollModalVisible = ref(false);
+const isUnrolling = ref(false);
+const activeUnrollData = ref<{
+  title: string;
+  author: string;
+  avatar?: string;
+  date: string;
+  content: string;
+  color: string;
+  type: 'diary' | 'letter';
+  rawItem?: any;
+} | null>(null);
 
 let lastWaterTime = 0;
 let lastQuoteIdx = -1;
-
 const DRIFT_QUOTES = [
   "路过你的窗，微风很软，灯火很暖。祝今天好。",
   "走得很累的时候，记得给桌洞里的自己留颗糖。",
@@ -776,9 +479,15 @@ const DRIFT_QUOTES = [
 function toggleWindow() {
   isWindowOpen.value = !isWindowOpen.value;
   uni.showToast({
-    title: isWindowOpen.value ? "轻推开窗，微风吹拂窗帘 🍃" : "合上木窗 · 室内重归静谧 🪟",
+    title: isWindowOpen.value ? "轻推开窗，微风轻拂窗帘 🍃" : "合上木窗 · 室内重归静谧 🪟",
     icon: "none"
   });
+}
+
+function cycleCurtain() {
+  curtainStyle.value = (curtainStyle.value % 5) + 1;
+  const CURTAIN_NAMES = ["亚麻原色", "碎花薄粉", "雾蓝细格", "鼠尾草绿", "落日暖橙"];
+  uni.showToast({ title: `换了窗帘：${CURTAIN_NAMES[curtainStyle.value - 1]}`, icon: "none" });
 }
 
 function catchDriftLetter() {
@@ -794,165 +503,93 @@ function catchDriftLetter() {
 
 function waterSucculent() {
   const now = Date.now();
-  if (now - lastWaterTime < 7000) {
-    uni.showToast({ title: "多肉喝饱了，泥土微润舒展中 🌿", icon: "none" });
+  if (now - lastWaterTime < 6000) {
+    uni.showToast({ title: "它还不渴，等泥土干一点再来浇 🌿", icon: "none" });
     return;
   }
   lastWaterTime = now;
   isWatering.value = true;
-  uni.showToast({ title: "清泉浸润多肉，叶片晶莹碧绿 ✨", icon: "none" });
+  uni.showToast({ title: "多肉喝饱了，叶片水润润的 ✨", icon: "none" });
   setTimeout(() => {
     isWatering.value = false;
   }, 2200);
 }
 
-function toggleCandle() {
-  isCandleLit.value = !isCandleLit.value;
-  uni.showToast({
-    title: isCandleLit.value ? "轻点香薰烛，淡淡洋甘菊清香 🕯️" : "轻吹熄香薰烛 · 余烟袅袅",
-    icon: "none"
-  });
-}
-
 function toggleLamp() {
   isLampLit.value = !isLampLit.value;
   uni.showToast({
-    title: isLampLit.value ? "台灯亮起，照亮桌洞与书页 💡" : "台灯熄灭 · 月光落满桌面 🌙",
+    title: isLampLit.value ? "台灯亮了 💡" : "台灯关了，早点睡 🌙",
     icon: "none"
   });
 }
 
-function openJournalWithAnim() {
-  isJournalOpening.value = true;
-  setTimeout(() => {
-    isJournalOpening.value = false;
-    diaryModalVisible.value = true;
-  }, 260);
-}
-
-const themeSelectorVisible = ref(false);
-const diaryModalVisible = ref(false);
-const handwritingPadVisible = ref(false);
-const isFoldingFlying = ref(false);
-const peelingNoteId = ref<string | null>(null);
-
-// 窗台便签放大展开检视弹窗状态
-const inspectModalVisible = ref(false);
-const inspectingNote = ref<WindowNoteItem | null>(null);
-
-// 桌洞暗格私密信件阅读弹窗状态
-const drawerSecretModalVisible = ref(false);
-const activeSecretNote = ref<DrawerSecretNote | null>(null);
-
-const themeList = [
-  { key: "wood" as DeskTheme, name: "温暖橡木", icon: "🪵" },
-  { key: "cherry" as DeskTheme, name: "樱花手账", icon: "🌸" },
-  { key: "retro" as DeskTheme, name: "复古墨绿", icon: "🌲" },
-  { key: "modern" as DeskTheme, name: "极简素白", icon: "☁️" }
-];
-
-const weatherIcon = computed(() => {
-  switch (currentDesk.value.weather) {
-    case "sunny": return "☀️";
-    case "rainy": return "🌧️";
-    case "night": return "🌙";
-    default: return "⛅";
-  }
-});
-
-const weatherLabel = computed(() => {
-  switch (currentDesk.value.weather) {
-    case "sunny": return "午后暖阳";
-    case "rainy": return "窗前细雨";
-    case "night": return "星空静谧";
-    default: return "晴间多云";
-  }
-});
-
-// ===== v1 重设计：便签 slot / 换批 / 主题木色变量 =====
-const noteBatch = ref(0);
-// slot 表：索引 = 可见便签数（表内项数 = 便签数 + 1 个 "+" 入口）
-const NOTE_SLOTS: { top: string; left: string; width: string }[][] = [
-  [{ top: '26%', left: '28%', width: '44%' }],
-  [{ top: '14%', left: '6%', width: '44%' }, { top: '40%', left: '50%', width: '44%' }],
-  [{ top: '10%', left: '4%', width: '44%' }, { top: '8%', left: '52%', width: '44%' }, { top: '46%', left: '28%', width: '44%' }],
-  [{ top: '10%', left: '4%', width: '44%' }, { top: '8%', left: '52%', width: '44%' }, { top: '44%', left: '4%', width: '44%' }, { top: '46%', left: '52%', width: '44%' }],
-  [{ top: '8%', left: '4%', width: '30%' }, { top: '8%', left: '35%', width: '30%' }, { top: '8%', left: '66%', width: '30%' }, { top: '44%', left: '6%', width: '44%' }, { top: '46%', left: '52%', width: '44%' }],
-  [{ top: '8%', left: '4%', width: '30%' }, { top: '8%', left: '35%', width: '30%' }, { top: '8%', left: '66%', width: '30%' }, { top: '44%', left: '4%', width: '30%' }, { top: '44%', left: '35%', width: '30%' }, { top: '44%', left: '66%', width: '30%' }],
-  [{ top: '8%', left: '2%', width: '22%' }, { top: '8%', left: '26%', width: '22%' }, { top: '8%', left: '50%', width: '22%' }, { top: '8%', left: '74%', width: '22%' }, { top: '44%', left: '4%', width: '30%' }, { top: '44%', left: '35%', width: '30%' }, { top: '44%', left: '66%', width: '30%' }],
-];
-const visibleNotes = computed(() => currentDesk.value.windowNotes.slice(noteBatch.value * 6, noteBatch.value * 6 + 6));
-const noteBatchCount = computed(() => Math.max(1, Math.ceil(currentDesk.value.windowNotes.length / 6)));
-const remainingNotes = computed(() => Math.max(0, currentDesk.value.windowNotes.length - (noteBatch.value + 1) * 6));
-function cycleNoteBatch() {
-  noteBatch.value = (noteBatch.value + 1) % noteBatchCount.value;
-}
-const noteSlots = computed(() => {
-  const n = visibleNotes.value.length;
-  const table = NOTE_SLOTS[Math.min(6, n)];
-  return table.map((s, i) => ({
-    top: s.top,
-    left: s.left,
-    width: s.width,
-    transform: `rotate(${i < n ? (visibleNotes.value[i].rotationDeg || 0) : -2}deg)`,
-  }));
-});
-// 主题木色变量：窗框/搁板/桌/抽屉整屋换色（修现状 theme 只改背景色的缺陷）
-const THEME_WOOD: Record<string, Record<string, string>> = {
-  wood: { '--wood-dark': '#5d3a20', '--wood': '#7a5236', '--wood-mid': '#8a5a38', '--wood-light': '#9a6b45' },
-  cherry: { '--wood-dark': '#4a2620', '--wood': '#6b3a30', '--wood-mid': '#7d4438', '--wood-light': '#8f5244' },
-  retro: { '--wood-dark': '#20301f', '--wood': '#33482c', '--wood-mid': '#3f5636', '--wood-light': '#4c6542' },
-  modern: { '--wood-dark': '#232a35', '--wood': '#37414f', '--wood-mid': '#425061', '--wood-light': '#4f5f73' },
-};
-const themeVars = computed(() => THEME_WOOD[currentDesk.value.theme] || THEME_WOOD.wood);
 function cycleWeather() {
-  const weathers: DeskHoleData["weather"][] = ["sunny", "rainy", "night", "cloudy"];
+  const weathers: DeskHoleData["weather"][] = ["sunny", "rainy", "night"];
   const currIdx = weathers.indexOf(currentDesk.value.weather);
   const next = weathers[(currIdx + 1) % weathers.length];
   currentDesk.value.weather = next;
   saveMyDeskData(currentDesk.value);
 }
 
-function selectTheme(theme: DeskTheme) {
-  currentDesk.value.theme = theme;
-  saveMyDeskData(currentDesk.value);
-  themeSelectorVisible.value = false;
+const weatherIcon = computed(() => {
+  switch (currentDesk.value.weather) {
+    case "sunny": return "☀️";
+    case "rainy": return "🌧️";
+    case "night": return "🌙";
+    default: return "☀️";
+  }
+});
+
+const weatherLabel = computed(() => {
+  switch (currentDesk.value.weather) {
+    case "sunny": return "晴天";
+    case "rainy": return "窗前细雨";
+    case "night": return "星空静谧";
+    default: return "午后暖阳";
+  }
+});
+
+const previewBoardNotes = computed(() => {
+  return currentDesk.value.windowNotes.slice(0, 3);
+});
+
+// 潜入桌洞
+function openDrawer() {
+  isHoleZooming.value = true;
+  setTimeout(() => {
+    isHoleZooming.value = false;
+    isHolePageActive.value = true;
+    isBoxUnlocked.value = false;
+    isBoxOpen.value = false;
+    isBookOpen.value = false;
+  }, 480);
 }
 
-function exitVisiting() {
-  currentDesk.value = getMyDeskData();
-  isVisitingOther.value = false;
+function closeHolePage() {
+  isHolePageActive.value = false;
+  isBoxOpen.value = false;
+  isBoxUnlocked.value = false;
+  isBookOpen.value = false;
 }
 
-// ===== 🕳️ 桌洞深度沉浸式次级交互世界 =====
-const isHoleZooming = ref(false);
-const isHolePageActive = ref(false);
+// 铁盒交互
+function toggleBigBox() {
+  if (isBoxOpen.value) {
+    isBoxOpen.value = false;
+    uni.showToast({ title: "合上了 📦", icon: "none" });
+    return;
+  }
+  if (!isBoxUnlocked.value) {
+    isBoxUnlocked.value = true;
+    uni.showToast({ title: "咔哒，锁开了 🗝️", icon: "none" });
+    setTimeout(() => {
+      isBoxOpen.value = true;
+    }, 450);
+  } else {
+    isBoxOpen.value = true;
+  }
+}
 
-// 铁盒 (BigBox) 状态
-const isBoxUnlocked = ref(false);
-const isBoxOpen = ref(false);
-const selectedHoleDateIdx = ref(0);
-
-// 手账册 (Book) 状态
-const isBookOpen = ref(false);
-const bookDateIdx = ref(0);
-const isBookFlipping = ref(false);
-
-// 纸卷舒展阅读弹窗 (Unroll Paper Modal) 状态
-const unrollModalVisible = ref(false);
-const isUnrolling = ref(false);
-const activeUnrollData = ref<{
-  title: string;
-  author: string;
-  avatar?: string;
-  date: string;
-  content: string;
-  color: string;
-  type: 'diary' | 'letter';
-  rawItem?: any;
-} | null>(null);
-
-// 铁盒内时间轴日期计算
 const holeTimelineDates = computed(() => {
   const dates: string[] = [];
   currentDesk.value.diaryEntries.forEach(d => {
@@ -962,41 +599,58 @@ const holeTimelineDates = computed(() => {
   return ["全部", ...dates];
 });
 
-// 计算铁盒内的纸卷位置与状态 (3D 错落摆放)
 const renderedHoleRolls = computed(() => {
   const dates = holeTimelineDates.value;
   const selectedDate = dates[selectedHoleDateIdx.value] || "全部";
   const list = currentDesk.value.diaryEntries;
   const cells = [
-    { left: 14, top: 12 },
-    { left: 68, top: 8 },
-    { left: 122, top: 14 },
-    { left: 20, top: 56 },
-    { left: 74, top: 52 },
-    { left: 126, top: 58 },
+    { left: 16, top: 2 },
+    { left: 74, top: 0 },
+    { left: 132, top: 4 },
+    { left: 190, top: 1 },
+    { left: 24, top: 54 },
+    { left: 82, top: 52 },
+    { left: 140, top: 56 },
+    { left: 196, top: 50 },
   ];
-  return list.map((item, idx) => {
-    const cleanDate = item.dateStr.split("·")[0].trim();
+  return list.map((m, i) => {
+    const cleanDate = m.dateStr.split("·")[0].trim();
     const isDim = selectedDate !== "全部" && cleanDate !== selectedDate;
-    const baseCell = cells[idx % cells.length];
-    const seed = (idx + 1) * 31;
-    const rot = -16 + ((seed * 11) % 32);
-    const scale = 0.92 + ((seed * 7) % 15) / 100;
+    const c = cells[i % cells.length];
+    const seed = (i + 1) * 37;
+    const rx = c.left + Math.round((Math.sin(seed * 3) - 0.5) * 14);
+    const ry = c.top + Math.round((Math.sin(seed * 5) - 0.5) * 8);
+    const rot = Math.round((Math.sin(seed * 7) - 0.5) * 56);
+    const sc = 0.92 + Math.abs(Math.sin(seed * 11)) * 0.16;
+    const z = 1 + (i % 3);
     return {
-      ...item,
+      ...m,
       cleanDate,
       isDim,
       style: {
-        left: `${baseCell.left}px`,
-        top: `${baseCell.top}px`,
-        transform: `rotate(${rot}deg) scale(${scale})`,
-        zIndex: 2 + (idx % 3),
+        left: `${rx}px`,
+        top: `${ry}px`,
+        transform: `rotate(${rot}deg) scale(${sc.toFixed(2)})`,
+        zIndex: z
       }
     };
   });
 });
 
-// 计算收到的纸条分组 (按日期)
+function selectHoleDate(idx: number) {
+  selectedHoleDateIdx.value = idx;
+  const d = holeTimelineDates.value[idx];
+  uni.showToast({
+    title: d === "全部" ? "显示全部纸条" : `时间线：${d}`,
+    icon: "none"
+  });
+}
+
+// 书本交互
+function toggleBook() {
+  isBookOpen.value = !isBookOpen.value;
+}
+
 const bookDateGroups = computed(() => {
   const groups: { date: string; notes: DrawerSecretNote[] }[] = [];
   currentDesk.value.drawerNotes.forEach(dn => {
@@ -1020,75 +674,11 @@ const currentBookPage = computed(() => {
   return bookDateGroups.value[idx];
 });
 
-// 🗄️ 实木抽屉交互：潜入桌洞镜头穿透动画
-function openDrawer() {
-  isHoleZooming.value = true;
-  uni.showToast({ title: "潜入桌洞中...", icon: "none", duration: 800 });
-  setTimeout(() => {
-    isHoleZooming.value = false;
-    isHolePageActive.value = true;
-    isBoxUnlocked.value = false;
-    isBoxOpen.value = false;
-    isBookOpen.value = false;
-  }, 480);
-}
-
-function closeDrawer() {
-  isDrawerPulled.value = false;
-}
-
-function closeHolePage() {
-  isHolePageActive.value = false;
-  isBoxOpen.value = false;
-  isBoxUnlocked.value = false;
-  isBookOpen.value = false;
-}
-
-function toggleDrawerPull() {
-  openDrawer();
-}
-
-// 铁盒：解开黄铜锁扣与 3D 掀盖
-function toggleBigBox() {
-  if (isBoxOpen.value) {
-    isBoxOpen.value = false;
-    uni.showToast({ title: "铁盒合上了 📦", icon: "none" });
-    return;
-  }
-  if (!isBoxUnlocked.value) {
-    isBoxUnlocked.value = true;
-    uni.showToast({ title: "咔哒 · 黄铜锁开了 🗝️", icon: "none" });
-    setTimeout(() => {
-      isBoxOpen.value = true;
-    }, 450);
-  } else {
-    isBoxOpen.value = true;
-  }
-}
-
-// 盒盖内侧时间轴筛选
-function selectHoleDate(idx: number) {
-  selectedHoleDateIdx.value = idx;
-  const d = holeTimelineDates.value[idx];
-  uni.showToast({
-    title: d === "全部" ? "显示全部心情纸卷" : `时间线：${d}`,
-    icon: "none"
-  });
-}
-
-// 收到的纸条手账册：封面翻开与左右 3D 翻页
-function toggleBook() {
-  isBookOpen.value = !isBookOpen.value;
-  if (isBookOpen.value) {
-    uni.showToast({ title: "翻开手账，查看收到的纸条 📖", icon: "none" });
-  }
-}
-
 function flipBook(dir: number) {
   const next = bookDateIdx.value + dir;
   if (next < 0 || next >= bookDateGroups.value.length) {
     uni.showToast({
-      title: dir < 0 ? "已经是第一页了" : "已经是最后一页了",
+      title: dir < 0 ? "已经是最早一天" : "已经是最新一天",
       icon: "none"
     });
     return;
@@ -1096,13 +686,13 @@ function flipBook(dir: number) {
   isBookFlipping.value = true;
   setTimeout(() => {
     bookDateIdx.value = next;
-  }, 180);
+  }, 200);
   setTimeout(() => {
     isBookFlipping.value = false;
   }, 460);
 }
 
-// 纸卷与信笺：展开物理舒展弹窗阅读
+// 纸条舒展弹窗
 function openHoleRoll(item: any) {
   activeUnrollData.value = {
     title: item.title,
@@ -1125,13 +715,31 @@ function openBookNoteSlip(note: DrawerSecretNote) {
   note.read = true;
   saveMyDeskData(currentDesk.value);
   activeUnrollData.value = {
-    title: "桌洞收到的私密纸条",
+    title: "桌洞私信",
     author: note.senderName,
     avatar: note.senderAvatar,
     date: note.receivedTime,
     content: note.fullContent,
     color: "pink",
     type: "letter",
+    rawItem: note
+  };
+  unrollModalVisible.value = true;
+  isUnrolling.value = false;
+  setTimeout(() => {
+    isUnrolling.value = true;
+  }, 30);
+}
+
+function openNoteFromBoard(note: WindowNoteItem) {
+  activeUnrollData.value = {
+    title: "便签留言",
+    author: note.authorName,
+    avatar: note.authorAvatar,
+    date: formatRelativeTime(note.createdAt),
+    content: note.content,
+    color: note.color,
+    type: "diary",
     rawItem: note
   };
   unrollModalVisible.value = true;
@@ -1161,7 +769,7 @@ function pinDiaryToWindow() {
   currentDesk.value = getMyDeskData();
   closeUnrollModal();
   closeHolePage();
-  uni.showToast({ title: "已将心情纸条贴上窗台！📌", icon: "none" });
+  uni.showToast({ title: "已贴到窗台/便签板！📌", icon: "none" });
 }
 
 function replyToUnrollSender() {
@@ -1175,3242 +783,1724 @@ function replyToUnrollSender() {
   }
 }
 
-// 撕取并打开便签检视弹窗 (带物理微翘动效)
-function peelAndInspectNote(note: WindowNoteItem) {
-  peelingNoteId.value = note.id;
-  setTimeout(() => {
-    peelingNoteId.value = null;
-    inspectingNote.value = note;
-    inspectModalVisible.value = true;
-  }, 220);
+function openJournalWithAnim() {
+  openHandwritingPad();
 }
 
-function closeInspectModal() {
-  inspectModalVisible.value = false;
-  inspectingNote.value = null;
+function openHandwritingPad() {
+  gearMenuVisible.value = false;
+  boardModalVisible.value = false;
+  handwritingPadVisible.value = true;
 }
 
-function likeInspectingNote() {
-  if (!inspectingNote.value) return;
-  inspectingNote.value.likes += 1;
+function onHandwritingConfirmed(data: { imageBase64: string; pattern: string; handwritingLength: number }) {
+  handwritingPadVisible.value = false;
+  const newDiary: DiaryMemoryItem = {
+    id: 'diary_' + Date.now(),
+    title: '今日心情笔记',
+    content: data.imageBase64,
+    dateStr: '11月18日 · 晴',
+    locationName: '窗前写字台',
+    tag: '手写心情',
+    color: (data.pattern as NotePaperColor) || 'yellow',
+    paperTexture: 'grid'
+  };
+  currentDesk.value.diaryEntries.unshift(newDiary);
   saveMyDeskData(currentDesk.value);
-  uni.showToast({ title: "已为便签点赞 ❤️", icon: "none" });
+  uni.showToast({ title: "小纸条已塞进桌洞的盒子里 📮", icon: "none" });
 }
 
-function removeInspectingNote() {
-  if (!inspectingNote.value) return;
-  const idToRemove = inspectingNote.value.id;
-  removeWindowNote(idToRemove);
-  currentDesk.value = getMyDeskData();
-  closeInspectModal();
-  uni.showToast({ title: "已撕下窗台便签 🗑️", icon: "success" });
+function getPaperMoodColor(colorKey?: string): string {
+  const MOOD_MAP: Record<string, string> = {
+    happy: "#FBE7C4",
+    heart: "#F9DCE3",
+    calm: "#DEE9DB",
+    sad: "#DDE4F0",
+    tired: "#E8E1D6",
+    yellow: "#FBE7C4",
+    pink: "#F9DCE3",
+    green: "#DEE9DB",
+    blue: "#DDE4F0",
+    kraft: "#E8E1D6"
+  };
+  return (colorKey && MOOD_MAP[colorKey]) || "#FDFBF4";
 }
 
 function formatRelativeTime(ts: number): string {
   if (!ts) return "刚刚";
   const diff = Date.now() - ts;
   if (diff < 60000) return "刚刚";
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  return `${Math.floor(diff / 86400000)}天前`;
+  if (diff < 3600000) return Math.floor(diff / 60000) + "分钟前";
+  if (diff < 86400000) return Math.floor(diff / 3600000) + "小时前";
+  return Math.floor(diff / 86400000) + "天前";
 }
-
-function isHandwritingImg(content: string): boolean {
-  if (!content) return false;
-  return content.startsWith("data:image/") || content.startsWith("http");
-}
-
-function openHandwritingPad() {
-  handwritingPadVisible.value = true;
-}
-
-// 确认手写真迹便签
-function onHandwritingConfirmed(dataUrl: string) {
-  handwritingPadVisible.value = false;
-  isFoldingFlying.value = true;
-
-  // 播放折纸飞机飞向窗台动画
-  setTimeout(() => {
-    isFoldingFlying.value = false;
-    postWindowNote(currentDesk.value.ownerId, dataUrl, "yellow");
-    currentDesk.value = getMyDeskData();
-    uni.showToast({ title: "手写纸条已折起，贴上窗台！✨", icon: "success" });
-  }, 1000);
-}
-
-function openDrawerNoteDetail(dn: DrawerSecretNote) {
-  dn.read = true;
-  saveMyDeskData(currentDesk.value);
-  activeSecretNote.value = dn;
-  drawerSecretModalVisible.value = true;
-}
-
-function replyToSecretSender(dn: DrawerSecretNote) {
-  drawerSecretModalVisible.value = false;
-  const friends = getFriendsList();
-  let f = friends.find(item => item.name === dn.senderName || item.avatar === dn.senderAvatar);
-  if (!f) {
-    f = {
-      userId: "user_" + Date.now(),
-      name: dn.senderName,
-      avatar: dn.senderAvatar,
-      distanceMeters: 680,
-      unreadCount: 0,
-      lastMessage: dn.preview,
-      lastMessageTime: Date.now()
-    };
-  }
-  openChatWithFriend(f);
-}
-
-function openSendPaperToUser() {
-  const friends = getFriendsList();
-  const f = friends.find(item => item.userId === currentDesk.value.ownerId) || friends[0];
-  if (f) {
-    openChatWithFriend(f);
-  }
-}
-
-function visitUserDesk(userId: string, name: string, avatar: string) {
-  currentDesk.value = getOtherUserDeskData(userId, name, avatar);
-  isVisitingOther.value = true;
-}
-
-function handleViewOwnerProfile() {
-  if (isVisitingOther.value) {
-    openProfileByUserId(currentDesk.value.ownerId, currentDesk.value.ownerName, currentDesk.value.ownerAvatar);
-  } else {
-    openMyProfileSheet();
-  }
-}
-
-function handleViewNoteAuthorProfile() {
-  if (!inspectingNote.value) return;
-  openProfileByUserId(inspectingNote.value.authorId, inspectingNote.value.authorName, inspectingNote.value.authorAvatar);
-}
-
-function handleViewSecretSenderProfile() {
-  if (!activeSecretNote.value) return;
-  openProfileByUserId(activeSecretNote.value.senderId, activeSecretNote.value.senderName, activeSecretNote.value.senderAvatar);
-}
-
-defineExpose({
-  visitUserDesk
-});
 </script>
 
-<style lang="scss" scoped>
-/* ==================== 桌洞 v1 重设计 · 场景样式 ==================== */
-/* 设计基准: desk-hole-prototype-v1.html · 木色由 themeVars 注入整屋换色 */
-.desk-hole-container {
+
+<style lang="scss">
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --bg:#F5F4F1;
+    --paper:#FDFBF4;
+    --ink:#2B2620;
+    --muted:#8E887E;
+    --accent:#A85A44;
+    --line:#E7E4DD;
+    --ui:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    --serif:"Songti SC","STSong","Noto Serif SC",serif;
+    --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+    --wood:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='130'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.12' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.32 0 0 0 0 0.21 0 0 0 0 0.1 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='260' height='130' filter='url(%23w)'/%3E%3C/svg%3E");
+    --metal:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='90'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.004 0.85' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.8 0 0 0 0 0.78 0 0 0 0 0.74 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='180' height='90' filter='url(%23m)'/%3E%3C/svg%3E");
+    --fiber:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='90' height='90' filter='url(%23p)' opacity='.7'/%3E%3C/svg%3E");
+    --cork:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.18 0.24' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.52 0 0 0 0 0.36 0 0 0 0 0.2 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23c)'/%3E%3C/svg%3E");
+  }
+  
+  
+  
+  .phone{
+    position:relative; width:390px; height:844px; border-radius:46px;
+    background:var(--bg); overflow:hidden;
+    box-shadow:0 40px 90px rgba(90,70,45,.28), 0 0 0 1px rgba(120,100,75,.15);
+    display:flex; flex-direction:column;
+  }
+  .notch{
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    width:110px; height:26px; border-radius:16px; background:#2D2822; z-index:60;
+  }
+  .statusbar{
+    height:52px; flex:none; display:flex; align-items:flex-end; justify-content:space-between;
+    padding:0 26px 6px; font-size:12px; font-weight:600; color:var(--ink);
+    z-index:55; position:relative;
+  }
+  .statusbar .right{ display:flex; gap:5px; align-items:center; }
+  .screen{ position:relative; flex:1; overflow:hidden; }
+
+  .page{ position:absolute; inset:0; display:none; animation:pgin .28s ease both; }
+  .page.active{ display:flex; flex-direction:column; }
+  @keyframes pgin{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+  .tabbar{
+    flex:none; height:88px; display:grid; grid-template-columns:1fr 1fr 1fr 1fr;
+    align-items:start; padding:8px 8px 0; position:relative; z-index:40;
+    background:rgba(255,255,255,.96); backdrop-filter:blur(16px);
+    border-top:1px solid var(--line);
+  }
+  .tab{
+    border:0; background:none; color:var(--muted); font-family:var(--ui);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-size:10px; padding-top:9px; cursor:pointer; transition:color .2s;
+  }
+  .tab svg{ width:23px; height:23px; }
+  .tab.on{ color:var(--ink); }
+  .tab-brush{ padding-top:0; color:var(--muted); }
+  .brush-btn{
+    width:56px; height:56px; border-radius:50%; margin-top:-20px;
+    background:#A85A44;
+    box-shadow:0 8px 18px rgba(168,90,68,.35), 0 0 0 5px #F5F4F1;
+    display:flex; align-items:center; justify-content:center; color:#FFF7EC;
+    transition:transform .15s;
+  }
+  .tab-brush:active .brush-btn{ transform:scale(.94); }
+  .tab-brush span{ margin-top:3px; font-size:10px; }
+
+  .paper{
+    position:relative; background:var(--paper); color:#2E2A24;
+    padding:16px 18px; font-family:var(--serif);
+    border-radius:3px;
+    box-shadow:0 1px 2px rgba(50,40,30,.14), 0 10px 24px rgba(50,40,30,.1);
+  }
+  .paper::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.45; border-radius:3px;
+    background:
+      var(--fiber),
+      repeating-linear-gradient(112deg,rgba(255,255,255,.3) 0 1px,rgba(255,255,255,0) 1px 7px),
+      radial-gradient(60% 40% at 80% 100%,rgba(120,90,50,.06),transparent 70%);
+    background-size:72px 72px, auto, auto;
+    background-blend-mode:multiply, normal, normal;
+  }
+  .paper::after{
+    content:""; position:absolute; right:0; bottom:0; width:15px; height:15px;
+    background:linear-gradient(315deg,rgba(0,0,0,0) 46%,rgba(0,0,0,.06) 50%,rgba(255,255,255,.75) 62%);
+    border-bottom-right-radius:3px; pointer-events:none;
+  }
+  .tape{
+    width:52px; height:15px;
+    background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(238,232,216,.5));
+    box-shadow:0 1px 2px rgba(90,70,45,.12), inset 0 1px 0 rgba(255,255,255,.6);
+  }
+
+  /* ---------- MAP ---------- */
+  .map-wrap{ position:relative; flex:1; overflow:hidden; background:#F1EDE6; }
+  .map-wrap svg.map{ position:absolute; inset:0; width:100%; height:100%; }
+
+  .searchwrap{ position:absolute; top:14px; left:14px; right:14px; z-index:30; }
+  .searchbox{
+    display:flex; align-items:center; gap:9px; height:46px; padding:0 15px;
+    background:#FFFFFF;
+    border-radius:14px; border:1px solid #E5E2DB;
+    box-shadow:0 2px 10px rgba(40,35,28,.06);
+  }
+  .searchbox svg{ width:17px; height:17px; flex:none; opacity:.55; }
+  .searchbox input{
+    flex:1; border:0; outline:none; background:none; font-family:var(--ui);
+    font-size:13.5px; color:var(--ink);
+  }
+  .searchbox input::placeholder{ color:#A99F8E; }
+  .scope{
+    font-size:10px; color:#8E887E; background:#F1EFEA; border:1px solid #E0DDD5;
+    padding:4px 8px; border-radius:8px; cursor:pointer; flex:none;
+  }
+
+  .results{
+    margin-top:8px; border-radius:14px; overflow:hidden; display:none;
+    background:#FFFFFF; border:1px solid #E5E2DB;
+    box-shadow:0 12px 30px rgba(40,35,28,.12);
+  }
+  .results.show{ display:block; }
+  .result{
+    display:flex; align-items:center; gap:10px; padding:12px 15px;
+    font-size:13px; border-bottom:1px solid #F1EFEA; cursor:pointer;
+  }
+  .result:last-child{ border-bottom:0; }
+  .result:active{ background:#F7F6F2; }
+  .result .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent); flex:none; }
+  .result small{ margin-left:auto; color:var(--muted); font-size:11px; }
+  .result em{ font-style:normal; color:var(--accent); }
+
+  .map-pins{ position:absolute; inset:0; z-index:10; }
+  .pin{
+    position:absolute; width:104px; transform:translate(-50%,-100%);
+    cursor:pointer; transition:opacity 1s linear, transform .2s;
+  }
+  .pin:active{ transform:translate(-50%,-100%) scale(.96); }
+  .pin .tape{
+    position:absolute; top:-7px; left:50%; transform:translateX(-50%) rotate(-3deg); z-index:2;
+    background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(238,232,216,.5));
+    box-shadow:0 1px 2px rgba(90,70,45,.12), inset 0 1px 0 rgba(255,255,255,.6);
+  }
+  .pin .note-mini{
+    position:relative; padding:13px 10px 10px; min-height:56px;
+    font-family:var(--serif); font-size:10.5px; line-height:1.55; color:#514838;
+    background:
+      var(--fiber),
+      linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 42%, rgba(90,70,45,.14)),
+      var(--c,#FBF5E8);
+    background-size:38px 38px, auto, auto;
+    background-blend-mode:multiply, normal, normal;
+    border-radius:2px 2px 3px 3px;
+    filter:drop-shadow(0 4px 8px rgba(50,40,30,.24));
+  }
+  .pin .note-mini::after{
+    content:""; position:absolute; right:0; bottom:0; width:13px; height:13px;
+    background:linear-gradient(315deg,transparent 47%,rgba(0,0,0,.07) 50%,rgba(255,255,255,.85) 63%);
+    border-bottom-right-radius:3px;
+  }
+  .pin .note-mini span{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; position:relative; }
+  .pin.hit .note-mini{ outline:2px solid rgba(192,112,90,.75); outline-offset:2px; animation:pulse 1.1s ease infinite; }
+  @keyframes pulse{ 50%{ outline-color:rgba(192,112,90,.15);} }
+
+  .fab{
+    position:absolute; right:16px; bottom:118px; z-index:25;
+    width:46px; height:46px; border-radius:50%; border:1px solid #E5E2DB;
+    background:#FFFFFF; color:#6E6A62; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(40,35,28,.12); cursor:pointer;
+  }
+  .fab svg{ width:19px; height:19px; }
+  .fab.spin svg{ animation:spin .8s ease; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  .nearby{
+    position:absolute; left:14px; right:90px; bottom:16px; z-index:25;
+    display:flex; align-items:center; gap:10px; padding:11px 13px;
+    background:rgba(255,255,255,.97); backdrop-filter:blur(12px);
+    border:1px solid #E5E2DB; border-radius:16px;
+    box-shadow:0 10px 26px rgba(40,35,28,.12); cursor:pointer;
+    animation:float 4.6s ease-in-out infinite;
+  }
+  @keyframes float{ 50%{ transform:translateY(-4px);} }
+  .nearby .stack{ display:flex; flex:none; }
+  .nearby .stack i{
+    width:26px; height:26px; border-radius:50%; margin-left:-8px; border:2px solid #FFF;
+    background:#DCD8D0; font-style:normal; font-size:10px; display:flex; align-items:center; justify-content:center;
+    color:#6E6A62; font-family:var(--ui);
+  }
+  .nearby .stack i:first-child{ margin-left:0; }
+  .nearby .txt{ flex:1; min-width:0; font-size:12px; line-height:1.45; }
+  .nearby .txt b{ font-weight:600; color:var(--accent); }
+  .nearby .txt span{ display:block; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nearby .go{ font-size:11px; color:#8E887E; border-left:1px solid var(--line); padding-left:11px; flex:none; }
+
+  .landmark-card{
+    position:absolute; left:14px; right:14px; bottom:16px; z-index:26;
+    background:#FFFFFF; border:1px solid #E5E2DB;
+    border-radius:16px; padding:14px 16px; box-shadow:0 12px 30px rgba(40,35,28,.14);
+    display:none;
+  }
+  .landmark-card.show{ display:block; animation:pgin .25s ease both; }
+  .landmark-card h4{ font-size:14px; font-family:var(--serif); margin-bottom:4px; }
+  .landmark-card p{ font-size:11px; color:var(--muted); margin-bottom:10px; }
+  .landmark-card .lm-close{ position:absolute; right:12px; top:10px; color:#C6C1B8; cursor:pointer; font-size:13px; padding:4px; }
+  .landmark-card button{
+    width:100%; height:36px; border-radius:10px; border:0; cursor:pointer;
+    background:#2B2620; color:#F5F4F1; font-family:var(--ui); font-size:12px; letter-spacing:.04em;
+  }
+
+  /* ---------- CHAT ---------- */
+  .chat-page{ background:linear-gradient(180deg,#F5F4F1,#EFEDE8); }
+  .chat-head{ flex:none; padding:6px 18px 12px; display:flex; align-items:center; gap:10px; }
+  .chat-head h3{ font-family:var(--ui); font-size:16px; font-weight:600; }
+  .chat-head .sub{ font-size:10px; color:var(--muted); margin-top:2px; }
+  .chat-head .spacer{ flex:1; }
+  .chip{
+    font-size:9.5px; color:#8E887E; border:1px solid #E5E2DB; background:#FFFFFF;
+    padding:4px 9px; border-radius:20px;
+  }
+  .chat-
+  .chat-body::-webkit-scrollbar{ width:0; }
+  .dayline{
+    align-self:center; font-size:9.5px; color:#8E887E; letter-spacing:.1em;
+    padding:3px 10px; background:#ECEAE4; border-radius:10px;
+  }
+  .notice{
+    align-self:center; max-width:88%; text-align:center; font-size:10.5px; line-height:1.7;
+    color:#8E887E; padding:9px 14px; border:1px solid #E7E4DD; background:#FFFFFF; border-radius:12px;
+  }
+  .msg{ display:flex; gap:8px; align-items:flex-end; max-width:86%; }
+  .msg.me{ align-self:flex-end; flex-direction:row-reverse; }
+  .msg .ava{
+    width:24px; height:24px; border-radius:50%; flex:none; font-size:10px;
+    display:flex; align-items:center; justify-content:center; color:#FFF6EE;
+    background:#9C8E7E; font-family:var(--ui);
+  }
+  .msg.me .ava{ background:#7E8E7E; }
+  .bubble .paper{ padding:12px 14px 15px; font-size:12.5px; line-height:1.8; }
+  .bubble .meta{ font-size:9px; color:#A29C92; margin-top:5px; }
+  .msg.me .meta{ text-align:right; }
+  .bubble.delayed .paper{ opacity:.75; }
+  .bubble.delayed .meta{ color:#B08A6E; }
+  .chat-input{
+    flex:none; display:flex; gap:8px; align-items:center; padding:10px 14px 12px;
+    border-top:1px solid var(--line); background:rgba(255,255,255,.97); backdrop-filter:blur(12px);
+  }
+  .chat-input input{
+    flex:1; height:40px; border-radius:12px; border:1px solid #E5E2DB; outline:none;
+    background:#F4F3EF; padding:0 13px; font-size:12.5px; font-family:var(--ui); color:var(--ink);
+  }
+  .chat-input .send{
+    width:40px; height:40px; border-radius:12px; border:0; background:#A85A44; color:#FFF6EE;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .chat-input .send svg{ width:16px; height:16px; }
+
+  /* ---------- COMPOSE ---------- */
+  .compose-head{ display:flex; align-items:center; gap:10px; padding:2px 4px 14px; }
+  .compose-head h3{ font-family:var(--ui); font-size:16px; font-weight:600; }
+  .compose-head .close{
+    margin-left:auto; width:30px; height:30px; border-radius:50%; border:0; background:#F1EFEA;
+    color:#8E887E; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .compose-head .close svg{ width:13px; height:13px; }
+  .loc{
+    display:flex; align-items:center; gap:7px; font-size:10.5px; color:#8E887E;
+    background:#F4F3EF; border:1px solid #E5E2DB; border-radius:10px; padding:8px 10px; margin-bottom:12px;
+  }
+  .loc svg{ width:12px; height:12px; flex:none; }
+  .loc b{ font-weight:500; color:#57534B; }
+  .loc .only{ margin-left:auto; font-size:9px; color:#AE9F8A; }
+  .compose-paper{ padding:14px 15px 10px; margin-bottom:12px; }
+  .compose-paper textarea{
+    width:100%; min-height:86px; resize:none; border:0; outline:none; background:none;
+    font-family:var(--serif); font-size:14px; line-height:1.9; color:#4A4238; position:relative;
+  }
+  .compose-paper textarea::placeholder{ color:#B3A794; }
+  .compose-paper .row{ display:flex; align-items:flex-end; gap:10px; margin-top:6px; }
+  .compose-paper .count{ margin-left:auto; font-size:9.5px; color:#B3A794; font-family:var(--ui); padding-bottom:4px; }
+  .photo-slot{
+    height:64px; width:64px; border-radius:10px; border:1px dashed #D8CBB4;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; overflow:hidden; background:rgba(255,255,255,.35);
+  }
+  .photo-slot img{ width:100%; height:100%; object-fit:cover; }
+  .photo-slot .hint{ font-size:8.5px; color:#B3A794; text-align:center; line-height:1.5; }
+  .photo-tools{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .tool{
+    display:flex; align-items:center; gap:6px; font-size:10.5px; color:#57534B;
+    border:1px solid #E5E2DB; background:#FFFFFF; border-radius:9px; padding:6px 10px; cursor:pointer;
+    font-family:var(--ui);
+  }
+  .tool.on{ border-color:var(--accent); color:var(--accent); background:#F9EFEA; }
+  .tool svg{ width:13px; height:13px; }
+  .doodle-box{ display:none; margin-top:10px; }
+  .doodle-box.show{ display:block; }
+  .doodle-box canvas{
+    width:100%; height:140px; border-radius:8px; background:#FFFDF7;
+    border:1px solid #EDE3D1; touch-action:none; display:block;
+  }
+  .doodle-tools{ display:flex; gap:6px; align-items:center; margin-top:8px; }
+  .swatch{ width:16px; height:16px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
+  .swatch.on{ border-color:#4A4238; }
+  .doodle-tools .clear{ margin-left:auto; font-size:10px; color:#9A9080; background:none; border:0; cursor:pointer; }
+  .field-label{ font-size:10px; color:#A2947E; letter-spacing:.1em; margin:14px 2px 8px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:7px; }
+  .choice{
+    font-size:10.5px; padding:7px 11px; border-radius:9px; cursor:pointer;
+    border:1px solid #E5E2DB; background:#FFFFFF; color:#57534B;
+    display:flex; align-items:center; gap:6px; font-family:var(--ui);
+  }
+  .choice.on{ border-color:var(--accent); color:var(--accent); background:#F9EFEA; }
+  .choice .dot{ width:10px; height:10px; border-radius:50%; }
+  .compose-actions{ display:flex; gap:9px; margin-top:18px; }
+  .btn-ghost{
+    flex:1; height:44px; border-radius:12px; border:1px solid #DAD7D0; background:transparent;
+    color:#6E6A62; font-size:12px; font-family:var(--ui); cursor:pointer;
+  }
+  .btn-main{
+    flex:1.5; height:44px; border-radius:12px; border:0; color:#FFF6EF;
+    background:#A85A44; font-size:12.5px; font-family:var(--ui);
+    letter-spacing:.06em; cursor:pointer; box-shadow:0 6px 14px rgba(168,90,68,.28);
+  }
+  .btn-main:active{ transform:translateY(1px); }
+  .mini-hint{ font-size:9px; color:#B0A390; line-height:1.7; margin-top:10px; }
+
+  /* ---------- DESK ---------- */
+  .desk-page{ background:#EFE4D2; overflow:hidden; }
+  .desk-page .wall, .visit-page .wall{
+    position:absolute; inset:0 0 42% 0;
+    background:radial-gradient(90% 70% at 62% 30%, #F5F1EA 0%, #EBE5DB 55%, #E0D9CD 100%);
+  }
+  .gear{
+    position:absolute; right:16px; top:14px; z-index:20; width:40px; height:40px; border-radius:50%;
+    background:rgba(255,255,255,.85); border:1px solid #D8D4CC; color:#74695A;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 4px 12px rgba(40,35,28,.1); backdrop-filter:blur(6px);
+  }
+  .gear svg{ width:17px; height:17px; }
+  .desk-title{
+    position:absolute; left:20px; top:16px; z-index:15;
+    font-family:var(--ui); font-size:11px; font-weight:600; color:#9A948C; letter-spacing:.3em;
+  }
+  .window-frame{
+    position:absolute; left:50%; top:58px; transform:translateX(-50%);
+    width:224px; height:202px; border-radius:6px; z-index:5;
+    border:11px solid; border-color:#E4CFB2 #D3BC98 #C4A87F #D3BC98; background:#CFE0E4; overflow:hidden;
+    box-shadow:0 18px 34px rgba(90,70,45,.25), inset 0 0 0 2px rgba(255,248,235,.4), inset 0 -4px 10px rgba(90,65,35,.32);
+    cursor:pointer;
+  }
+  .window-frame > .pane{
+    position:absolute; inset:0; transition:background 1.2s ease;
+    background:linear-gradient(180deg,#BFD9E4 0%,#DDE9E7 55%,#F6EBD6 100%);
+  }
+  .window-frame[data-w="rain"] > .pane{ background:linear-gradient(180deg,#8FA3AE 0%,#AFBEC5 55%,#D7D8D0 100%); }
+  .window-frame[data-w="night"] > .pane{ background:linear-gradient(180deg,#26334A 0%,#3E4C65 55%,#6C6B76 100%); }
+  .vp-photo{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    user-select:none; -webkit-user-drag:none;
+  }
+  .window-frame .scenery{
+    position:absolute; inset:0; transition:background 1.2s ease;
+    background:linear-gradient(180deg,#BFD9E4 0%,#DDE9E7 55%,#F6EBD6 100%);
+  }
+  .window-frame[data-w="rain"] .scenery{ background:linear-gradient(180deg,#8FA3AE 0%,#AFBEC5 55%,#D7D8D0 100%); }
+  .window-frame[data-w="night"] .scenery{ background:linear-gradient(180deg,#26334A 0%,#3E4C65 55%,#6C6B76 100%); }
+  .sc-photo{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    display:none; user-select:none; -webkit-user-drag:none;
+  }
+  .sc-photo.on{ display:block; }
+  .scenery.photo .svgsun, .scenery.photo .cloud, .scenery.photo .sc-hill,
+  .scenery.photo .sc-tree, .scenery.photo .sc-birds, .scenery.photo .stars{ display:none; }
+  .window-frame.photo .sash .pane{
+    background:
+      linear-gradient(112deg, transparent 22%, rgba(255,255,255,.14) 27%, transparent 34%, transparent 58%, rgba(255,255,255,.08) 63%, transparent 70%),
+      linear-gradient(160deg,rgba(214,232,238,.2),rgba(236,242,240,.1) 55%,rgba(250,244,230,.18));
+  }
+  .sc-hill{ position:absolute; bottom:0; border-radius:50% 50% 0 0; filter:blur(1.2px); }
+  .sc-hill.h1{ left:-18%; width:68%; height:42%; background:linear-gradient(180deg,#B7C9AC,#9DB394); }
+  .sc-hill.h2{ right:-22%; width:72%; height:34%; background:linear-gradient(180deg,#A4BBA0,#8CA389); }
+  .sc-tree{ position:absolute; bottom:13%; width:14px; filter:blur(.5px); }
+  .sc-tree::before{ content:""; position:absolute; left:5px; bottom:0; width:4px; height:14px; background:#7A6248; border-radius:2px; }
+  .sc-tree::after{ content:""; position:absolute; left:-7px; top:-17px; width:28px; height:28px; border-radius:50%; background:radial-gradient(circle at 38% 32%, #8FAE82, #6E8F64); box-shadow:8px 5px 0 -2px #7A9A70, -8px 6px 0 -3px #86A37B; }
+  .sc-tree.t1{ left:14%; }
+  .sc-tree.t2{ left:33%; }
+  .sc-tree.t3{ right:17%; }
+  .sc-birds i{
+    position:absolute; width:14px; height:5px; border-top:2px solid #5F6E6B; border-radius:50%;
+    animation:birdfly 12s linear infinite;
+  }
+  .sc-birds i:nth-child(1){ top:22%; left:-16px; }
+  .sc-birds i:nth-child(2){ top:31%; left:-16px; animation-delay:3.5s; }
+  .sc-birds i:nth-child(3){ top:17%; left:-16px; animation-delay:7s; }
+  @keyframes birdfly{ to{ transform:translateX(270px); } }
+  .sash{
+    position:absolute; top:0; bottom:0; width:50%; z-index:4;
+    transition:transform .65s cubic-bezier(.3,.8,.35,1);
+  }
+  .sash.left{ left:0; transform-origin:left center; }
+  .sash.right{ right:0; transform-origin:right center; }
+  .window-frame.open .sash.left{ transform:perspective(320px) rotateY(-66deg); }
+  .window-frame.open .sash.right{ transform:perspective(320px) rotateY(66deg); }
+  .sash .pane{
+    position:absolute; inset:0;
+    background:
+      linear-gradient(112deg, transparent 22%, rgba(255,255,255,.17) 27%, transparent 34%, transparent 58%, rgba(255,255,255,.1) 63%, transparent 70%),
+      linear-gradient(160deg,rgba(214,232,238,.45),rgba(236,242,240,.24) 55%,rgba(250,244,230,.36));
+    border:2px solid rgba(224,205,177,.9);
+  }
+  .sash.left .pane{ border-left-width:0; }
+  .sash.right .pane{ border-right-width:0; }
+  .svgsun{
+    position:absolute; right:24px; top:16px; width:36px; height:36px; border-radius:50%;
+    background:radial-gradient(circle, #FFF7DE 0 34%, #FFE9A8 55%, rgba(255,220,140,0) 74%);
+    box-shadow:0 0 28px 10px rgba(255,232,160,.75), 0 0 64px 26px rgba(255,232,160,.28);
+    transition:opacity .8s;
+  }
+  .window-frame[data-w="rain"] .svgsun{ opacity:0; }
+  .window-frame[data-w="night"] .svgsun{ opacity:0; }
+  .cloud{
+    position:absolute; width:76px; height:22px; border-radius:20px;
+    background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(238,243,245,.78));
+    filter:blur(1.8px);
+    transition:opacity .8s;
+  }
+  .cloud::before,.cloud::after{
+    content:""; position:absolute; background:linear-gradient(180deg,#FFF,rgba(238,243,245,.78)); border-radius:50%;
+  }
+  .cloud::before{ width:30px; height:30px; left:14px; top:-13px; }
+  .cloud::after{ width:22px; height:22px; right:14px; top:-8px; }
+  .cloud.c1{ left:-70px; top:42px; animation:drift 26s linear infinite; }
+  .cloud.c2{ left:-70px; top:92px; transform:scale(.7); opacity:.7; animation:drift 38s linear infinite 6s; }
+  @keyframes drift{ to{ transform:translateX(330px);} }
+  .window-frame[data-w="night"] .cloud{ opacity:.12; }
+  .rainlayer{
+    position:absolute; inset:0; opacity:0; transition:opacity .6s; filter:blur(.4px);
+    background:
+      repeating-linear-gradient(104deg, rgba(255,255,255,.5) 0 1.5px, transparent 1.5px 13px),
+      repeating-linear-gradient(100deg, rgba(255,255,255,.28) 0 1px, transparent 1px 19px);
+  }
+  .rainlayer::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:26%;
+    background:linear-gradient(180deg, transparent, rgba(188,199,204,.35));
+  }
+  .window-frame[data-w="rain"] .rainlayer{ opacity:.55; animation:rainmove .5s linear infinite; }
+  @keyframes rainmove{ to{ background-position:0 0, -4px 22px; } }
+  .stars{
+    position:absolute; inset:0; opacity:0; transition:opacity .8s;
+    background-image:
+      radial-gradient(1.4px 1.4px at 20% 24%,#FFF 50%,transparent 51%),
+      radial-gradient(1.2px 1.2px at 62% 16%,#FFF 50%,transparent 51%),
+      radial-gradient(1px 1px at 78% 38%,#FFF 50%,transparent 51%),
+      radial-gradient(1.2px 1.2px at 40% 46%,#FFF 50%,transparent 51%),
+      radial-gradient(1px 1px at 88% 60%,#FFF 50%,transparent 51%),
+      radial-gradient(.9px .9px at 12% 62%,#FFF 50%,transparent 51%),
+      radial-gradient(1.1px 1.1px at 52% 68%,#FFF 50%,transparent 51%),
+      radial-gradient(.8px .8px at 33% 10%,#FFF 50%,transparent 51%);
+  }
+  .stars::after{
+    content:""; position:absolute; right:26px; top:18px; width:18px; height:18px; border-radius:50%;
+    background:radial-gradient(circle at 36% 36%, #FFF8E7, #E8DCC0 68%, #D8C9A8);
+    box-shadow:0 0 18px 6px rgba(255,244,214,.55), inset -5px -3px 5px rgba(150,140,110,.55);
+  }
+  .window-frame[data-w="night"] .stars{ opacity:.9; }
+  .glazing-lines{ position:absolute; inset:0; pointer-events:none; }
+  .glazing-lines::before,.glazing-lines::after{ content:""; position:absolute; background:#E0CDB1; }
+  .glazing-lines::before{ left:50%; top:0; bottom:0; width:8px; transform:translateX(-50%); }
+  .glazing-lines::after{ top:50%; left:0; right:0; height:8px; transform:translateY(-50%); }
+  .weather-tag{
+    position:absolute; left:0; right:0; bottom:0; z-index:5; padding:8px 12px; pointer-events:none;
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(180deg,transparent,rgba(40,45,50,.35));
+    color:#FFF9EE; font-size:10px; letter-spacing:.08em;
+  }
+  .weather-tag b{ font-size:11.5px; font-weight:600; }
+  .windowsill{
+    position:absolute; left:50%; top:254px; transform:translateX(-50%);
+    width:262px; height:16px; border-radius:4px; z-index:6;
+    background:linear-gradient(180deg,#F0E3C8,#DFCBA6);
+    box-shadow:0 8px 14px rgba(90,70,45,.22);
+  }
+  .succulent{ position:absolute; left:76px; top:196px; z-index:9; width:64px; height:82px; cursor:pointer; }
+  .succulent .foliage{ position:absolute; left:8px; right:8px; top:0; height:56px; }
+  .succulent .blf{
+    position:absolute; width:16px; height:24px;
+    border-radius:52% 52% 50% 50% / 62% 62% 40% 40%;
+    background:radial-gradient(circle at 36% 30%, #7FA070, #5F8156 72%);
+    box-shadow:inset 0 -4px 6px rgba(30,60,30,.4);
+  }
+  .succulent .blf.l{ left:2px; top:16px; transform:rotate(-48deg) scale(.85); }
+  .succulent .blf.r{ right:2px; top:16px; transform:rotate(48deg) scale(.85); }
+  .succulent .blf.c{ left:23px; top:3px; transform:rotate(3deg) scale(.88); }
+  .succulent .lf{
+    position:absolute; width:17px; height:27px;
+    border-radius:52% 52% 50% 50% / 62% 62% 40% 40%;
+    box-shadow:inset 0 -4px 6px rgba(40,70,40,.32), 0 3px 5px rgba(40,30,20,.18);
+  }
+  .succulent .lf1{ left:24px; top:0; background:radial-gradient(circle at 36% 30%, #A9C79B, #7E9A72 72%); }
+  .succulent .lf2{ left:5px; top:9px; transform:rotate(-34deg); background:radial-gradient(circle at 36% 30%, #9FBE90, #74906A 72%); }
+  .succulent .lf3{ right:5px; top:9px; transform:rotate(34deg); background:radial-gradient(circle at 36% 30%, #A4C395, #78936C 72%); }
+  .succulent .lf4{ left:13px; top:18px; transform:rotate(-16deg) scale(.92); background:radial-gradient(circle at 36% 30%, #8FAE82, #6A8960 72%); }
+  .succulent .lf5{ right:13px; top:18px; transform:rotate(16deg) scale(.92); background:radial-gradient(circle at 36% 30%, #93B186, #6E8D64 72%); }
+  .succulent .lf6{ left:27px; top:15px; transform:rotate(6deg) scale(.95); background:radial-gradient(circle at 36% 30%, #9CBB93, #74906A 72%); }
+  .plant-pot{
+    position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+    width:34px; height:26px;
+    background:linear-gradient(180deg,#C4906F,#A96F55);
+    border-radius:4px 4px 9px 9px;
+    box-shadow:0 6px 10px rgba(40,30,20,.3), inset 0 2px 0 rgba(255,255,255,.22), inset -3px 0 4px rgba(80,40,20,.18);
+  }
+  .plant-pot::before{
+    content:""; position:absolute; left:-3px; right:-3px; top:-4px; height:7px;
+    background:linear-gradient(180deg,#D2A084,#B87F62);
+    border-radius:3px;
+    box-shadow:0 2px 3px rgba(40,30,20,.25);
+  }
+  .succulent .water-can{
+    position:absolute; left:44px; top:-16px; width:34px; height:34px;
+    opacity:0; transform:rotate(0deg); transition:.35s ease; pointer-events:none;
+  }
+  .succulent .water-can svg{ width:100%; height:100%; }
+  .succulent .drop{
+    position:absolute; left:34px; top:6px; width:4px; height:7px;
+    border-radius:50% 50% 60% 60%; background:#9CC3D8; opacity:0;
+  }
+  .succulent.watering .water-can{ opacity:1; transform:rotate(-35deg); }
+  .succulent.watering .drop{ animation:dropfall .7s linear infinite; }
+  .succulent.watering .drop.d2{ animation-delay:.18s; }
+  .succulent.watering .drop.d3{ animation-delay:.36s; }
+  .succulent.watering .foliage{ animation:leafb 1.2s ease; }
+  @keyframes dropfall{
+    0%{ transform:translateY(0); opacity:0; }
+    25%{ opacity:1; }
+    100%{ transform:translateY(26px); opacity:0; }
+  }
+  @keyframes leafb{ 40%{ filter:brightness(1.15); } }
+
+  .wboard{ position:absolute; left:196px; bottom:388px; width:48px; height:58px; z-index:5; }
+  .wb-face{
+    position:absolute; left:0; right:0; top:0; height:42px;
+    background:#FDFCF8; border:1px solid #E2DCCF; border-radius:5px;
+    box-shadow:0 4px 10px rgba(60,45,30,.25), 0 1px 2px rgba(60,45,30,.15);
+    transform:rotate(-2deg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    padding:4px 5px;
+  }
+  .wb-icon{ width:20px; height:20px; }
+  .wb-icon svg{ width:100%; height:100%; }
+  .wb-text{ font-size:8px; color:#57534B; font-family:var(--ui); font-weight:600; white-space:nowrap; }
+  .wb-leg{ position:absolute; bottom:0; width:3px; height:13px; background:#B99B6C; border-radius:2px; box-shadow:0 2px 3px rgba(60,45,30,.3); }
+  .wb-leg.l{ left:10px; transform:rotate(14deg); }
+  .wb-leg.r{ right:10px; transform:rotate(-14deg); }
+  .board{ position:absolute; left:22px; top:296px; width:104px; z-index:7; cursor:pointer; }
+  .board .bd{
+    position:relative; width:104px; height:132px; border-radius:5px;
+    background:
+      var(--cork),
+      linear-gradient(180deg,#CFA878,#B98F5F);
+    background-size:120px, auto;
+    background-blend-mode:multiply, normal;
+    border:6px solid; border-color:#A98B5E #94764C #8A6D44 #94764C;
+    box-shadow:0 10px 20px rgba(90,70,45,.28), inset 0 2px 4px rgba(255,246,228,.35), inset 0 -3px 6px rgba(90,65,35,.4);
+    transform:rotate(-1.6deg);
+  }
+  .board .mini{
+    position:absolute; width:38px; padding:5px 4px; font-family:var(--serif); font-size:6.6px;
+    line-height:1.5; color:#5B5140; background:#FBF4E4;
+    box-shadow:0 2px 4px rgba(90,70,45,.18);
+  }
+  .board .mini::before{
+    content:""; position:absolute; top:-3px; left:50%; transform:translateX(-50%) rotate(-4deg);
+    width:16px; height:5px; background:rgba(255,255,255,.7);
+  }
+  .board .m1{ left:7px; top:8px; transform:rotate(-3deg); background:#F7E4DC; }
+  .board .m2{ right:6px; top:34px; transform:rotate(3.5deg); background:#E8EFE4; }
+  .board .m3{ left:24px; top:74px; transform:rotate(-2deg); background:#FBF4E4; }
+  .desk-surface{
+    position:absolute; left:0; right:0; bottom:0; height:46%; z-index:8;
+    background:linear-gradient(180deg,#E9D2B0 0%,#DFC39C 12%,#D9BA90 100%);
+    box-shadow:0 -10px 30px rgba(90,70,45,.18);
+  }
+  .desk-surface::before{
+    content:""; position:absolute; inset:0; opacity:.4;
+    background:repeating-linear-gradient(93deg,rgba(150,110,65,.09) 0 2px,transparent 2px 15px);
+  }
+  .desk-surface::after{
+    content:""; position:absolute; left:0; right:0; top:0; height:9px;
+    background:linear-gradient(180deg,rgba(255,246,228,.9),transparent);
+  }
+  .curtains{ position:absolute; top:42px; left:0; right:0; height:232px; z-index:9; pointer-events:none; }
+  .curtains::before{
+    content:""; position:absolute; top:0; left:34px; right:34px; height:5px; border-radius:3px;
+    background:linear-gradient(180deg,#C9A96F,#B08F5F); box-shadow:0 3px 6px rgba(90,70,45,.25);
+  }
+  .curtain{
+    position:absolute; top:5px; width:58px; height:224px; pointer-events:auto; cursor:pointer;
+    transform-origin:top center;
+    border-radius:0 0 26px 26px / 0 0 34px 16px;
+    background:
+      repeating-linear-gradient(90deg, rgba(120,90,60,.10) 0 6px, rgba(255,255,255,0) 6px 18px),
+      var(--curt,#FBF6EA);
+    box-shadow:0 6px 16px rgba(90,70,45,.18);
+    animation:sway var(--swd,5.2s) ease-in-out infinite;
+  }
+  .curtain.cl{ left:40px; }
+  .curtain.cr{ right:40px; }
+  .desk-page.windy{ --swd:2.2s; }
+  .curtains[data-style="2"] .curtain{
+    --curt:#F6E3DC;
+    background:
+      radial-gradient(6px 6px at 12px 16px, #E8A9B8 42%, transparent 43%),
+      radial-gradient(5px 5px at 30px 30px, #C9909F 42%, transparent 43%),
+      radial-gradient(5px 5px at 16px 44px, #E8A9B8 40%, transparent 41%),
+      repeating-linear-gradient(90deg, rgba(120,90,60,.08) 0 6px, rgba(255,255,255,0) 6px 18px),
+      #F6E3DC;
+  }
+  .curtains[data-style="3"] .curtain{
+    --curt:#DCE6EF;
+    background:
+      repeating-linear-gradient(90deg, rgba(70,90,120,.28) 0 2px, transparent 2px 12px),
+      repeating-linear-gradient(0deg, rgba(70,90,120,.28) 0 2px, transparent 2px 12px),
+      #DCE6EF;
+  }
+  .curtains[data-style="4"] .curtain{
+    --curt:#CBD4C7;
+    background:
+      var(--fiber),
+      repeating-linear-gradient(90deg, rgba(70,90,70,.14) 0 3px, transparent 3px 20px),
+      #CBD4C7;
+    background-size:40px 40px, auto, auto;
+    background-blend-mode:multiply, normal, normal;
+  }
+  .curtains[data-style="5"] .curtain{
+    --curt:#F3D8CF;
+    background:
+      var(--fiber),
+      repeating-linear-gradient(90deg, rgba(201,112,90,.22) 0 7px, transparent 7px 18px),
+      #F3D8CF;
+    background-size:40px 40px, auto, auto;
+    background-blend-mode:multiply, normal, normal;
+  }
+  @keyframes sway{
+    0%,100%{ transform:skewX(0deg); }
+    50%{ transform:skewX(2.6deg); }
+  }
+
+  .bb-lock{
+    position:absolute; left:50%; bottom:-10px; width:24px; height:20px; margin-left:-12px; z-index:4;
+    background:linear-gradient(180deg,#E8C778,#C9A24B); border-radius:4px;
+    box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.55);
+    transition:transform .5s ease .1s, opacity .5s ease .15s;
+    cursor:pointer;
+  }
+  .bb-lock::before{
+    content:""; position:absolute; left:50%; top:-8px; width:12px; height:12px; margin-left:-6px;
+    border:3px solid #C9A24B; border-bottom:0; border-radius:7px 7px 0 0;
+  }
+  .bb-lock::after{
+    content:""; position:absolute; left:50%; top:6px; width:4px; height:6px; margin-left:-2px;
+    border-radius:2px; background:#7A5E1E; box-shadow:3px 0 0 -1px #7A5E1E;
+  }
+  .bigbox.unlocked .bb-lock{ transform:rotate(-55deg) translateY(10px); opacity:0; }
+
+  .book{
+    position:absolute; left:190px; bottom:6px; width:150px; height:88px; z-index:2;
+    transform:rotate(2deg); perspective:520px;
+  }
+  .bk-backboard{
+    position:absolute; inset:0;
+    background:linear-gradient(180deg,#8A6A44,#6E5232);
+    border-radius:4px 10px 10px 4px;
+    box-shadow:0 12px 20px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,246,228,.25);
+  }
+  .bk-backboard::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:12px;
+    background:repeating-linear-gradient(90deg,#7A5C38 0 3px,#93724A 3px 6px);
+    border-radius:4px 0 0 4px;
+  }
+  .bk-sheet{
+    position:absolute; left:14px; right:6px; top:6px; bottom:6px;
+    background:var(--fiber), #FBF6E8;
+    background-size:60px 60px, auto; background-blend-mode:multiply, normal;
+    border-radius:2px 6px 6px 2px;
+    box-shadow:0 2px 6px rgba(0,0,0,.3), inset 0 0 20px rgba(120,95,60,.12);
+    padding:8px 8px 0;
+  }
+  .bk-turn{
+    position:absolute; left:14px; right:6px; top:6px; bottom:6px; display:none;
+    background:var(--fiber), #FBF6E8;
+    background-size:60px 60px, auto; background-blend-mode:multiply, normal;
+    border-radius:2px 6px 6px 2px;
+    box-shadow:0 4px 10px rgba(0,0,0,.4);
+    transform-origin:left center; z-index:2;
+  }
+  .book.flipping .bk-turn{ display:block; animation:turnpage .5s ease both; }
+  @keyframes turnpage{
+    from{ transform:rotateY(0); }
+    to{ transform:rotateY(-172deg); }
+  }
+  .bk-pagehead{ display:flex; align-items:center; gap:6px; }
+  .bk-pagehead .d{ font-size:9px; color:#7A6A4E; font-weight:600; font-family:var(--ui); }
+  .bk-pagehead .pg{ margin-left:auto; font-size:8px; color:#A2947E; font-family:var(--ui); }
+  .bk-hearts{ display:flex; flex-wrap:wrap; gap:2px 10px; justify-content:center; padding-top:8px; }
+  .bk-heart{
+    position:relative; width:26px; height:24px; margin:12px 3px 15px;
+    cursor:pointer; transition:transform .2s;
+  }
+  .bk-heart:active{ transform:scale(.88); }
+  .bk-heart::before,.bk-heart::after{
+    content:""; position:absolute; top:0; width:13px; height:21px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,0) 45%, rgba(90,70,45,.2)),
+      var(--mc,#EFE0C0);
+    border-radius:13px 13px 0 0;
+    box-shadow:inset 0 0 0 1px rgba(120,95,60,.15);
+  }
+  .bk-heart::before{ left:13px; transform:rotate(-45deg); transform-origin:0 100%; }
+  .bk-heart::after{ left:0; transform:rotate(45deg); transform-origin:100% 100%; }
+  .bk-heart .crease{
+    position:absolute; left:12px; top:2px; width:1.5px; height:19px;
+    background:linear-gradient(180deg,transparent,rgba(90,70,45,.4),transparent);
+  }
+  .bk-heart .bh-label{
+    position:absolute; top:25px; left:50%; transform:translateX(-50%);
+    white-space:nowrap; font-size:6.5px; color:#7A6A5C; font-family:var(--ui);
+  }
+  .bk-heart .bs-seal{
+    position:absolute; top:-8px; right:-8px; width:10px; height:10px; border-radius:50%;
+    background:radial-gradient(circle at 36% 32%, #E8927E, #B5402E 72%);
+    box-shadow:0 2px 3px rgba(0,0,0,.4); z-index:2;
+  }
+  .bk-cover{
+    position:absolute; inset:0; border-radius:4px 10px 10px 4px;
+    transform-origin:left center;
+    transform-style:preserve-3d;
+    transition:transform .8s cubic-bezier(.3,.75,.3,1);
+    cursor:pointer; z-index:3;
+  }
+  .bk-cover .bcf,.bk-cover .bcb{
+    position:absolute; inset:0; border-radius:4px 10px 10px 4px; backface-visibility:hidden;
+  }
+  .bk-cover .bcf{
+    background:
+      linear-gradient(100deg, transparent 30%, rgba(255,255,255,.16) 46%, transparent 60%),
+      linear-gradient(165deg,#8F5B3C,#714427);
+    box-shadow:0 12px 20px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,246,228,.3), inset 2px 0 0 rgba(255,255,255,.12);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bk-cover .bcf::before{
+    content:""; position:absolute; inset:10px 14px 10px 22px; border:1px solid rgba(246,231,208,.4); border-radius:3px;
+  }
+  .bk-cover .bcf span{
+    font-family:var(--serif); font-size:11px; letter-spacing:.3em; color:#F3E3C4;
+    text-shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+  .bk-cover .bcb{
+    transform:rotateY(180deg);
+    background:var(--fiber), #EFE6D0;
+    background-size:60px 60px, auto; background-blend-mode:multiply, normal;
+    box-shadow:inset 0 0 24px rgba(120,95,60,.25), 0 8px 16px rgba(0,0,0,.35);
+  }
+  .book.open .bk-cover{ transform:rotateY(-178deg); }
+  .bk-nav{
+    position:absolute; bottom:-4px; width:26px; height:22px; border:0; cursor:pointer;
+    background:rgba(60,44,28,.75); color:rgba(246,231,208,.9); border-radius:6px;
+    font-size:13px; line-height:1; display:none; z-index:4; font-family:var(--ui);
+  }
+  .book.open .bk-nav{ display:block; }
+  .bk-nav.next{ right:-4px; }
+  .bk-nav.prev{ left:-4px; }
+
+  .school-desk{ position:absolute; left:0; right:0; bottom:0; height:46%; z-index:8; }
+  .sd-plane{
+    position:absolute; left:22px; right:22px; bottom:300px; height:126px; z-index:1;
+    clip-path:polygon(9% 0,91% 0,100% 100%,0 100%);
+    background:linear-gradient(180deg,#EBD6B2 0%,#E3CBA1 55%,#DABF93 100%);
+    filter:drop-shadow(0 8px 12px rgba(90,70,45,.2));
+  }
+  .sd-plane::after{
+    content:""; position:absolute; left:0; right:0; top:0; height:9px;
+    background:linear-gradient(180deg,rgba(255,246,228,.55),transparent);
+  }
+  .sd-top{
+    position:absolute; left:14px; right:14px; bottom:286px; height:18px; border-radius:6px;
+    background:linear-gradient(180deg,#EFD8B4 0%,#E3CBA1 45%,#D5B689 100%);
+    box-shadow:0 10px 22px rgba(90,70,45,.2), inset 0 2px 0 rgba(255,246,228,.7);
+    z-index:2;
+  }
+  .sd-top::before{
+    content:""; position:absolute; inset:0; border-radius:6px; opacity:.4;
+    background:repeating-linear-gradient(93deg,rgba(150,110,65,.09) 0 2px,transparent 2px 15px);
+  }
+  .sd-front{
+    position:absolute; left:30px; right:30px; bottom:118px; height:168px;
+    border-radius:8px 8px 4px 4px;
+    background:linear-gradient(180deg,#E0C79D,#CDAE7E);
+    box-shadow:0 14px 26px rgba(90,70,45,.25);
+    z-index:2;
+  }
+  .sd-front::after{
+    content:""; position:absolute; inset:0; border-radius:8px;
+    box-shadow:inset 0 2px 0 rgba(255,246,228,.4), inset 0 -3px 6px rgba(90,65,35,.25);
+  }
+  .sd-leg{ position:absolute; bottom:0; width:20px; height:122px; border-radius:4px 4px 0 0; background:linear-gradient(180deg,#D2B082,#B99463); z-index:2; }
+  .sd-leg.l{ left:44px; }
+  .sd-leg.r{ right:44px; }
+  .desk-hole{
+    position:absolute; left:50%; transform:translateX(-50%); bottom:144px; width:220px; height:140px;
+    border-radius:10px; cursor:pointer; overflow:hidden; z-index:2;
+    background:radial-gradient(120% 90% at 50% 30%, #4B3A28, #2E2318 70%);
+    box-shadow:inset 0 10px 24px rgba(0,0,0,.6), 0 2px 0 rgba(255,246,228,.25);
+  }
+  .desk-hole::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:56px;
+    background:radial-gradient(70% 90% at 50% 100%, rgba(255,205,140,.3), transparent 75%);
+  }
+  .desk-hole .hb-side{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%) rotate(-2deg);
+    width:124px; height:56px; border-radius:6px;
+    background:linear-gradient(180deg,#DCA984,#C89268);
+    box-shadow:0 8px 14px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,246,228,.3);
+  }
+  .desk-hole .hb-side::before{
+    content:""; position:absolute; left:50%; top:-2px; width:12px; height:58px; margin-left:-6px;
+    background:#C9705A; border-radius:2px; box-shadow:0 2px 4px rgba(0,0,0,.3);
+  }
+  .desk-hole .hb-side::after{
+    content:""; position:absolute; left:50%; top:19px; width:13px; height:13px; margin-left:-6px;
+    border-radius:3px; background:#E8C778;
+    box-shadow:0 2px 4px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .desk-hole .hole-book{
+    position:absolute; left:26px; top:64px; width:54px; height:30px; opacity:.92;
+    background:linear-gradient(165deg,#8F5B3C,#714427);
+    border-radius:2px 5px 5px 2px;
+    box-shadow:0 4px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,246,228,.25);
+    transform:rotate(-4deg);
+  }
+  .desk-hole .hole-book::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+    background:repeating-linear-gradient(90deg,#7A5C38 0 2px,#93724A 2px 4px);
+  }
+  .desk-hole .hole-book::after{
+    content:"收到的纸条"; position:absolute; left:10px; right:4px; top:9px;
+    font-family:var(--serif); font-size:6.5px; color:rgba(243,227,196,.85); letter-spacing:.1em; white-space:nowrap;
+  }
+  .desk-hole .hole-slip{
+    position:absolute; width:34px; height:26px; background:rgba(251,244,228,.92); opacity:.85;
+    box-shadow:0 4px 8px rgba(0,0,0,.4);
+  }
+  .desk-hole .hole-slip::before{
+    content:""; position:absolute; top:-3px; left:50%; transform:translateX(-50%) rotate(-4deg);
+    width:16px; height:5px; background:rgba(255,255,255,.6);
+  }
+  .desk-hole .hole-slip.hs1{ right:46px; bottom:20px; transform:rotate(-7deg); }
+  .desk-hole .hole-slip.hs2{ left:32px; bottom:12px; transform:rotate(5deg); background:#F7E4DC; }
+  .desk-hole:active .hb-side{ transform:translateX(-50%) rotate(-2deg) scale(.97); }
+
+  .lamp-glow{
+    position:absolute; left:40px; bottom:150px; width:280px; height:230px; z-index:2;
+    background:radial-gradient(ellipse 62% 46% at 42% 18%, rgba(255,226,150,.36), transparent 72%);
+    pointer-events:none; opacity:0; transition:opacity .45s;
+  }
+  .desk-page.lamp-on .lamp-glow{ opacity:1; }
+  .desk-lamp.lit .shade::after{ box-shadow:0 0 26px 12px rgba(255,225,150,.75); }
+
+  /* ---- 洞内 ---- */
+  .hole-page{
+    background:
+      radial-gradient(80% 42% at 50% 0%, rgba(255,214,150,.14), transparent 55%),
+      radial-gradient(90% 70% at 50% 40%, #4A3A29 0%, #33261A 55%, #221810 100%);
+    overflow:hidden;
+  }
+  .hole-page::before, .hole-page::after{
+    content:""; position:absolute; top:0; bottom:0; width:36px; z-index:1;
+    background:
+      var(--wood),
+      repeating-linear-gradient(90deg,rgba(90,66,40,.5) 0 3px,rgba(60,44,28,.5) 3px 9px);
+    background-size:230px 115px, auto;
+    background-blend-mode:multiply, normal;
+  }
+  .hole-page::before{ left:0; }
+  .hole-page::after{ right:0; }
+  .hole-title{
+    position:absolute; top:18px; left:0; right:0; text-align:center; z-index:2;
+    color:rgba(246,231,208,.6); font-family:var(--ui); font-weight:600; font-size:11px; letter-spacing:.5em;
+  }
+  .hole-back{
+    position:absolute; left:14px; top:12px; z-index:20; border:0; cursor:pointer;
+    background:rgba(58,44,30,.7); border:1px solid rgba(201,169,111,.4); color:rgba(246,231,208,.9);
+    border-radius:20px; padding:7px 13px; font-size:11px; font-family:var(--ui);
+  }
+  .hole-page .page-placeholder{ display:none; }
+  .bigbox{ position:absolute; left:50%; bottom:100px; width:250px; height:210px; margin-left:-125px; perspective:560px; }
+  .bb-hinge{
+    position:absolute; left:24px; right:24px; top:-9px; height:10px; border-radius:4px 4px 0 0;
+    background:linear-gradient(180deg,#C8BFA9,#A19684);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+    z-index:4;
+  }
+  .bb-hinge::before, .bb-hinge::after{
+    content:""; position:absolute; top:2px; width:5px; height:5px; border-radius:50%;
+    background:#8A7E6A; box-shadow:inset 0 1px 1px rgba(255,255,255,.5);
+  }
+  .bb-hinge::before{ left:6px; }
+  .bb-hinge::after{ right:6px; }
+  .bb-depth{
+    position:absolute; left:8px; right:8px; bottom:-8px; height:9px;
+    background:linear-gradient(180deg,#8E8268,#6B6250);
+    border-radius:0 0 10px 10px;
+    box-shadow:0 10px 18px rgba(0,0,0,.45);
+    z-index:0;
+  }
+  .bb-
+  .bb-
+  .bb-inside{
+    position:absolute; left:3px; right:3px; top:4px; height:118px; border-radius:8px;
+    background:linear-gradient(180deg,#6B6152,#4E4638);
+    box-shadow:inset 0 8px 18px rgba(0,0,0,.55), inset 0 -2px 0 rgba(255,255,255,.12);
+  }
+  .bb-lid{
+    position:absolute; left:-4px; right:-4px; top:-6px; height:126px;
+    transform-style:preserve-3d; transform-origin:top center;
+    transition:transform .85s cubic-bezier(.3,.75,.3,1);
+    z-index:3; cursor:pointer;
+  }
+  .bigbox.open .bb-lid{ transform:rotateX(-152deg); }
+  .bb-lid .lf, .bb-lid .li{ position:absolute; inset:0; border-radius:9px; backface-visibility:hidden; }
+  .bb-lid .lf{
+    border:2px solid #9A8F7B;
+    background:
+      linear-gradient(100deg, transparent 26%, rgba(255,255,255,.34) 44%, rgba(255,255,255,.1) 52%, transparent 64%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 3px),
+      linear-gradient(165deg,#DCD6CA,#C4BCA9 55%,#B0A48D);
+    box-shadow:0 10px 24px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.55), inset 0 -3px 5px rgba(80,70,55,.28);
+  }
+  .bb-lid .lf::before{
+    content:""; position:absolute; left:24px; right:24px; top:20px; bottom:24px;
+    border-radius:6px;
+    background:
+      radial-gradient(60% 70% at 50% 40%, rgba(201,112,90,.22), rgba(201,112,90,.06) 70%, transparent),
+      linear-gradient(180deg,#F6EFD9,#EBDFBC);
+    border:1px solid rgba(122,94,49,.45);
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.5), inset 0 0 0 4px rgba(122,94,49,.28), 0 1px 2px rgba(90,70,45,.25);
+  }
+  .bb-lid .lf::after{
+    content:"心情盒子";
+    position:absolute; left:0; right:0; top:56%;
+    text-align:center;
+    font-family:var(--serif); font-size:13px; letter-spacing:.34em; color:#7A5A2E;
+    text-shadow:0 1px 0 rgba(255,255,255,.6);
+  }
+  .bb-lid .li{
+    transform:rotateX(180deg);
+    border:2px solid #B4A78F;
+    background:
+      linear-gradient(100deg, transparent 30%, rgba(255,255,255,.4) 47%, rgba(255,255,255,.1) 55%, transparent 66%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 1px, transparent 1px 3px),
+      linear-gradient(180deg,#EFE7D6,#DFD4BE);
+    box-shadow:inset 0 0 14px rgba(120,100,70,.28), inset 0 2px 0 rgba(255,255,255,.6);
+  }
+  .bigbox:not(.open) .bb-lid .li{ pointer-events:none; }
+  .rolls{ position:absolute; left:10px; right:10px; top:5px; bottom:4px; z-index:2; }
+  .roll{ position:absolute; text-align:center; cursor:pointer; transition:opacity .3s; }
+  .roll.dim{ opacity:.18; pointer-events:none; }
+  .roll .rc{
+    width:40px; height:40px; position:relative; border-radius:50%;
+    background:
+      radial-gradient(circle at 36% 30%, rgba(255,255,255,.55), transparent 46%),
+      repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.4) 0 2.4px, rgba(80,50,25,.24) 2.4px 4.8px),
+      var(--mc,#F1E3C6);
+    box-shadow:
+      0 6px 10px rgba(15,10,6,.5),
+      0 2px 3px rgba(15,10,6,.35),
+      inset 0 0 0 1px rgba(118,94,60,.35),
+      inset 0 -4px 8px rgba(88,66,38,.35),
+      inset 0 3px 6px rgba(255,255,255,.7);
+    transition:transform .2s;
+  }
+  .roll .rc::after{
+    content:""; position:absolute; right:-5px; bottom:-3px; width:15px; height:12px;
+    background:linear-gradient(180deg, rgba(255,255,255,.3), rgba(80,50,25,.18)), var(--mc,#F1E3C6);
+    border-radius:0 0 3px 4px; transform:rotate(26deg); transform-origin:top left;
+    box-shadow:0 3px 5px rgba(0,0,0,.3), inset 0 0 0 1px rgba(118,94,60,.25);
+  }
+  .roll:active .rc{ transform:scale(.9); }
+  .roll .rtag{
+    position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+    background:#FDFBF4; border:1px solid #D8CCB8; border-radius:3px;
+    font-size:6.5px; color:#6E6455; font-family:var(--ui); padding:1px 4px;
+    white-space:nowrap; box-shadow:0 2px 3px rgba(0,0,0,.4); z-index:3;
+  }
+  .hud-tl{ position:absolute; left:12px; right:12px; top:0; bottom:0; display:flex; align-items:center; justify-content:space-between; }
+  .hud-tl::before{
+    content:""; position:absolute; left:6px; right:6px; top:50%; height:2px; margin-top:-1px;
+    background:linear-gradient(90deg,transparent,rgba(201,140,60,.55) 5%,rgba(201,140,60,.55) 95%,transparent);
+    box-shadow:0 0 8px rgba(255,200,120,.5);
+  }
+  .hud-tl .hm{ font-size:6.5px; color:rgba(122,94,49,.75); font-family:var(--ui); flex:none; margin-right:3px; position:relative; z-index:1; }
+  .hud-node{ position:relative; z-index:1; text-align:center; cursor:pointer; opacity:.55; transition:opacity .25s; min-width:15px; flex:none; }
+  .hud-node.on{ opacity:1; }
+  .hud-node .hf{ display:flex; justify-content:center; }
+  .hud-node .hd{ font-size:7px; color:rgba(90,60,30,.8); margin-top:1px; white-space:nowrap; font-family:var(--ui); }
+  .hud-node.on .hd{ color:#7A4A1E; font-weight:600; }
+  .hud-node.on .hf{ filter:drop-shadow(0 0 5px rgba(255,190,110,.9)); }
+  .hole-empty{
+    position:absolute; left:0; right:0; top:46px; text-align:center;
+    color:rgba(246,231,208,.5); font-size:10px; font-family:var(--serif);
+  }
+  .unroll-wrap{ position:relative; }
+  .unroll-wrap::before{
+    content:""; position:absolute; left:50%; top:-9px; width:62%; height:16px; margin-left:-31%; z-index:2;
+    border-radius:8px;
+    background:linear-gradient(180deg,#F6EDD8,#D9C9A8);
+    box-shadow:0 3px 6px rgba(90,70,45,.35), inset 0 2px 3px rgba(255,255,255,.6);
+    opacity:0;
+  }
+  .unroll-wrap.go::before{ animation:curlmove .8s ease both; }
+  @keyframes curlmove{
+    0%{ opacity:1; transform:translateY(0) rotate(-2deg); }
+    70%{ opacity:1; }
+    100%{ opacity:0; transform:translateY(28px) rotate(2deg); }
+  }
+  .unroll-paper{ transform-origin:top center; transform:scaleY(.05) scaleX(.85); }
+  .unroll-paper.go{ animation:paperunroll .8s cubic-bezier(.25,.85,.3,1) both; }
+  @keyframes paperunroll{
+    0%{ transform:scaleY(.05) scaleX(.85); }
+    35%{ transform:scaleY(.3) scaleX(.96); }
+    70%{ transform:scaleY(.86) scaleX(1.02); }
+    100%{ transform:scaleY(1) scaleX(1); }
+  }
+  .hole-zoom{
+    position:absolute; inset:0; z-index:95; display:none;
+    background:radial-gradient(circle at 50% 64%, #4A3826 0%, #241A10 62%);
+    transform-origin:50% 64%;
+  }
+  .hole-zoom.play{ display:block; animation:holezoom .52s ease both; }
+  @keyframes holezoom{
+    from{ opacity:0; transform:scale(.12); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  .desk-lamp{ position:absolute; left:118px; bottom:392px; z-index:5; width:80px; height:100px; cursor:pointer; transform:scale(.8); transform-origin:bottom center; }
+  .desk-lamp .shade{
+    position:absolute; left:20px; top:0; width:46px; height:30px; border-radius:8px 8px 3px 3px;
+    background:linear-gradient(165deg,#F2DA9E 0%,#E4C285 45%,#C89A5B 100%); transform:rotate(-8deg);
+    box-shadow:0 6px 14px rgba(190,150,90,.35), inset 2px 2px 3px rgba(255,250,230,.6);
+  }
+  .desk-lamp .shade::after{
+    content:""; position:absolute; left:4px; right:4px; bottom:-5px; height:6px;
+    background:#F7E7C2; border-radius:50%; filter:blur(1px);
+    box-shadow:0 0 18px 8px rgba(255,225,150,.55);
+  }
+  .desk-lamp .stem{ position:absolute; left:41px; top:26px; width:4px; height:48px; background:linear-gradient(90deg,#8A7355,#D9C39B 40%,#F1E4C6 52%,#A98F66 78%,#6E5940); border-radius:2px; }
+  .desk-lamp .base{ position:absolute; left:26px; top:70px; width:34px; height:8px; border-radius:50%; background:#C7A776; }
+  .cup{ position:absolute; right:168px; bottom:348px; z-index:6; width:36px; height:40px; }
+  .cup-css{
+    position:absolute; inset:0;
+    background:linear-gradient(90deg,#E5DBC8,#FBF6EC 30%,#FBF6EC 62%,#E0D3BC);
+    border-radius:3px 3px 10px 10px; box-shadow:0 8px 14px rgba(90,70,45,.2), inset -3px 0 4px rgba(160,140,110,.3);
+  }
+  .cup-css::before{
+    content:""; position:absolute; right:-7px; top:8px; width:11px; height:13px;
+    border:2px solid #F0E4D2; border-left:0; border-radius:0 8px 8px 0;
+  }
+  .cup-css::after{ content:""; position:absolute; left:5px; right:5px; top:5px; height:3px; border-radius:50%; background:#D8C3A0; }
+  .notebook{
+    position:absolute; left:36px; bottom:378px; z-index:4; width:74px; height:32px;
+    background:#F7EDD9; border-radius:3px; transform:rotate(-6deg) scale(.9); transform-origin:bottom center;
+    box-shadow:0 6px 12px rgba(90,70,45,.18); cursor:pointer;
+  }
+  .notebook::after{
+    content:""; position:absolute; left:6px; right:6px; top:8px; height:1px; background:#E2D3B8;
+    box-shadow:0 6px 0 #E2D3B8, 0 12px 0 #E2D3B8;
+  }
+  .pen{
+    position:absolute; left:224px; bottom:362px; z-index:5; width:56px; height:5px; border-radius:3px;
+    background:linear-gradient(90deg,#B4836A,#D3A88E); transform:rotate(8deg) scale(.95); transform-origin:center;
+    box-shadow:0 3px 6px rgba(90,70,45,.2);
+  }
+  .desk-page .windy-placeholder{ display:none; }
+
+  /* ---------- sheets / modals ---------- */
+  .overlay{
+    position:absolute; inset:0; z-index:70; background:rgba(52,44,35,.38);
+    opacity:0; pointer-events:none; transition:opacity .25s; backdrop-filter:blur(2px);
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0; z-index:80;
+    background:#FBFAF7; border-radius:20px 20px 0 0; padding:10px 18px 26px;
+    transform:translateY(104%); transition:transform .32s cubic-bezier(.22,.9,.3,1);
+    max-height:88%; overflow-y:auto; box-shadow:0 -14px 40px rgba(40,32,24,.16);
+  }
+  .sheet.show{ transform:translateY(0); }
+  .sheet::-webkit-scrollbar{ width:0; }
+  .sheet .grab{ width:38px; height:4px; border-radius:2px; background:#D8CCB8; margin:2px auto 14px; }
+  .sheet .sheet-title{ display:flex; align-items:center; margin-bottom:14px; }
+  .sheet .sheet-title h3{ font-family:var(--ui); font-size:15px; font-weight:600; }
+  .sheet .sheet-title .x{
+    margin-left:auto; width:28px; height:28px; border-radius:50%; border:0; background:#F1EFEA;
+    color:#8E887E; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .sheet .sheet-title .x svg{ width:12px; height:12px; }
+
+  .modal{
+    position:absolute; inset:0; z-index:85; display:flex; align-items:center; justify-content:center;
+    padding:24px; opacity:0; pointer-events:none; transition:opacity .22s;
+  }
+  .modal.show{ opacity:1; pointer-events:auto; }
+  .modal .backdrop{ position:absolute; inset:0; background:rgba(52,44,35,.42); backdrop-filter:blur(2px); }
+  .modal .card{
+    position:relative; width:100%; max-height:86%; overflow-y:auto; border-radius:20px;
+    background:#FBFAF7; padding:20px 18px; box-shadow:0 24px 60px rgba(40,32,24,.3);
+    transform:translateY(10px) scale(.98); transition:transform .22s;
+  }
+  .modal.show .card{ transform:none; }
+  .modal .card::-webkit-scrollbar{ width:0; }
+  .modal .card .mclose{
+    position:absolute; right:12px; top:12px; width:28px; height:28px; border-radius:50%;
+    border:0; background:#F1EFEA; color:#8E887E; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; z-index:2;
+  }
+  .modal .card .mclose svg{ width:12px; height:12px; }
+
+  .detail-paper{ padding:20px 20px 26px; margin-bottom:14px; }
+  .detail-paper .dtxt{ font-family:var(--serif); font-size:15px; line-height:2; white-space:pre-wrap; position:relative; }
+  .detail-paper .dmeta{
+    display:flex; align-items:center; gap:6px; margin-top:16px; padding-top:10px;
+    border-top:1px dashed rgba(120,100,70,.18); font-size:9.5px; color:#A2947E; font-family:var(--ui);
+  }
+  .detail-paper .dmeta .ava{
+    width:17px; height:17px; border-radius:50%; background:#E3D3B9; display:flex; align-items:center;
+    justify-content:center; font-size:8px; color:#7B6C56;
+  }
+  .detail-paper img.doodle{ width:100%; border-radius:6px; margin-top:10px; background:#fff; position:relative; }
+  .timer{
+    display:flex; align-items:center; gap:8px; font-size:10px; color:#8E887E;
+    background:#F7F5F1; border:1px solid #E7E4DD; border-radius:10px; padding:8px 11px; margin-bottom:14px;
+  }
+  .timer b{ font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .timer .bar{ flex:1; height:3px; border-radius:2px; background:#E9E6DF; overflow:hidden; }
+  .timer .bar i{ display:block; height:100%; background:var(--accent); border-radius:2px; transition:width 1s linear; }
+  .act-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .act{
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 4px;
+    border-radius:12px; background:#FFFFFF; border:1px solid #E7E4DD; cursor:pointer;
+    font-size:10px; color:#57534B; font-family:var(--ui);
+  }
+  .act svg{ width:16px; height:16px; opacity:.7; }
+  .act.danger{ color:var(--accent); }
+  .act:active{ background:#F4F3EF; }
+
+  .note-list{ display:flex; flex-direction:column; gap:10px; }
+  .note-list .paper{ padding:13px 14px; font-size:12px; line-height:1.8; }
+  .note-list .paper .m{ font-size:9px; color:#8E887E; margin-top:7px; font-family:var(--ui); position:relative; }
+  .note-list .paper .acts{ display:flex; gap:8px; margin-top:9px; position:relative; }
+  .note-list .paper .acts button{
+    font-size:9.5px; font-family:var(--ui); border:1px solid #DAD7D0; background:transparent;
+    color:#6E6A62; border-radius:7px; padding:4px 8px; cursor:pointer;
+  }
+  .empty{ text-align:center; padding:34px 0; color:#A29C92; font-size:11px; line-height:1.9; }
+  .empty b{ display:block; font-family:var(--ui); font-size:14px; font-weight:600; color:#8E887E; margin-bottom:4px; }
+
+  .tl{ position:relative; padding-left:26px; }
+  .tl::before{
+    content:""; position:absolute; left:8px; top:6px; bottom:6px; width:1px;
+    background:repeating-linear-gradient(180deg,#D8D4CC 0 5px,transparent 5px 10px);
+  }
+  .tl-item{ position:relative; margin-bottom:20px; }
+  .tl-item .node{
+    position:absolute; left:-23px; top:2px; width:16px; height:16px; border-radius:50%;
+    background:#FFFFFF; border:1px solid #D8D4CC; display:flex; align-items:center; justify-content:center;
+  }
+  .tl-item .node svg{ width:10px; height:10px; }
+  .tl-item .date{ font-size:9px; color:#8E887E; margin-bottom:6px; }
+  .tl-slip{ padding:13px 15px; }
+  .tl-slip .face{ margin-bottom:6px; }
+  .tl-slip p{ font-family:var(--serif); font-size:12.5px; line-height:1.85; white-space:pre-wrap; position:relative; }
+  .tl-slip .foot{ display:flex; align-items:center; margin-top:9px; position:relative; gap:8px; }
+  .tl-slip .foot .when{ font-size:9px; color:#A2947E; }
+  .tl-slip .foot .share-flag{ font-size:8.5px; color:#9AAE8C; border:1px solid #CBD8C4; border-radius:6px; padding:2px 6px; }
+  .tl-slip .foot .btns{ margin-left:auto; display:flex; gap:6px; }
+  .tl-slip .foot button{
+    font-size:9px; font-family:var(--ui); color:#8B8171;
+    border:1px solid #DED2BD; background:transparent; border-radius:7px; padding:4px 8px; cursor:pointer;
+  }
+
+  .profile{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .profile .ava{
+    width:56px; height:56px; border-radius:50%; flex:none;
+    background:linear-gradient(150deg,#B9A08C,#9C8270); color:#FFF6EE;
+    display:flex; align-items:center; justify-content:center; font-family:var(--ui); font-size:20px; font-weight:500;
+    box-shadow:0 6px 14px rgba(120,100,80,.25);
+  }
+  .profile h3{ font-family:var(--ui); font-size:15px; font-weight:600; margin-bottom:3px; }
+  .profile p{ font-size:10px; color:#8E887E; }
+  .profile .edit{
+    margin-left:auto; font-size:9.5px; color:#8B8171; border:1px solid #DED2BD;
+    border-radius:8px; padding:5px 9px; background:transparent; cursor:pointer; font-family:var(--ui);
+  }
+  .member{
+    position:relative; border-radius:14px; padding:14px 16px; overflow:hidden; margin-bottom:18px;
+    background:linear-gradient(135deg,#4C463E,#6B6053 60%,#7C6B55);
+    color:#F6EBD6; cursor:pointer;
+  }
+  .member::after{
+    content:""; position:absolute; right:-26px; top:-40px; width:110px; height:110px; border-radius:50%;
+    border:1px solid rgba(246,235,214,.22);
+  }
+  .member .m1{ display:flex; align-items:center; gap:6px; font-size:11.5px; letter-spacing:.06em; }
+  .member .m1 svg{ width:13px; height:13px; }
+  .member .m2{ font-size:9px; opacity:.6; margin-top:5px; }
+  .member .tag{
+    position:absolute; right:14px; bottom:14px; font-size:8.5px; letter-spacing:.1em;
+    border:1px solid rgba(246,235,214,.35); border-radius:20px; padding:3px 8px;
+  }
+  .setting-row{
+    display:flex; align-items:center; gap:10px; padding:13px 4px; cursor:pointer;
+    border-bottom:1px solid #EDE4D4; font-size:12px; color:#5B5245;
+  }
+  .setting-row:last-child{ border-bottom:0; }
+  .setting-row .ic{ width:18px; display:flex; justify-content:center; opacity:.6; }
+  .setting-row .ic svg{ width:15px; height:15px; }
+  .setting-row .val{ margin-left:auto; font-size:10px; color:#A2947E; }
+  .setting-row .arr{ color:#C6B9A4; font-size:11px; margin-left:6px; }
+  .setting-row .badge{
+    min-width:16px; height:16px; border-radius:8px; background:#C0705A; color:#FFF6EA;
+    font-size:8.5px; display:flex; align-items:center; justify-content:center; padding:0 4px;
+    margin-left:auto;
+  }
+  .setting-row .badge + .arr{ margin-left:2px; }
+  .setting-group-title{ font-size:9px; letter-spacing:.14em; color:#B0A390; margin:18px 2px 2px; }
+  .toggle{
+    margin-left:auto; width:34px; height:19px; border-radius:10px; background:#DDD2BF; position:relative;
+    transition:background .2s; flex:none;
+  }
+  .toggle::after{
+    content:""; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%;
+    background:#FFF9EE; transition:transform .2s; box-shadow:0 1px 2px rgba(0,0,0,.15);
+  }
+  .toggle.on{ background:#9AAE8C; }
+  .toggle.on::after{ transform:translateX(15px); }
+
+  .toast{
+    position:absolute; left:50%; bottom:120px; transform:translate(-50%,10px); z-index:120;
+    background:rgba(32,28,24,.92); color:#F5F3EF; font-size:11px; padding:9px 16px;
+    border-radius:14px; opacity:0; pointer-events:none; transition:.25s; white-space:nowrap;
+    max-width:86%; overflow:hidden; text-overflow:ellipsis;
+    box-shadow:0 8px 20px rgba(0,0,0,.22);
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  /* ---- 详细设计批次 ---- */
+  .time-filter{ position:absolute; top:72px; left:14px; z-index:24; display:flex; gap:6px; }
+  .tf-chip{
+    font-size:9.5px; padding:5px 10px; border-radius:14px; cursor:pointer;
+    background:rgba(255,255,255,.94); border:1px solid #E5E2DB; color:#8E887E;
+    box-shadow:0 2px 8px rgba(40,35,28,.06);
+  }
+  .tf-chip.on{ background:#2B2620; color:#F5F4F1; border-color:#2B2620; }
+
+  .note-list .paper.env{ background:#F2EEE8; }
+  .env-mark{
+    display:inline-flex; align-items:center; gap:3px; font-size:8.5px; color:#8B8171;
+    border:1px solid #DED2BD; border-radius:6px; padding:2px 6px; font-family:var(--ui);
+    margin-left:6px;
+  }
+  .env-mark svg{ width:10px; height:10px; }
+
+  .paste-anim{ position:absolute; inset:0; z-index:55; display:none; pointer-events:none; }
+  .paste-anim.play{ display:block; }
+  .paste-anim .glue{
+    position:absolute; left:50%; top:42%; width:130px; height:60px; margin:-30px 0 0 -65px;
+    background:radial-gradient(closest-side,rgba(255,248,230,.9),transparent);
+    opacity:0;
+  }
+  .paste-anim.play .glue{ animation:gluefade .9s .3s ease both; }
+  @keyframes gluefade{ 30%{opacity:.9;} 100%{opacity:0;} }
+  .paste-anim .swipe{
+    position:absolute; left:50%; top:42%; width:90px; height:90px; margin:-45px 0 0 -45px;
+    color:rgba(178,95,73,.9); opacity:0;
+  }
+  .paste-anim.play .swipe{ animation:swipe .8s ease both; }
+  @keyframes swipe{
+    0%{ transform:translate(-110px,-70px) rotate(-35deg); opacity:0; }
+    25%{ opacity:1; }
+    100%{ transform:translate(110px,70px) rotate(25deg); opacity:0; }
+  }
+  .paste-anim .slap{
+    position:absolute; left:50%; top:45%; width:170px; margin-left:-85px; margin-top:-40px;
+    opacity:0;
+  }
+  .paste-anim.play .slap{ animation:slap .7s .55s ease both; }
+  @keyframes slap{
+    0%{ transform:scale(2.1) rotate(10deg); opacity:0; }
+    35%{ opacity:1; }
+    60%{ transform:scale(.94) rotate(-3deg); }
+    100%{ transform:scale(1) rotate(0deg); opacity:1; }
+  }
+
+  .journey{ display:flex; align-items:center; gap:7px; margin-top:7px; }
+  .journey .track{ flex:1; height:3px; border-radius:2px; background:#E9E6DF; overflow:hidden; position:relative; }
+  .journey .track i{ position:absolute; left:0; top:0; bottom:0; width:0; background:var(--accent); border-radius:2px; transition:width .7s ease; }
+  .journey .stage{ font-size:8.5px; color:#A09A90; white-space:nowrap; }
+  .bubble.done .journey{ opacity:0; transition:opacity .6s .8s; }
+  .readhint{ margin-top:5px; font-size:9px; color:#A3A99B; display:flex; align-items:center; gap:4px; }
+  .readhint::before{ content:""; width:5px; height:5px; border-radius:50%; background:#B7C3AB; }
+  .chat-tools{ display:flex; gap:6px; align-items:center; }
+  .pencil{ filter:grayscale(1) contrast(1.12) brightness(1.04); }
+
+  .glass-note{
+    position:absolute; left:16px; top:14px; width:56px; padding:9px 6px; z-index:4; cursor:pointer;
+    background:rgba(253,240,196,.92); font-family:var(--serif); font-size:8.5px; line-height:1.6;
+    color:#7A5E1E; box-shadow:0 3px 8px rgba(80,60,20,.25); transform:rotate(-4deg); text-align:center;
+  }
+  .drift-letter{
+    position:absolute; left:-46px; top:64px; z-index:2; width:40px; cursor:pointer;
+    animation:driftacross 14s linear infinite;
+  }
+  @keyframes driftacross{
+    0%{ transform:translateX(0) translateY(0) rotate(-6deg); }
+    25%{ transform:translateX(80px) translateY(14px) rotate(5deg); }
+    50%{ transform:translateX(160px) translateY(-8px) rotate(-7deg); }
+    75%{ transform:translateX(240px) translateY(10px) rotate(4deg); }
+    100%{ transform:translateX(320px) translateY(0) rotate(-5deg); }
+  }
+  .drift-letter.crumpled{ animation:crumple .8s ease forwards; }
+  @keyframes crumple{
+    40%{ transform:translate(150px,-10px) rotate(200deg) scale(.7); }
+    100%{ transform:translate(150px,150px) rotate(560deg) scale(.12); opacity:0; }
+  }
+  .album{
+    position:absolute; right:56px; bottom:332px; z-index:5; width:46px; height:30px; cursor:pointer;
+    background:#E8D9BC; border-radius:3px; transform:rotate(3deg);
+    box-shadow:0 6px 12px rgba(90,70,45,.2);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .album::before{ content:""; position:absolute; left:-4px; top:3px; width:5px; height:24px; border-radius:3px; background:#C9A96F; }
+  .album span{ font-size:7px; color:#8A7A5C; letter-spacing:.05em; }
+
+  .stamp-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .stamp{
+    border:2px dotted #C9B58E; border-radius:6px; padding:8px 4px 6px; text-align:center;
+    background:#FBF3DF; cursor:pointer;
+  }
+  .stamp .sn{ font-family:var(--serif); font-size:9.5px; color:#7A5E1E; }
+  .stamp .sd{ font-size:7.5px; color:#A2947E; margin-top:3px; }
+  .stamp svg{ width:20px; height:20px; opacity:.6; margin-bottom:2px; }
+  .stamp.empty{ border-style:dashed; background:transparent; }
+  .stamp.empty .sn{ color:#B3A58D; }
+  .album-title{ display:flex; align-items:center; margin-bottom:14px; }
+  .album-title h3{ font-family:var(--ui); font-size:15px; font-weight:600; }
+  .album-title span{ margin-left:auto; font-size:9px; color:#8E887E; }
+
+  .citypass{ position:absolute; inset:0; z-index:90; display:none; overflow:hidden; background:linear-gradient(180deg,#3B4354 0%,#575063 45%,#8B7460 100%); }
+  .citypass.play{ display:block; }
+  .cp-buildings{ position:absolute; left:0; right:0; bottom:18%; }
+  .cp-buildings i{ position:absolute; bottom:0; background:#2E2A26; border-radius:3px 3px 0 0; }
+  .cp-buildings i::after{
+    content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg,rgba(255,225,150,.16) 0 3px,transparent 3px 9px);
+  }
+  .cp-l1{ height:120px; }
+  .cp-l2{ height:190px; opacity:.85; }
+  .citypass.play .cp-l1{ animation:citymove 1.4s linear both; }
+  .citypass.play .cp-l2{ animation:citymove2 1.4s linear both; }
+  @keyframes citymove{ from{ transform:translateX(55%);} to{ transform:translateX(-28%);} }
+  @keyframes citymove2{ from{ transform:translateX(28%);} to{ transform:translateX(-42%);} }
+  .cp-caption{
+    position:absolute; left:0; right:0; top:26%; text-align:center; color:#F3E9D6;
+    font-family:var(--serif); font-size:12px; letter-spacing:.3em; opacity:0;
+  }
+  .citypass.play .cp-caption{ animation:capfade 1.4s ease both; }
+  @keyframes capfade{ 20%{opacity:0;} 45%{opacity:1;} 85%{opacity:1;} 100%{opacity:0;} }
+  .cp-window{
+    position:absolute; left:50%; top:38%; width:74px; height:88px; margin:-44px 0 0 -37px;
+    border:5px solid #E0CDB1; border-radius:6px; background:linear-gradient(180deg,#F6D98F,#E8A85F);
+    box-shadow:0 0 40px 12px rgba(255,215,140,.45); opacity:0;
+  }
+  .citypass.play .cp-window{ animation:winappear 1.4s ease both; }
+  @keyframes winappear{ 55%{opacity:0; transform:scale(.6);} 80%{opacity:1; transform:scale(1.05);} 100%{opacity:1; transform:scale(1);} }
+  .cp-window::before, .cp-window::after{ content:""; position:absolute; background:#E0CDB1; }
+  .cp-window::before{ left:50%; top:0; bottom:0; width:4px; transform:translateX(-50%); }
+  .cp-window::after{ top:50%; left:0; right:0; height:4px; transform:translateY(-50%); }
+
+  .visit-page{ background:#EFE4D2; overflow:hidden; }
+  .back-btn{
+    position:absolute; left:14px; top:12px; z-index:20; border:0; cursor:pointer;
+    background:rgba(252,248,238,.8); border:1px solid #DCCFB8; color:#74695A;
+    border-radius:20px; padding:7px 13px; font-size:11px; font-family:var(--ui);
+  }
+  .visit-actions{ position:absolute; left:16px; right:16px; bottom:26px; z-index:15; display:flex; gap:8px; }
+  .visit-actions button{
+    flex:1; height:42px; border-radius:12px; border:1px solid #DCD1BD; background:rgba(252,248,238,.9);
+    color:#5B5245; font-size:11px; font-family:var(--ui); cursor:pointer;
+    box-shadow:0 6px 14px rgba(90,70,45,.14);
+  }
+  .visit-actions button.main{ background:#4A4238; color:#FBF5E8; border-color:#4A4238; }
+  .visit-hint{ position:absolute; left:0; right:0; bottom:78px; text-align:center; font-size:9px; color:rgba(90,70,45,.5); z-index:14; }
+
+  .write-paper textarea{
+    width:100%; min-height:88px; resize:none; border:0; outline:none; background:none;
+    font-family:var(--serif); font-size:13px; line-height:1.9; color:#4A4238; position:relative;
+  }
+  .write-foot{ display:flex; gap:8px; margin-top:14px; }
+  .write-foot button{
+    flex:1; height:40px; border-radius:11px; border:0; cursor:pointer; font-family:var(--ui); font-size:11.5px;
+  }
+  .write-foot .ok{ background:#A85A44; color:#FFF6EF; }
+  .write-foot .no{ background:transparent; border:1px solid #DAD7D0; color:#6E6A62; }
+  .letter-actions{ display:flex; gap:8px; margin-top:14px; }
+  .letter-actions button{
+    flex:1; height:42px; border-radius:12px; border:0; cursor:pointer; font-family:var(--ui); font-size:11.5px;
+  }
+  .letter-actions .reply{ background:#2B2620; color:#F5F4F1; }
+  .letter-actions .drop{ background:transparent; border:1px solid #DAD7D0; color:#6E6A62; }
+
+  .fly-paper{
+    position:absolute; z-index:110; width:120px; padding:12px; background:#FDFBF4;
+    box-shadow:0 10px 20px rgba(50,40,30,.3); font-family:var(--serif); font-size:10px; line-height:1.6;
+    border-radius:2px;
+    transition:transform .8s cubic-bezier(.3,.7,.4,1), opacity .8s; pointer-events:none;
+  }
+  .title-chip{
+    font-size:9px; color:#9C4A5C; border:1px solid #E8C7CE; background:#FBF0EB;
+    border-radius:12px; padding:2px 8px; margin-left:8px; display:inline-block; vertical-align:middle; font-weight:400;
+  }
+
+  .tiles{ position:absolute; inset:0; z-index:1; overflow:hidden; }
+  .tiles img{
+    position:absolute; width:195.2px; height:195.2px;
+    user-select:none; -webkit-user-drag:none; background:#F1EDE6;
+  }
+  .map-brand{
+    position:absolute; left:14px; bottom:76px; z-index:23; pointer-events:none;
+    font-size:7px; color:#8E887E; background:rgba(255,255,255,.82); border-radius:4px; padding:2px 5px;
+    letter-spacing:.03em; font-family:var(--ui);
+  }
+
+  /* ---- 写实质感层 ---- */
+  .tex{ position:absolute; inset:0; pointer-events:none; border-radius:inherit; }
+  .tex-noise{ background-image:var(--noise); background-size:110px; mix-blend-mode:overlay; opacity:.32; }
+  .tex-wood{ background-image:var(--wood); background-size:230px 115px; mix-blend-mode:multiply; opacity:.55; }
+  .tex-metal{ background-image:var(--metal); background-size:170px 85px; mix-blend-mode:overlay; opacity:.42; }
+
+  .phone::before{
+    content:""; position:absolute; inset:0; z-index:128; pointer-events:none;
+    background:radial-gradient(135% 115% at 50% 42%, transparent 58%, rgba(36,24,12,.2));
+  }
+  .phone::after{
+    content:""; position:absolute; inset:0; z-index:129; pointer-events:none;
+    background-image:var(--noise); background-size:130px;
+    mix-blend-mode:overlay; opacity:.15;
+  }
+
+  .osh{
+    position:absolute; height:10px; border-radius:50%;
+    background:rgba(70,50,30,.3); filter:blur(4px); z-index:1; pointer-events:none;
+  }
+  .motes{ position:absolute; pointer-events:none; z-index:6; }
+  .motes i{
+    position:absolute; width:3px; height:3px; border-radius:50%;
+    background:rgba(255,236,190,.85); filter:blur(.6px);
+    animation:mote 9s ease-in-out infinite;
+  }
+  .motes i:nth-child(2){ width:2px; height:2px; animation-delay:2.2s; }
+  .motes i:nth-child(3){ animation-delay:4.4s; }
+  .motes i:nth-child(4){ width:2px; height:2px; animation-delay:1.2s; }
+  .motes i:nth-child(5){ width:4px; height:4px; animation-delay:6s; }
+  @keyframes mote{
+    0%,100%{ transform:translate(0,0); opacity:.12; }
+    50%{ transform:translate(10px,-18px); opacity:.85; }
+  }
+  .bshadow{
+    position:absolute; left:50%; bottom:84px; width:276px; height:22px; margin-left:-138px;
+    border-radius:50%; background:rgba(0,0,0,.55); filter:blur(10px); z-index:0; pointer-events:none;
+  }
+
+  @media (max-width:430px){
+    
+    
+    .phone{ width:100%; height:100dvh; border-radius:0; box-shadow:none; }
+    .notch{ display:none; }
+    .statusbar{ height:36px; padding-top:6px; }
+  }
+
+
+.desk-container {
   width: 100%;
-  height: 100%;
-  height: 100dvh;
-  --brass: #c9a227;
-  --brass-hi: #e8c96a;
-  --linen: #f3ead9;
-  --paper: #efe7db;
-  --ink: #4a3728;
-  --ink-soft: #7a6a58;
-  --wax: #a83232;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  /* 严格预留底部 TabBar（56px + 安全区）的高度 */
-  padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
-  background: var(--wood-dark);
-  color: #333;
-}
-
-.hand {
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", cursive;
-}
-
-/* ===== 顶栏 (v1 木色顶栏) ===== */
-.desk-top-bar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 14px;
-  background: linear-gradient(180deg, var(--wood), var(--wood-dark));
-  position: relative;
-  z-index: 25;
-  box-shadow: 0 2px 8px rgba(50, 30, 15, 0.35);
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 2px, transparent 2px 9px);
-  }
-}
-
-.desk-user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-  user-select: none;
-
-  &:active { transform: scale(0.97); opacity: 0.88; }
-}
-
-.owner-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  flex: none;
-  border: 2px solid var(--brass-hi);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.owner-meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.owner-name-row { display: flex; align-items: center; gap: 6px; }
-
-.owner-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.3px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.desk-tag {
-  flex: none;
-  font-size: 9px;
-  color: #6b4a12;
-  background: linear-gradient(180deg, #ffe9a3, #f5d478);
-  padding: 2px 7px;
-  border-radius: 8px;
-  font-weight: 600;
-  box-shadow: inset 0 -1px 0 rgba(120, 80, 10, 0.3);
-}
-
-.owner-sub { font-size: 10px; color: rgba(255, 246, 225, 0.72); }
-
-.desk-actions-top { flex: none; display: flex; align-items: center; gap: 6px; }
-
-.action-pill-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff8e8;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  cursor: pointer;
-}
-
-.pill-icon { font-size: 12px; }
-.pill-text { font-size: 11px; }
-
-.theme-btn {
-  background: linear-gradient(180deg, #ffe9a3, #f0cd6d);
-  border-color: transparent;
-  color: #6b4a12;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
-}
-
-/* ===== 窗户区 (v1 压缩窗高) ===== */
-.window-zone {
-  flex: none;
-  padding: 10px 12px 0;
-  margin-bottom: -8px; /* 窗台出檐压住桌背缘，消除窗/桌断带 */
-  position: relative;
-  z-index: 10;
-}
-
-.window-frame {
-  position: relative;
-  height: clamp(240px, 37vh, 344px);
-  border-radius: 18px;
-  overflow: hidden;
-  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
-  padding: 9px;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 6px 16px -6px rgba(70, 45, 20, 0.5);
-  perspective: 550px;
-  transform-style: preserve-3d;
-}
-
-.sky {
-  position: relative;
-  height: 100%;
-  border-radius: 11px;
-  overflow: hidden;
-}
-
-.weather-sunny .sky, .sky.weather-sunny { background: linear-gradient(180deg, #a9d7e8 0%, #c8e6d4 55%, #f6ecd2 100%); }
-.weather-cloudy .sky, .sky.weather-cloudy { background: linear-gradient(180deg, #b8c9d4 0%, #d3dcd4 55%, #ece8d8 100%); }
-.weather-rainy .sky, .sky.weather-rainy { background: linear-gradient(180deg, #7d94a8 0%, #93a6b2 55%, #b8c2c4 100%); }
-.weather-night .sky, .sky.weather-night { background: linear-gradient(180deg, #26355c 0%, #3a4a74 60%, #5a5a80 100%); }
-
-.sun-glow {
-  position: absolute;
-  top: 16px;
-  right: 26px;
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff8d8 0%, #ffe9a0 45%, rgba(255, 233, 160, 0) 72%);
-  animation: sun-breathe 4.5s ease-in-out infinite;
-}
-
-@keyframes sun-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.12); opacity: 1; }
-}
-
-.sun-flare-rays {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 150px;
-  height: 150px;
-  background: radial-gradient(circle at top right, rgba(255, 245, 157, 0.3) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.night-sky { position: absolute; inset: 0; }
-
-.crescent-moon {
-  position: absolute;
-  top: 68%;
-  left: 10%;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fbf4dc, #e6d9b4 72%);
-  box-shadow: 0 0 24px 8px rgba(244, 236, 208, 0.3);
-}
-
-.star {
-  position: absolute;
-  color: #fff9c4;
-  font-size: 10px;
-  opacity: 0.8;
-  animation: star-blink 2s infinite ease-in-out alternate;
-}
-
-.star-1 { top: 78%; left: 24%; }
-.star-2 { top: 78%; left: 40%; animation-delay: 0.8s; }
-.star-3 { top: 78%; left: 86%; animation-delay: 1.4s; }
-
-@keyframes star-blink {
-  0% { opacity: 0.3; transform: scale(0.8); }
-  100% { opacity: 1; transform: scale(1.15); }
-}
-
-.rain-canvas { position: absolute; inset: 0; pointer-events: none; }
-
-.rain-line {
-  position: absolute;
-  top: -20px;
-  width: 1.5px;
-  height: 22px;
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.7));
-  animation: rain-fall 0.75s linear infinite;
-}
-
-@keyframes rain-fall {
-  to { transform: translateY(340px); }
-}
-
-.soft-cloud {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
-  filter: blur(2px);
-}
-
-.cloud-1 { top: 40px; left: -70px; width: 64px; height: 16px; animation: cloud-drift 34s linear infinite; }
-.cloud-2 { top: 88px; left: -60px; width: 48px; height: 13px; opacity: 0.6; animation: cloud-drift 46s linear infinite 6s; }
-
-@keyframes cloud-drift {
-  from { transform: translateX(0); }
-  to { transform: translateX(560px); }
-}
-
-.distant-landscape {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 35px;
-  background: linear-gradient(to top, rgba(104, 159, 56, 0.35), transparent);
-}
-
-.bird {
-  position: absolute;
-  width: 16px;
-  height: 8px;
-
-  &::before, &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    width: 9px;
-    height: 7px;
-    border-top: 2px solid rgba(80, 100, 120, 0.55);
-    border-radius: 60% 60% 0 0;
-  }
-  &::before { left: 0; transform: rotate(-14deg); }
-  &::after { left: 7px; transform: rotate(14deg); }
-}
-
-.bird-1 { top: 56px; left: 110px; animation: bird-fly 22s linear infinite; }
-.bird-2 { top: 80px; left: 160px; transform: scale(0.75); animation: bird-fly 26s linear infinite 4s; }
-
-.weather-rainy .bird, .weather-night .bird { display: none; }
-
-@keyframes bird-fly {
-  from { margin-left: 0; }
-  to { margin-left: 240px; }
-}
-
-/* 折纸飞机飞行动画 (保留) */
-.paper-airplane-anim {
-  position: absolute;
-  bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: airplane-soar 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-
-.airplane-body { font-size: 38px; }
-
-.airplane-trail {
-  font-size: 11px;
-  color: #fff;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-top: 4px;
-}
-
-@keyframes airplane-soar {
-  0% { transform: translate(-50%, 40px) scale(0.5); opacity: 0; }
-  50% { transform: translate(-50%, -60px) scale(1.2); opacity: 1; }
-  100% { transform: translate(-20%, -140px) scale(0.8); opacity: 0; }
-}
-
-/* 丁达尔微尘浮游微粒 (Motes) */
-.air-motes {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.mote {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(255, 240, 190, 0.85);
-  filter: blur(0.5px);
-  animation: mote-float 8s ease-in-out infinite;
-}
-
-.m1 { top: 32%; left: 35%; animation-duration: 7s; }
-.m2 { top: 48%; left: 42%; width: 3px; height: 3px; animation-duration: 9.5s; animation-delay: 1.8s; }
-.m3 { top: 25%; left: 58%; width: 5px; height: 5px; animation-duration: 8.2s; animation-delay: 3.5s; }
-.m4 { top: 62%; left: 28%; width: 2.5px; height: 2.5px; animation-duration: 11s; animation-delay: 2.2s; }
-.m5 { top: 40%; left: 66%; width: 3.5px; height: 3.5px; animation-duration: 9s; animation-delay: 4.8s; }
-
-@keyframes mote-float {
-  0%, 100% { transform: translate(0, 0); opacity: 0.15; }
-  50% { transform: translate(12px, -20px); opacity: 0.85; }
-}
-
-/* 窗外漂流慢信 (正弦曲线滑移) */
-.drift-air-letter {
-  position: absolute;
-  top: 66px;
-  left: -50px;
-  z-index: 3;
-  cursor: pointer;
-  animation: drift-across 18s linear infinite;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 4px 6px rgba(40, 20, 10, 0.25));
-  transition: transform 0.2s ease;
-
-  &:active {
-    transform: scale(1.2) !important;
-  }
-}
-
-.drift-envelope-icon {
-  font-size: 20px;
-  transform: rotate(-8deg);
-}
-
-@keyframes drift-across {
-  0% { transform: translateX(0) translateY(0) rotate(-6deg); }
-  25% { transform: translateX(110px) translateY(12px) rotate(6deg); }
-  50% { transform: translateX(220px) translateY(-8px) rotate(-5deg); }
-  75% { transform: translateX(330px) translateY(10px) rotate(4deg); }
-  100% { transform: translateX(460px) translateY(0) rotate(-6deg); }
-}
-
-/* 纱帘与风力联动 */
-.sheer-curtain {
-  position: absolute;
-  top: 0;
-  bottom: 52px;
-  width: 44px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.14));
-  z-index: 6;
-  pointer-events: none;
-  transition: transform 0.6s ease;
-}
-
-.curtain-left {
-  left: 0;
-  border-radius: 0 40% 60% 0 / 0 30% 30% 0;
-  animation: curtain-sway 6s ease-in-out infinite alternate;
-  transform-origin: top left;
-}
-
-.curtain-right {
-  right: 0;
-  background: linear-gradient(270deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.14));
-  border-radius: 40% 0 0 60% / 30% 0 0 30%;
-  animation: curtain-sway 7s ease-in-out infinite alternate-reverse;
-  transform-origin: top right;
-}
-
-.is-windy .curtain-left {
-  animation: curtain-sway 2.2s ease-in-out infinite alternate;
-}
-
-.is-windy .curtain-right {
-  animation: curtain-sway 2.4s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes curtain-sway {
-  from { transform: skewY(0deg) skewX(0deg); }
-  to { transform: skewY(2.2deg) skewX(1.8deg); }
-}
-
-/* 窗户 3D 活动窗扇 */
-.window-sash {
-  position: absolute;
-  top: 0;
-  bottom: 52px;
-  width: 50%;
-  z-index: 5;
-  transition: transform 0.65s cubic-bezier(0.3, 0.8, 0.35, 1);
-  pointer-events: none;
-}
-
-.sash-left {
-  left: 0;
-  transform-origin: left center;
-}
-
-.sash-right {
-  right: 0;
-  transform-origin: right center;
-}
-
-.is-open .sash-left {
-  transform: perspective(340px) rotateY(-68deg);
-}
-
-.is-open .sash-right {
-  transform: perspective(340px) rotateY(68deg);
-}
-
-.sash-glass {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(115deg, rgba(255, 255, 255, 0.18) 20%, transparent 35%, rgba(255, 255, 255, 0.1) 60%, transparent 75%);
-  border: 2px solid rgba(220, 190, 150, 0.7);
-}
-
-.sash-left .sash-glass { border-left-width: 0; }
-.sash-right .sash-glass { border-right-width: 0; }
-
-/* 窗棂 */
-.window-wood-frame {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  cursor: pointer;
-}
-
-.crossbar-h, .crossbar-v {
-  position: absolute;
-  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 2px 4px rgba(40, 25, 10, 0.3);
-}
-
-.crossbar-h { left: 0; right: 0; top: 54%; height: 9px; }
-.crossbar-v { top: 0; bottom: 0; left: 50%; width: 9px; margin-left: -4.5px; }
-
-.window-sash-handle {
-  position: absolute;
-  left: 50%;
-  top: 54%;
-  transform: translate(-50%, -50%);
-  background: rgba(60, 40, 20, 0.75);
-  border: 1px solid rgba(255, 230, 180, 0.5);
-  padding: 3px 10px;
-  border-radius: 12px;
-  backdrop-filter: blur(4px);
-  z-index: 10;
-  transition: transform 0.2s, background 0.2s;
-  pointer-events: auto;
-
-  &:active {
-    transform: translate(-50%, -50%) scale(0.92);
-  }
-}
-
-.sash-tip-text {
-  font-size: 8px;
-  color: #fff4d6;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-/* ===== 便签墙：slot 错落散贴 (v1) ===== */
-.window-notes-stream {
-  position: absolute;
-  inset: 8px 10px 56px 10px;
-  z-index: 4;
-  pointer-events: none;
-}
-
-.washi-sticky-note, .batch-chip {
-  pointer-events: auto;
-}
-
-.washi-sticky-note {
-  position: absolute;
-  border-radius: 4px;
-  padding: 8px 9px 7px;
-  box-shadow: 0 5px 12px rgba(80, 55, 25, 0.28), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: hidden;
-  box-sizing: border-box;
-
-  &:active { transform: scale(0.96); }
-}
-
-.note-peeling {
-  transform: rotate(-10deg) scale(1.15) !important;
-  box-shadow: 6px 12px 20px rgba(0, 0, 0, 0.35) !important;
-  z-index: 9;
-}
-
-.my-note { box-shadow: 0 5px 12px rgba(80, 55, 25, 0.28), 0 0 0 1.5px var(--brass-hi); }
-
-.washi-tape-strip {
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-3deg);
-  width: 44px;
-  height: 13px;
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: 0 1px 2px rgba(90, 60, 30, 0.18);
-  border-left: 1px dashed rgba(0, 0, 0, 0.15);
-  border-right: 1px dashed rgba(0, 0, 0, 0.15);
-}
-
-.paper-yellow { background: #fff6c2; color: #4d3d2c; }
-.paper-pink   { background: #fde4ee; color: #4d3d2c; }
-.paper-blue   { background: #e2f0fa; color: #4d3d2c; }
-.paper-green  { background: #e6f4e4; color: #4d3d2c; }
-.paper-kraft  { background: #f5ece1; color: #4d3d2c; }
-
-.note-author-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  margin-top: 3px;
-  font-weight: 700;
-}
-
-.note-author-txt {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #5b4632;
-}
-
-.note-heart { flex: none; font-size: 9px; color: #c25555; font-weight: 600; }
-
-.handwritten-note-img {
-  width: 100%;
-  height: 44px;
-  margin-top: 4px;
-  border-radius: 3px;
-  object-fit: contain;
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.note-body-txt {
-  font-size: 10.5px;
-  line-height: 1.45;
-  margin-top: 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* "+" 贴便签入口 (D1) */
-.note-plus {
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 52px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1.5px dashed rgba(90, 60, 30, 0.4);
-  box-shadow: 0 3px 8px rgba(80, 55, 25, 0.18);
-
-  .washi-tape-strip { display: none; }
-}
-
-.plus-ic { font-size: 18px; color: #6b4a12; line-height: 1; }
-.plus-tx { font-size: 10px; color: #6b4a12; font-weight: 600; }
-
-/* 换批 chip (D2) */
-.batch-chip {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 8;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 10px;
-  padding: 3px 8px;
-  box-shadow: 0 2px 5px rgba(80, 55, 25, 0.25);
-  cursor: pointer;
-}
-
-.batch-tx { font-size: 9px; font-weight: 700; color: #6b4a12; }
-
-/* ===== 窗台木搁板 (v1) ===== */
-.window-shelf {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 52px;
-  background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 30%, var(--wood-dark) 100%);
-  box-shadow: 0 -3px 8px rgba(60, 35, 15, 0.3), inset 0 2px 0 rgba(255, 235, 200, 0.35);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  padding: 0 14px 5px;
-  z-index: 5;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
-    background: linear-gradient(180deg, var(--wood-light), var(--wood));
-    border-radius: 3px 3px 0 0;
-  }
-}
-
-.shelf-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  position: relative;
-}
-
-/* 🪴 春日多肉互动浇水 */
-.shelf-succulent {
-  cursor: pointer;
-  position: relative;
-  user-select: none;
-}
-
-.succulent-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.succulent-plant {
-  transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.35, 1), filter 0.3s;
-}
-
-.is-watering .succulent-plant {
-  animation: leaf-bounce 1.4s ease-in-out;
-}
-
-@keyframes leaf-bounce {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  35% { transform: scale(1.15) translateY(-2px); filter: brightness(1.25); }
-  65% { transform: scale(1.05) translateY(0); filter: brightness(1.15); }
-}
-
-.watering-can-anim {
-  position: absolute;
-  top: -16px;
-  right: -12px;
-  opacity: 0;
-  pointer-events: none;
-  transform: rotate(0deg) scale(0.8);
-  transition: opacity 0.3s, transform 0.35s ease;
-  z-index: 10;
-}
-
-.is-watering .watering-can-anim {
-  opacity: 1;
-  transform: rotate(-35deg) scale(1);
-}
-
-.watering-can-icon {
-  font-size: 19px;
-  line-height: 1;
-}
-
-.water-drops {
-  position: absolute;
-  left: -4px;
-  top: 14px;
-  width: 14px;
-  height: 20px;
-}
-
-.drop {
-  position: absolute;
-  width: 3px;
-  height: 5.5px;
-  border-radius: 50% 50% 60% 60%;
-  background: #8ec5fc;
-  opacity: 0;
-}
-
-.d1 { left: 2px; }
-.d2 { left: 6px; }
-.d3 { left: 10px; }
-
-.is-watering .drop {
-  animation: drop-fall 0.75s linear infinite;
-}
-
-.is-watering .d2 { animation-delay: 0.22s; }
-.is-watering .d3 { animation-delay: 0.44s; }
-
-@keyframes drop-fall {
-  0% { transform: translateY(0); opacity: 0; }
-  30% { opacity: 0.9; }
-  100% { transform: translateY(18px); opacity: 0; }
-}
-
-/* 🕯️ 香薰烛真实火苗摇曳 */
-.shelf-candle {
-  cursor: pointer;
-  user-select: none;
-}
-
-.candle-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.candle-flame {
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.flame-core {
-  width: 6px;
-  height: 10px;
-  background: radial-gradient(circle at 50% 80%, #ffffff 0%, #ffeb3b 40%, #ff5722 80%);
-  border-radius: 50% 50% 35% 35%;
-  animation: flame-dance 1.8s ease-in-out infinite alternate;
-}
-
-.flame-glow {
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 200, 100, 0.45) 0%, transparent 70%);
-  animation: flame-glow-pulse 1.8s ease-in-out infinite alternate;
-}
-
-@keyframes flame-dance {
-  0% { transform: scale(1) rotate(-3deg); }
-  50% { transform: scale(1.1, 0.95) rotate(2deg); }
-  100% { transform: scale(0.95, 1.15) rotate(-2deg); }
-}
-
-@keyframes flame-glow-pulse {
-  0% { opacity: 0.6; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1.15); }
-}
-
-.item-emoji {
-  font-size: 24px;
-  line-height: 1;
-  filter: drop-shadow(0 3px 3px rgba(40, 20, 5, 0.4));
-}
-
-.shelf-label { font-size: 8.5px; color: rgba(255, 240, 215, 0.85); }
-
-.books {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5px;
-  filter: drop-shadow(0 3px 3px rgba(40, 20, 5, 0.4));
-}
-
-.bk { display: block; border-radius: 1.5px; }
-.bk.b1 { width: 34px; height: 6px; background: #b8574f; }
-.bk.b2 { width: 30px; height: 6px; background: #4f7d9e; margin-left: -3px; }
-.bk.b3 { width: 36px; height: 6px; background: #7d9457; margin-left: 2px; }
-
-.coffee-steaming { position: relative; display: flex; align-items: center; }
-.coffee-cup { font-size: 24px; line-height: 1; filter: drop-shadow(0 3px 3px rgba(40, 20, 5, 0.4)); }
-
-.steam {
-  position: absolute;
-  top: -10px;
-  width: 2.5px;
-  height: 11px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.8);
-  animation: steam-rise 2.4s ease-in-out infinite;
-}
-
-.steam-1 { left: 8px; }
-.steam-2 { left: 15px; animation-delay: 1.1s; }
-
-@keyframes steam-rise {
-  0% { transform: translateY(3px); opacity: 0; }
-  35% { opacity: 0.9; }
-  100% { transform: translateY(-8px); opacity: 0; }
-}
-
-/* ===== 桌面区 (v1 第一人称摆置) ===== */
-.desk-zone {
-  flex: 1;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 210px;
-}
-
-.desk-top {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 40%, var(--wood-mid) 100%);
-  box-shadow: inset 0 6px 14px rgba(60, 35, 15, 0.35);
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(90deg, rgba(70, 40, 15, 0.08) 0 3px, transparent 3px 26px);
-    pointer-events: none;
-  }
-}
-
-.desk-sunlight-beam {
-  position: absolute;
-  top: -30px;
-  left: 16%;
-  width: 46%;
-  height: 150%;
-  background: linear-gradient(105deg, rgba(255, 244, 200, 0.34), rgba(255, 244, 200, 0) 70%);
-  transform: rotate(14deg);
-  pointer-events: none;
-  filter: blur(4px);
-  z-index: 2;
-}
-
-/* 台灯开启时的暖黄光漫反射层 */
-.lamp-ambient-glow {
-  position: absolute;
-  top: 10px;
-  left: 18%;
-  width: 290px;
-  height: 190px;
-  background: radial-gradient(ellipse 65% 55% at 48% 25%, rgba(255, 228, 140, 0.35) 0%, rgba(255, 210, 120, 0.12) 55%, transparent 75%);
-  pointer-events: none;
-  filter: blur(8px);
-  z-index: 2;
-  animation: lamp-breathe 4s ease-in-out infinite alternate;
-}
-
-@keyframes lamp-breathe {
-  0% { opacity: 0.86; }
-  100% { opacity: 1; }
-}
-
-.linen-mat {
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  top: 10px;
-  bottom: 6px;
-  border-radius: 10px;
+  height: 100vh;
   background:
-    radial-gradient(circle at 82% 16%, transparent 26px, rgba(150, 110, 60, 0.10) 27px 30px, transparent 31px),
-    radial-gradient(circle at 12% 80%, rgba(90, 60, 120, 0.08) 0 6px, transparent 7px),
-    repeating-linear-gradient(45deg, rgba(150, 120, 80, 0.06) 0 2px, transparent 2px 6px),
-    repeating-linear-gradient(-45deg, rgba(150, 120, 80, 0.05) 0 2px, transparent 2px 6px),
-    var(--linen);
-  box-shadow: 0 3px 10px rgba(70, 45, 20, 0.3), inset 0 0 0 1px rgba(150, 120, 80, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 8px 12px;
-  gap: 4px;
-  z-index: 3;
-}
-
-.obj {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  position: relative;
-}
-
-.obj-cap {
-  font-size: 9px;
-  color: var(--ink-soft);
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.obj-journal, .obj-caddy, .obj-lamp {
-  cursor: pointer;
-  transition: transform 0.15s;
-  &:active { transform: scale(0.96); }
-}
-
-/* 💡 复古黄铜台灯 */
-.brass-lamp {
-  position: relative;
-  width: 42px;
-  height: 66px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.lamp-shade {
-  position: relative;
-  width: 38px;
-  height: 22px;
-  background: linear-gradient(135deg, #e4c285 0%, #c89a5b 70%, #8a6a38 100%);
-  border-radius: 12px 12px 3px 3px;
-  box-shadow: 0 4px 8px rgba(50, 30, 10, 0.35), inset 0 1px 2px rgba(255, 245, 210, 0.6);
-  transition: box-shadow 0.4s ease;
-  z-index: 2;
-}
-
-.lamp-bulb-glow {
-  position: absolute;
-  bottom: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 22px;
-  height: 6px;
-  border-radius: 50%;
-  background: #fff6d9;
-  opacity: 0;
-  transition: opacity 0.4s ease, box-shadow 0.4s ease;
-}
-
-.is-lit .lamp-shade {
-  box-shadow: 0 4px 14px rgba(230, 180, 80, 0.45), 0 0 16px 4px rgba(255, 225, 140, 0.4);
-}
-
-.is-lit .lamp-bulb-glow {
-  opacity: 1;
-  box-shadow: 0 0 18px 8px rgba(255, 225, 130, 0.7);
-}
-
-.lamp-stem {
-  width: 4px;
-  height: 35px;
-  background: linear-gradient(90deg, #8a6a38, #d9be85 50%, #6d5025);
-  border-radius: 2px;
-  z-index: 1;
-}
-
-.lamp-base {
-  width: 28px;
-  height: 9px;
-  background: linear-gradient(180deg, #d9be85, #8a6a38);
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(40, 20, 5, 0.45);
-  margin-top: -2px;
-  z-index: 2;
-}
-
-/* 回忆录皮面本 (v1 比例 + 3D 翻开) */
-.vintage-journal-book {
-  width: clamp(100px, 28vw, 122px);
-  height: 92px;
-  border-radius: 5px 8px 8px 5px;
-  position: relative;
-  background: linear-gradient(135deg, #5a3a24, #472c19);
-  box-shadow: 0 6px 12px rgba(50, 28, 10, 0.45), inset 0 1px 0 rgba(255, 220, 170, 0.25);
-  cursor: pointer;
-  transition: transform 0.25s cubic-bezier(0.3, 0.8, 0.35, 1), box-shadow 0.25s;
-  overflow: hidden;
-  perspective: 400px;
-
-  &:active { transform: scale(0.97); }
-
-  &.is-opening {
-    transform: perspective(400px) rotateY(-22deg) scale(0.97);
-    box-shadow: 0 12px 24px rgba(40, 20, 10, 0.55);
-  }
-}
-
-.journal-spine-leather {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 11px;
-  background: linear-gradient(90deg, #3a2312, #5a3a24);
-  border-radius: 5px 0 0 5px;
-}
-
-.journal-stitch-line {
-  position: absolute;
-  left: 15px;
-  top: 7px;
-  bottom: 7px;
-  width: 1px;
-  border-left: 1.5px dashed rgba(230, 200, 150, 0.5);
-}
-
-.deckled-pages-edge {
-  position: absolute;
-  right: 0;
-  top: 5px;
-  bottom: 5px;
-  width: 5px;
-  background: repeating-linear-gradient(180deg, #f2e8d5 0 2px, #d9cbb2 2px 3px);
-  border-radius: 0 2px 2px 0;
-}
-
-.journal-ribbon {
-  position: absolute;
-  top: 0;
-  right: 16px;
-  width: 7px;
-  height: 26px;
-  background: #b8433c;
-  border-radius: 0 0 3px 3px;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
-}
-
-.journal-cover-title {
-  position: absolute;
-  left: 24px;
-  top: 24px;
-  display: flex;
-  flex-direction: column;
-  z-index: 2;
-}
-
-.journal-txt {
-  font-size: 14px;
-  font-weight: 700;
-  color: #e8d3ac;
-  letter-spacing: 1px;
-}
-
-.journal-meta { font-size: 9px; color: rgba(232, 211, 172, 0.75); margin-top: 4px; }
-
-/* 桌面小物 */
-.middles { display: flex; align-items: flex-end; gap: 8px; padding-bottom: 2px; }
-
-.ink {
-  width: 26px;
-  height: 30px;
-  border-radius: 6px 6px 8px 8px;
-  background: linear-gradient(180deg, rgba(90, 60, 120, 0.25), #4a3560 40%);
-  position: relative;
-  box-shadow: 0 4px 8px rgba(50, 28, 10, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.35);
-
-  &::before {
-    content: ''; position: absolute; top: -7px; left: 8px; width: 14px; height: 8px;
-    background: #2e2140; border-radius: 3px;
-  }
-  &::after {
-    content: ''; position: absolute; top: 6px; left: 5px; width: 6px; height: 12px;
-    background: rgba(255, 255, 255, 0.4); border-radius: 3px; transform: rotate(8deg);
-  }
-}
-
-.tapes { display: flex; flex-direction: column; gap: 4px; }
-
-.tape {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  position: relative;
-  box-shadow: 0 3px 6px rgba(50, 28, 10, 0.35);
-
-  &::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: var(--linen); }
-  /* 多端安全: repeating-linear 替代原型 repeating-conic */
-  &.t1 { background: repeating-linear-gradient(45deg, #e8a7b8 0 4px, #f6d3dc 4px 8px); }
-  &.t2 { background: repeating-linear-gradient(45deg, #9db87a 0 4px, #cfe0b8 4px 8px); margin-left: 6px; }
-}
-
-.pencil {
-  width: 56px;
-  height: 7px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #e8b64c 0 78%, #d9a06a 78% 88%, #3a3a3a 88%);
-  transform: rotate(-9deg);
-  box-shadow: 0 3px 5px rgba(50, 28, 10, 0.35);
-}
-
-/* 笔筒 (v1 木 pot + 插三笔) */
-.caddy { width: 84px; height: 96px; position: relative; }
-
-.pens { position: absolute; left: 12px; top: -24px; display: flex; gap: 6px; }
-
-.pen {
-  width: 6px;
-  height: 44px;
-  border-radius: 3px;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
-  &.p1 { background: linear-gradient(180deg, #3a3a3a 0 30%, #c96f4a 30%); transform: rotate(-8deg); }
-  &.p2 { background: linear-gradient(180deg, #e8d3ac 0 22%, #7a5236 22%); height: 50px; }
-  &.p3 { background: linear-gradient(180deg, #b8433c 0 26%, #e8b64c 26%); transform: rotate(7deg); height: 40px; }
-}
-
-.pot {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 66px;
-  border-radius: 8px 8px 12px 12px;
-  background: linear-gradient(180deg, var(--wood-light), var(--wood) 60%, var(--wood-dark));
-  box-shadow: 0 6px 12px rgba(50, 28, 10, 0.45), inset 0 3px 0 rgba(255, 235, 200, 0.3);
-
-  &::before {
-    content: ''; position: absolute; top: -6px; left: -3px; right: -3px; height: 11px;
-    border-radius: 6px;
-    background: linear-gradient(180deg, var(--wood-light), var(--wood-mid));
-    box-shadow: 0 2px 4px rgba(50, 28, 10, 0.4);
-  }
-}
-
-.pot-lb {
-  position: absolute; left: 0; right: 0; top: 24px; text-align: center;
-  color: #f2e2c4; font-size: 11px; font-weight: 700; letter-spacing: 1px;
-}
-
-.pot-lb2 {
-  position: absolute; left: 0; right: 0; top: 41px; text-align: center;
-  color: rgba(242, 226, 196, 0.7); font-size: 8px;
-}
-
-/* ===== 桌前脸 + 内嵌抽屉 (v1) ===== */
-.desk-front {
-  flex: none;
-  height: 96px;
-  position: relative;
-  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
-  box-shadow: inset 0 4px 10px rgba(30, 15, 5, 0.45);
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(90deg, rgba(30, 15, 5, 0.1) 0 3px, transparent 3px 30px);
-    pointer-events: none;
-  }
-}
-
-.drawer-face-panel {
-  position: absolute;
-  left: 5%;
-  right: 5%;
-  top: 12px;
-  height: 72px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
-  box-shadow: inset 0 2px 5px rgba(25, 12, 4, 0.55), inset 0 -1px 0 rgba(255, 220, 170, 0.2), 0 1px 0 rgba(255, 220, 170, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.15s;
-  box-sizing: border-box;
-
-  &:active { transform: scale(0.985); }
-}
-
-.brass-handle-box { display: flex; align-items: center; gap: 10px; position: relative; }
-
-/* 拉手安装底板：让黄铜拉手有"装在抽屉上"的附着感 */
-.brass-handle-box::before {
-  content: '';
-  position: absolute;
-  left: -7px;
-  top: -7px;
-  width: 54px;
-  height: 34px;
-  border-radius: 7px;
-  background: rgba(25, 12, 4, 0.28);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 220, 170, 0.18);
-}
-
-.brass-curved-pull {
-  width: 40px;
-  height: 20px;
-  border-radius: 0 0 20px 20px;
-  border: 4px solid var(--brass);
-  border-top: none;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45), inset 0 -2px 0 rgba(255, 255, 255, 0.3);
-  position: relative;
-  flex: none;
-
-  &::before, &::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #e8c96a, #8a6a1a);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  }
-  &::before { left: -5px; }
-  &::after { right: -5px; }
-}
-
-.brass-label-plate { display: flex; align-items: center; gap: 7px; }
-
-.drawer-plate-text {
-  font-size: 12px;
-  font-weight: 700;
-  color: #f2e2c4;
-  letter-spacing: 0.5px;
-}
-
-/* 火漆封信数徽章 (v1) */
-.drawer-count-badge {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  flex: none;
-  background: radial-gradient(circle at 35% 30%, #c9524a, #8e2723 70%);
+    radial-gradient(1200px 600px at 20% 10%, #FDFDFB 0%, transparent 60%),
+    radial-gradient(900px 500px at 90% 90%, #EFEDE8 0%, transparent 60%),
+    #E8E7E3;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffe9d8;
-  font-size: 9px;
-  font-weight: 700;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 -2px 4px rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.25);
-  transform: rotate(-8deg);
-}
-
-.drawer-right-box { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-
-.secret-pill {
-  background: rgba(255, 233, 163, 0.16);
-  border: 1px solid rgba(255, 233, 163, 0.5);
-  border-radius: 11px;
-  padding: 3px 9px;
-  cursor: pointer;
-}
-
-.secret-tx { font-size: 10px; font-weight: 700; color: #ffe9a3; }
-
-.drawer-action-pill {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 11px;
-  border-radius: 13px;
-  font-size: 11px;
-  font-weight: 600;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
-}
-
-.drawer-action-pill.open-pill {
-  background: linear-gradient(180deg, #ffe9a3, #f0cd6d);
-  color: #6b4a12;
-}
-
-.action-pill-icon { font-size: 12px; }
-.action-pill-text { font-size: 11px; }
-
-/* ===== 抽屉展开 overlay (D3) ===== */
-.drawer-open-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(20, 10, 5, 0.45);
-  z-index: 40;
-  display: flex;
-  align-items: flex-end;
-  /* 面板整体抬到底部 TabBar 之上，避免信封列表被导航裁切 */
-  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-  box-sizing: border-box;
-  animation: overlay-fade 0.2s ease-out;
-}
-
-@keyframes overlay-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.drawer-open-panel {
-  width: 100%;
-  max-height: 52vh;
-  border-radius: 16px 16px 0 0;
-  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
-  box-sizing: border-box;
-  animation: drawer-slide-up 0.28s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-@keyframes drawer-slide-up {
-  from { transform: translateY(40px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.drawer-inner-compartment {
-  background: #2b1117; /* 暗红色复古丝绒内衬 */
-  box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.75), 0 -6px 20px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 213, 79, 0.2);
-}
-
-.compartment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.15);
-}
-
-.comp-title-box { display: flex; align-items: center; gap: 6px; }
-.comp-icon { font-size: 13px; }
-.comp-title { font-size: 12px; color: #ffe082; font-weight: 700; letter-spacing: 0.3px; }
-
-.comp-badge {
-  font-size: 9px;
-  background: rgba(255, 213, 79, 0.2);
-  color: #ffe082;
-  padding: 1px 6px;
-  border-radius: 8px;
-  border: 0.5px solid rgba(255, 213, 79, 0.4);
-}
-
-.comp-close-pill {
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: rgba(255, 213, 79, 0.15);
-  border: 0.5px solid rgba(255, 213, 79, 0.4);
-  color: #ffe082;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:active { transform: scale(0.95); background: rgba(255, 213, 79, 0.3); }
-}
-
-.close-pill-text { font-size: 11px; font-weight: 700; }
-
-.drawer-letters-scroll { max-height: 32vh; margin-top: 8px; }
-
-.drawer-empty-state {
-  padding: 16px;
-  text-align: center;
-  color: #bcaaa4;
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.empty-icon { font-size: 22px; }
-
-.drawer-letter-envelope {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #5d4037;
-  border-radius: 6px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  border: 0.5px solid #795548;
-  cursor: pointer;
-}
-
-.envelope-stamp-box { position: relative; }
-.letter-avatar { width: 28px; height: 28px; border-radius: 50%; }
-
-.real-wax-seal {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  background: #c62828;
-  color: #fff;
-  font-size: 8px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.envelope-body { flex: 1; min-width: 0; }
-.env-top { display: flex; justify-content: space-between; }
-.env-sender { font-size: 11px; font-weight: 700; color: #fff; }
-.env-time { font-size: 9px; color: #d7ccc8; }
-
-.env-preview {
-  font-size: 10px;
-  color: #ffcc80;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-top: 2px;
+  box-sizing: border-box;
 }
 
-.env-open-arrow { color: #ffb74d; font-size: 14px; }/* ==================== 📖 全窗口手账阅读器 (Full-Window Diary) ==================== */
-.diary-full-page {
-  position: fixed;
-  inset: 0;
+.desk-phone {
+  position: relative;
   width: 100%;
+  max-width: 420px;
   height: 100%;
-  height: 100dvh;
-  z-index: 150;
-  background: #f7f4ed;
-  background-image: radial-gradient(#dfd7c8 0.8px, transparent 0.8px);
-  background-size: 18px 18px;
-  display: flex;
-  flex-direction: column;
-  animation: diary-slide-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 844px;
+  border-radius: 36px;
+  background: var(--bg);
   overflow: hidden;
-}
-
-@keyframes diary-slide-in {
-  from {
-    transform: translateY(100%);
-    opacity: 0.8;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.diary-full-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  background: rgba(254, 252, 248, 0.96);
-  backdrop-filter: blur(12px);
-  border-bottom: 1.5px dashed rgba(62, 39, 35, 0.15);
-  box-shadow: 0 4px 16px rgba(62, 39, 35, 0.05);
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.diary-nav-back {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 18px;
-  background: rgba(62, 39, 35, 0.06);
-  transition: all 0.15s ease;
-
-  &:active {
-    transform: scale(0.95);
-    background: rgba(62, 39, 35, 0.12);
-  }
-
-  .back-arrow {
-    font-size: 18px;
-    font-weight: 700;
-    color: #4e342e;
-    line-height: 1;
-  }
-  .back-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: #4e342e;
-  }
-}
-
-.diary-nav-title-box {
+  box-shadow: 0 30px 80px rgba(90, 70, 45, 0.25), 0 0 0 1px rgba(120, 100, 75, 0.12);
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.diary-nav-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #3e2723;
-  letter-spacing: 0.5px;
-}
-
-.diary-nav-sub {
-  font-size: 11px;
-  color: #8d6e63;
-  margin-top: 1px;
-}
-
-.diary-nav-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(62, 39, 35, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:active {
-    transform: scale(0.92);
-    background: rgba(62, 39, 35, 0.12);
-  }
-
-  .close-icon {
-    font-size: 14px;
-    color: #5d4037;
-    font-weight: 600;
-  }
-}
-
-.diary-full-scroll {
-  flex: 1;
-  height: 0;
-  width: 100%;
-}
-
-.diary-scroll-content {
-  padding: 18px 16px;
-  max-width: 620px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.diary-intro-card {
-  position: relative;
-  background: #fffdf9;
-  border: 1px solid #ebd9c5;
-  border-radius: 14px;
-  padding: 20px 18px 14px;
-  margin-bottom: 22px;
-  box-shadow: 0 4px 16px rgba(93, 64, 55, 0.06);
-
-  .washi-tape-strip {
-    position: absolute;
-    top: -9px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90px;
-    height: 18px;
-    background: rgba(224, 185, 140, 0.55);
-    border: 1px dashed rgba(141, 110, 99, 0.4);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border-radius: 2px;
-  }
-
-  .intro-quote {
-    position: relative;
-    padding: 0 8px;
-
-    .quote-mark {
-      font-size: 20px;
-      font-family: serif;
-      color: #bcaaa4;
-      line-height: 1;
-      vertical-align: middle;
-      &.right-mark { margin-left: 4px; }
-    }
-
-    .quote-text {
-      font-size: 13px;
-      line-height: 1.7;
-      color: #5d4037;
-      font-style: italic;
-    }
-  }
-
-  .intro-author-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 14px;
-    padding-top: 10px;
-    border-top: 1px dashed #efebe9;
-
-    .intro-avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 1px solid #ffd54f;
-    }
-
-    .intro-author-name {
-      font-size: 11px;
-      font-weight: 600;
-      color: #8d6e63;
-    }
-  }
-}
-
-.diary-entries-flow {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.diary-entry-fullcard {
-  position: relative;
-  border-radius: 14px;
-  padding: 18px 18px 14px;
-  box-shadow: 0 4px 18px rgba(62, 39, 35, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  transition: transform 0.15s ease;
-
-  &.paper-yellow { background: #fffbe6; border-color: #ffe58f; }
-  &.paper-pink   { background: #fff0f6; border-color: #ffadd2; }
-  &.paper-green  { background: #f6ffed; border-color: #b7eb8f; }
-  &.paper-blue   { background: #e6f7ff; border-color: #91d5ff; }
-  &.paper-white  { background: #ffffff; border-color: #d9d9d9; }
-  &.paper-kraft  { background: #f5ece1; border-color: #d7ccc8; }
-
-  .entry-tape-accent {
-    position: absolute;
-    top: -7px;
-    right: 28px;
-    width: 60px;
-    height: 14px;
-    background: rgba(255, 255, 255, 0.65);
-    border: 0.5px dashed rgba(0, 0, 0, 0.2);
-    border-radius: 2px;
-  }
-
-  .entry-meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: #795548;
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 0.5px dashed rgba(121, 85, 72, 0.2);
-
-    .entry-date {
-      font-weight: 700;
-      color: #5d4037;
-    }
-    .entry-loc {
-      font-size: 11px;
-      opacity: 0.85;
-    }
-  }
-
-  .entry-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #3e2723;
-    margin-bottom: 8px;
-    display: block;
-    line-height: 1.4;
-  }
-
-  .entry-body {
-    font-size: 13.5px;
-    line-height: 1.7;
-    color: #4e342e;
-    display: block;
-    letter-spacing: 0.3px;
-  }
-
-  .entry-footer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 14px;
-    padding-top: 8px;
-
-    .entry-tag {
-      font-size: 11px;
-      font-weight: 600;
-      color: #6d4c41;
-      background: rgba(62, 39, 35, 0.06);
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
-    .entry-stamp {
-      border: 1px solid #d32f2f;
-      color: #d32f2f;
-      padding: 2px 7px;
-      border-radius: 4px;
-      transform: rotate(-4deg);
-      opacity: 0.75;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1px;
-    }
-  }
-}
-
-.diary-bottom-sign {
-  margin-top: 28px;
-  padding-bottom: calc(50px + env(safe-area-inset-bottom, 20px));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-
-  .sign-divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 80%;
-
-    .line {
-      flex: 1;
-      height: 1px;
-      background: rgba(62, 39, 35, 0.15);
-    }
-    .sign-star {
-      color: #a1887f;
-      font-size: 12px;
-    }
-  }
-
-  .sign-text {
-    font-size: 12px;
-    font-weight: 700;
-    color: #8d6e63;
-    letter-spacing: 1px;
-  }
-
-  .sign-sub {
-    font-size: 11px;
-    color: #bcaaa4;
-  }
-}
-
-.theme-selector-pop {
+.desk-header {
   position: absolute;
-  top: 65px;
-  right: 14px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  z-index: 50;
-  width: 170px;
-}
-
-.theme-pop-header {
+  top: 14px;
+  left: 18px;
+  right: 18px;
+  z-index: 25;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 8px;
 }
 
-.theme-options {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.theme-chip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  background: #f7f7f7;
-}
-
-.chip-active {
-  background: #fff3e0;
-  color: #e65100;
-  font-weight: 700;
-}
-
-/* 🔍 便签放大展开检视弹窗 */
-.note-inspect-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: inspect-fade-in 0.2s ease-out;
-}
-
-@keyframes inspect-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.note-inspect-modal {
-  width: 100%;
-  max-width: 340px;
-  border-radius: 8px;
-  padding: 20px 16px 16px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  animation: inspect-scale-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes inspect-scale-up {
-  from { transform: scale(0.85); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.inspect-washi-tape {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 64px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  border-left: 1.5px dashed rgba(0, 0, 0, 0.25);
-  border-right: 1.5px dashed rgba(0, 0, 0, 0.25);
-}
-
-.inspect-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 10px;
-  border-bottom: 0.5px dashed rgba(0, 0, 0, 0.15);
-}
-
-.inspect-author-info {
+.desk-meta-box {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: opacity 0.15s ease;
-
-  &:active {
-    opacity: 0.8;
-  }
 }
 
-.inspect-avatar {
+.owner-ava {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
-.inspect-meta {
+.meta-texts {
   display: flex;
   flex-direction: column;
 }
 
-.inspect-author-name {
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title-row .desk-title {
+  font-family: var(--ui);
   font-size: 13px;
   font-weight: 700;
-  color: #3e2723;
+  color: #5D4F3E;
+  letter-spacing: 0.1em;
 }
 
-.inspect-time {
-  font-size: 10px;
-  color: #8d6e63;
-  margin-top: 1px;
+.desk-tag {
+  font-size: 8px;
+  background: #E8DECE;
+  color: #7A6953;
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: 600;
 }
 
-.inspect-close-btn {
-  font-size: 16px;
-  color: #8d6e63;
-  width: 28px;
-  height: 28px;
+.sub-text {
+  font-size: 8.5px;
+  color: #9A9184;
+}
+
+.desk-top-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-}
-
-.inspect-body {
-  margin: 14px 0;
-  min-height: 120px;
-  max-height: 55vh;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.inspect-handwriting-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 6px;
-  padding: 8px;
-  box-sizing: border-box;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.inspect-full-hw-img {
-  width: 100%;
-  max-height: 48vh;
-  object-fit: contain;
-}
-
-.inspect-text-wrapper {
-  padding: 6px 4px;
-}
-
-.inspect-full-text {
-  font-size: 14px;
-  line-height: 1.7;
-  color: #3e2723;
-  word-break: break-all;
-  white-space: pre-wrap;
-}
-
-.inspect-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding-top: 10px;
-  border-top: 0.5px dashed rgba(0, 0, 0, 0.15);
   gap: 8px;
 }
 
-.inspect-action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 7px 0;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  border: 0.5px solid rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: transform 0.15s;
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  .action-icon {
-    font-size: 14px;
-  }
-
-  .action-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #4e342e;
-  }
-
-  &.like-btn .action-label {
-    color: #c62828;
-  }
-
-  &.delete-btn .action-label {
-    color: #d32f2f;
-  }
-}
-
-/* 💌 桌洞私密信笺阅读弹窗 */
-.secret-letter-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: letter-fade-in 0.2s ease-out;
-}
-
-@keyframes letter-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.secret-letter-card {
-  width: 100%;
-  max-width: 350px;
-  background: linear-gradient(135deg, #fffcf5 0%, #fdf8eb 100%);
-  border-radius: 12px;
-  padding: 20px 18px 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(215, 204, 196, 0.7);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  animation: letter-pop-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes letter-pop-up {
-  from { transform: translateY(20px) scale(0.9); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-.letter-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 1px dashed #d7ccc8;
-}
-
-.letter-sender-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-
-  &:active {
-    opacity: 0.8;
-  }
-}
-
-.letter-modal-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1.5px solid #ffb300;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-.letter-sender-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.letter-sender-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: #3e2723;
-}
-
-.letter-send-time {
-  font-size: 10px;
-  color: #8d6e63;
-  margin-top: 2px;
-}
-
-.letter-seal-tag {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: #fbe9e7;
-  border: 1px solid #ffab91;
-  color: #d84315;
-  padding: 2px 6px;
-  border-radius: 10px;
+.back-pill-btn {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #D8D4CC;
+  color: #74695A;
   font-size: 10px;
   font-weight: 600;
-}
-
-.letter-close-btn {
-  font-size: 18px;
-  color: #8d6e63;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 10px;
+  border-radius: 14px;
   cursor: pointer;
 }
 
-.letter-sheet-body {
-  margin: 16px 0;
-  min-height: 100px;
-  max-height: 50vh;
-  overflow-y: auto;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 8px;
-  padding: 12px;
-  border: 0.5px solid rgba(215, 204, 196, 0.5);
-}
-
-.letter-text {
-  font-size: 13.5px;
-  line-height: 1.7;
-  color: #3e2723;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.letter-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed #d7ccc8;
-}
-
-.letter-reply-btn {
-  flex: 1.4;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #fff;
-  border-radius: 20px;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
-  cursor: pointer;
-  transition: transform 0.15s;
-
-  &:active {
-    transform: scale(0.96);
-  }
-
-  .reply-icon {
-    font-size: 14px;
-  }
-  .reply-text {
-    font-size: 12px;
-    font-weight: 700;
-  }
-}
-
-.letter-fold-btn {
-  flex: 0.9;
-  background: rgba(239, 235, 233, 0.8);
-  border: 1px solid #d7ccc8;
-  color: #5d4037;
-  border-radius: 20px;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-
-  .fold-text {
-    font-size: 12px;
-    font-weight: 600;
-  }
-}
-
-/* =================================================================
-   🌟 深度沉浸式「桌洞里 (Page Hole)」拟物物理交互动效系统
-   ================================================================= */
-
-/* 🕳️ 桌洞镜头穿透潜入放大转场 */
-.hole-zoom {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: radial-gradient(circle at 50% 64%, #4A3826 0%, #241A10 62%);
-  transform-origin: 50% 64%;
-  pointer-events: none;
-}
-.hole-zoom.play {
-  animation: holezoom 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes holezoom {
-  from { opacity: 0; transform: scale(0.12); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* 🌌 深度沉浸式「桌洞里」次级页面 */
-.hole-page {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background:
-    radial-gradient(80% 42% at 50% 0%, rgba(255, 214, 150, 0.14), transparent 55%),
-    radial-gradient(90% 70% at 50% 40%, #4A3A29 0%, #33261A 55%, #221810 100%);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  animation: hole-fade-in 0.3s ease;
-}
-
-@keyframes hole-fade-in {
-  from { opacity: 0; transform: scale(0.98); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.hole-side-pillar {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 26px;
-  z-index: 2;
-  background:
-    linear-gradient(90deg, rgba(30, 20, 10, 0.8), rgba(70, 48, 28, 0.6)),
-    repeating-linear-gradient(90deg, rgba(90, 66, 40, 0.5) 0 3px, rgba(60, 44, 28, 0.5) 3px 9px);
-  pointer-events: none;
-}
-.pillar-left { left: 0; box-shadow: 6px 0 16px rgba(0, 0, 0, 0.5); }
-.pillar-right { right: 0; box-shadow: -6px 0 16px rgba(0, 0, 0, 0.5); }
-
-.hole-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 18px 8px;
-  z-index: 10;
-}
-
-.hole-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(58, 44, 30, 0.85);
-  border: 1px solid rgba(201, 169, 111, 0.5);
-  color: #F6EBD8;
-  border-radius: 20px;
-  padding: 6px 14px;
-  cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-
-  &:active {
-    transform: scale(0.95);
-    background: rgba(80, 58, 38, 0.95);
-  }
-}
-
-.back-ic { font-size: 14px; font-weight: bold; }
-.back-tx { font-size: 12px; font-weight: 600; }
-
-.hole-title-wrap {
-  text-align: center;
-}
-
-.hole-title {
-  display: block;
-  font-size: 15px;
-  font-weight: 700;
-  color: #F6E7D0;
-  letter-spacing: 0.35em;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-}
-
-.hole-sub {
-  display: block;
-  font-size: 9px;
-  color: rgba(246, 231, 208, 0.6);
-  margin-top: 2px;
-}
-
-.hole-empty-right {
-  width: 78px;
-}
-
-.hole-air-motes {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-
-  .mote {
-    position: absolute;
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: rgba(255, 230, 160, 0.45);
-    filter: blur(1px);
-    animation: hole-mote-float 8s ease-in-out infinite alternate;
-  }
-  .m1 { left: 25%; top: 35%; animation-duration: 9s; }
-  .m2 { left: 45%; top: 60%; animation-duration: 7s; animation-delay: 1s; }
-  .m3 { left: 75%; top: 40%; animation-duration: 8.5s; animation-delay: 2s; }
-  .m4 { left: 60%; top: 75%; animation-duration: 6.5s; animation-delay: 0.5s; }
-}
-
-@keyframes hole-mote-float {
-  0%   { transform: translate(0, 0); opacity: 0.2; }
-  50%  { transform: translate(10px, -15px); opacity: 0.7; }
-  100% { transform: translate(-8px, -28px); opacity: 0.1; }
-}
-
-.hole-stage-shadow {
-  position: absolute;
-  left: 30px;
-  right: 30px;
-  bottom: 80px;
-  height: 40px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.7) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.hole-diorama-stage {
-  flex: 1;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 0 16px;
-  z-index: 5;
-}
-
-/* 🗝️ 物件一：拟物心情铁盒 (BigBox) */
-.bigbox {
-  position: relative;
-  width: 175px;
-  height: 200px;
-  perspective: 600px;
-  cursor: pointer;
-  flex: none;
-}
-
-.bb-hinge {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  top: -8px;
-  height: 9px;
-  border-radius: 4px 4px 0 0;
-  background: linear-gradient(180deg, #C8BFA9, #A19684);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  z-index: 4;
-}
-
-.bb-body {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 84px;
-  border-radius: 10px;
-  border: 2px solid #968B76;
-  background:
-    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.3) 46%, rgba(255, 255, 255, 0.08) 54%, transparent 66%),
-    linear-gradient(180deg, #CFC7B7 0%, #BFB6A4 55%, #A89D87 100%);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -4px 8px rgba(70, 60, 45, 0.3);
-  z-index: 1;
-}
-
-.bb-body-label {
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  top: 14px;
-  bottom: 12px;
-  border: 1px solid rgba(122, 94, 49, 0.45);
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(246, 238, 220, 0.55);
-}
-
-.body-lbl-txt {
-  font-size: 7px;
-  color: rgba(112, 84, 44, 0.85);
-  letter-spacing: 0.12em;
-  font-weight: 600;
-}
-
-.bb-depth {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: -7px;
-  height: 8px;
-  background: linear-gradient(180deg, #8E8268, #6B6250);
-  border-radius: 0 0 10px 10px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
-  z-index: 0;
-}
-
-.bb-inside {
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 2px;
-  height: 112px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #6B6152, #4E4638);
-  box-shadow: inset 0 8px 18px rgba(0, 0, 0, 0.55), inset 0 -2px 0 rgba(255, 255, 255, 0.12);
-  z-index: 2;
-  overflow: hidden;
-}
-
-.bb-lid {
-  position: absolute;
-  left: -3px;
-  right: -3px;
-  top: -4px;
-  height: 120px;
-  transform-style: preserve-3d;
-  transform-origin: top center;
-  transition: transform 0.85s cubic-bezier(0.3, 0.75, 0.3, 1);
-  z-index: 3;
-}
-
-.bigbox.open .bb-lid {
-  transform: rotateX(-152deg);
-}
-
-.bb-lid .lf, .bb-lid .li {
-  position: absolute;
-  inset: 0;
-  border-radius: 9px;
-  backface-visibility: hidden;
-}
-
-.bb-lid .lf {
-  border: 2px solid #9A8F7B;
-  background:
-    linear-gradient(100deg, transparent 26%, rgba(255, 255, 255, 0.34) 44%, rgba(255, 255, 255, 0.1) 52%, transparent 64%),
-    linear-gradient(165deg, #DCD6CA, #C4BCA9 55%, #B0A48D);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 5px rgba(80, 70, 55, 0.28);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.bb-lock-wrap {
-  position: absolute;
-  left: 50%;
-  bottom: -10px;
-  transform: translateX(-50%);
-  width: 26px;
-  height: 22px;
-  z-index: 5;
-  transition: transform 0.5s ease 0.1s, opacity 0.5s ease 0.15s;
-}
-
-.bb-lock {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(180deg, #E8C778, #C9A24B);
-  border-radius: 4px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  position: relative;
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: -8px;
-    width: 12px;
-    height: 12px;
-    margin-left: -6px;
-    border: 3px solid #C9A24B;
-    border-bottom: 0;
-    border-radius: 7px 7px 0 0;
-  }
-}
-
-.bigbox.unlocked .bb-lock-wrap {
-  transform: translateX(-50%) rotate(-55deg) translateY(12px);
-  opacity: 0;
-}
-
-.bb-lid-badge {
-  text-align: center;
-  padding: 6px 14px;
-  border-radius: 6px;
-  background:
-    radial-gradient(60% 70% at 50% 40%, rgba(201, 112, 90, 0.22), rgba(201, 112, 90, 0.06) 70%, transparent),
-    linear-gradient(180deg, #F6EFD9, #EBDFBC);
-  border: 1px solid rgba(122, 94, 49, 0.45);
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.5), inset 0 0 0 4px rgba(122, 94, 49, 0.28), 0 1px 2px rgba(90, 70, 45, 0.25);
-}
-
-.badge-title {
-  display: block;
-  font-size: 13px;
-  color: #7A5A2E;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.badge-sub {
-  display: block;
-  font-size: 6.5px;
-  color: rgba(112, 84, 44, 0.85);
-  letter-spacing: 0.1em;
-  margin-top: 2px;
-}
-
-.lid-click-tip {
-  margin-top: 6px;
-  background: rgba(122, 94, 49, 0.15);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-.lid-click-tip .tip-txt {
-  font-size: 8px;
-  color: #7A5A2E;
-  font-weight: 600;
-}
-
-.bb-lid .li {
-  transform: rotateX(180deg);
-  border: 2px solid #B4A78F;
-  background:
-    linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.4) 47%, rgba(255, 255, 255, 0.1) 55%, transparent 66%),
-    linear-gradient(180deg, #EFE7D6, #DFD4BE);
-  box-shadow: inset 0 0 14px rgba(120, 100, 70, 0.28), inset 0 2px 0 rgba(255, 255, 255, 0.6);
-  padding: 10px 8px;
-  box-sizing: border-box;
-}
-
-.hud-tl {
-  position: absolute;
-  inset: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 4px;
-    right: 4px;
-    top: 50%;
-    height: 2px;
-    margin-top: -1px;
-    background: linear-gradient(90deg, transparent, rgba(201, 140, 60, 0.55) 5%, rgba(201, 140, 60, 0.55) 95%, transparent);
-    box-shadow: 0 0 8px rgba(255, 200, 120, 0.5);
-  }
-}
-
-.hud-tl .hm {
-  font-size: 7px;
-  color: rgba(122, 94, 49, 0.85);
-  font-weight: 700;
-  z-index: 1;
-}
-
-.hud-node {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  cursor: pointer;
-  opacity: 0.55;
-  transition: opacity 0.25s, transform 0.25s;
-
-  &.on {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
-
-.hf-icon {
-  display: block;
-  font-size: 8px;
-  color: #C9A24B;
-  text-shadow: 0 0 4px rgba(255, 190, 110, 0.9);
-}
-
-.hd-text {
-  display: block;
-  font-size: 7px;
-  color: #7A4A1E;
-  margin-top: 1px;
-  font-weight: 600;
-}
-
-.rolls-container {
-  position: absolute;
-  inset: 6px;
-  z-index: 2;
-}
-
-.roll-item {
-  position: absolute;
-  text-align: center;
-  cursor: pointer;
-  transition: opacity 0.3s, transform 0.2s;
-
-  &.dim {
-    opacity: 0.18;
-    pointer-events: none;
-  }
-
-  &:active .rc-roll {
-    transform: scale(0.9);
-  }
-}
-
-.rc-roll {
+.gear-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  position: relative;
-  box-shadow:
-    0 6px 10px rgba(15, 10, 6, 0.5),
-    0 2px 3px rgba(15, 10, 6, 0.35),
-    inset 0 0 0 1px rgba(118, 94, 60, 0.35),
-    inset 0 -4px 8px rgba(88, 66, 38, 0.35),
-    inset 0 3px 6px rgba(255, 255, 255, 0.7);
-}
-
-.roll-paper-yellow { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #F6E69F; }
-.roll-paper-pink   { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #F7D4E4; }
-.roll-paper-green  { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #D5E8D4; }
-.roll-paper-kraft  { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #E8DCBE; }
-.roll-paper-blue   { background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.55), transparent 46%), repeating-radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.4) 0 2.4px, rgba(80, 50, 25, 0.24) 2.4px 4.8px), #D0E4F2; }
-
-.rtag-chip {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #FDFBF4;
-  border: 1px solid #D8CCB8;
-  border-radius: 3px;
-  padding: 1px 4px;
-  white-space: nowrap;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
-  z-index: 3;
-}
-
-.rtag-text {
-  font-size: 6.5px;
-  color: #6E6455;
-  font-weight: 600;
-}
-
-.hole-empty-tip {
-  position: absolute;
-  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #D8D4CC;
+  color: #74695A;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.hole-empty-tip .empty-txt {
-  font-size: 10px;
-  color: rgba(246, 231, 208, 0.6);
-}
-
-/* 📖 物件二：收到的纸条翻页手账本 (Book) */
-.hole-book {
-  position: relative;
-  width: 145px;
-  height: 190px;
-  perspective: 520px;
   cursor: pointer;
-  flex: none;
+  box-shadow: 0 4px 12px rgba(40, 35, 28, 0.1);
+  backdrop-filter: blur(6px);
 }
+.gear-btn svg { width: 16px; height: 16px; }
 
-.bk-backboard {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #8A6A44, #6E5232);
-  border-radius: 4px 10px 10px 4px;
-  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 246, 228, 0.25);
-
-  &::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 12px;
-    background: repeating-linear-gradient(90deg, #7A5C38 0 3px, #93724A 3px 6px);
-    border-radius: 4px 0 0 4px;
-  }
-}
-
-.bk-sheet {
-  position: absolute;
-  left: 14px;
-  right: 6px;
-  top: 6px;
-  bottom: 6px;
-  background: #FBF6E8;
-  border-radius: 2px 6px 6px 2px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(120, 95, 60, 0.12);
-  padding: 8px 6px;
-  display: flex;
-  flex-direction: column;
-}
-
-.bk-pagehead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px dashed rgba(160, 130, 90, 0.35);
-  padding-bottom: 4px;
-  margin-bottom: 6px;
-}
-
-.pg-date { font-size: 8px; color: #8A6538; font-weight: 700; }
-.pg-num  { font-size: 7px; color: #B09268; }
-
-.bk-hearts-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow-y: auto;
-}
-
-.bk-heart-slip {
-  position: relative;
-  background: #FFF9F0;
-  border: 1px solid #E4D5BC;
-  border-radius: 4px;
-  padding: 6px 6px 6px 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.2s;
-
-  &:active {
-    transform: scale(0.96);
-  }
-}
-
-.crease-line {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  background: linear-gradient(180deg, #D4C3A3, #EFE2CB);
-  border-radius: 1px;
-}
-
-.bs-seal-badge {
-  position: absolute;
-  right: 4px;
-  top: 4px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #B33939;
-  color: #fff;
-  font-size: 7px;
+.dhead {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  gap: 8px;
+  margin-bottom: 8px;
 }
-
-.bh-time {
-  display: block;
-  font-size: 7px;
-  color: #9E8565;
-}
-
-.bh-author {
-  display: block;
-  font-size: 9px;
-  font-weight: bold;
-  color: #5A3E22;
-  margin-top: 1px;
-}
-
-.bk-empty-page {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bk-empty-txt {
-  font-size: 9px;
-  color: #B5A082;
-}
-
-.bk-turn {
-  position: absolute;
-  left: 14px;
-  right: 6px;
-  top: 6px;
-  bottom: 6px;
-  background: #EFE4CC;
-  border-radius: 2px 6px 6px 2px;
-  transform-origin: left center;
-  transition: transform 0.45s ease;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 3;
-}
-
-.hole-book.flipping .bk-turn {
-  opacity: 1;
-  transform: rotateY(-180deg);
-}
-
-.bk-cover {
-  position: absolute;
-  inset: 0;
-  transform-origin: left center;
-  transform-style: preserve-3d;
-  transition: transform 0.8s cubic-bezier(0.25, 0.85, 0.3, 1);
-  z-index: 4;
-}
-
-.hole-book.open .bk-cover {
-  transform: rotateY(-160deg);
-}
-
-.bcf-front, .bcb-back {
-  position: absolute;
-  inset: 0;
-  border-radius: 4px 10px 10px 4px;
-  backface-visibility: hidden;
-}
-
-.bcf-front {
-  background:
-    radial-gradient(circle at 75% 25%, rgba(255, 230, 180, 0.2), transparent 40%),
-    linear-gradient(160deg, #A88358, #7E5832);
-  border: 2px solid #5A3D1E;
-  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.bcf-title {
-  font-size: 13px;
-  color: #FDF4E3;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-.bcf-sub {
-  font-size: 6.5px;
-  color: rgba(253, 244, 227, 0.7);
-  letter-spacing: 0.15em;
-  margin-top: 3px;
-}
-
-.bcf-hint {
-  margin-top: 14px;
-  font-size: 8px;
-  color: #FFE4A0;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-.bcb-back {
-  transform: rotateY(180deg);
-  background: #6E4D2A;
-  border: 2px solid #5A3D1E;
-}
-
-.bk-nav {
-  position: absolute;
-  bottom: -28px;
+.dhead-ava {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(58, 44, 30, 0.9);
-  border: 1px solid rgba(201, 169, 111, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 6;
-
-  &.prev { left: 16px; }
-  &.next { right: 16px; }
-
-  &:active {
-    transform: scale(0.9);
-  }
+}
+.dhead-author {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5D4F3E;
 }
 
-.nav-arrow {
-  color: #F6EBD8;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.hole-bottom-bar {
-  padding: 10px 18px 20px;
-  display: flex;
-  justify-content: center;
-  z-index: 10;
-}
-
-.hole-tip-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(40, 28, 18, 0.75);
-  border: 1px solid rgba(201, 169, 111, 0.3);
-  padding: 4px 12px;
-  border-radius: 14px;
-}
-
-.tip-dot { font-size: 8px; color: #E8C778; }
-.tip-info { font-size: 9px; color: rgba(246, 231, 208, 0.8); }
-
-/* 📜 纸卷舒展阅读弹窗 (Unroll Paper Modal) */
-.unroll-modal-overlay {
-  position: fixed;
+/* 浮动菜单 */
+.gear-pop-overlay {
+  position: absolute;
   inset: 0;
-  z-index: 1000;
-  background: rgba(30, 22, 14, 0.65);
+  z-index: 120;
+  background: rgba(40, 32, 24, 0.45);
   backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  box-sizing: border-box;
 }
-
-.unroll-wrap {
-  position: relative;
+.gear-card {
   width: 100%;
-  max-width: 320px;
+  max-width: 280px;
+  background: #FBFAF7;
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
 }
-
-.unroll-wrap::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -9px;
-  width: 62%;
-  height: 16px;
-  margin-left: -31%;
-  z-index: 10;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #F6EDD8, #D9C9A8);
-  box-shadow: 0 3px 6px rgba(90, 70, 45, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.6);
-  opacity: 0;
-}
-
-.unroll-wrap.go::before {
-  animation: curlmove 0.75s ease both;
-}
-
-@keyframes curlmove {
-  0%   { opacity: 1; transform: translateY(0) rotate(-2deg); }
-  70%  { opacity: 1; }
-  100% { opacity: 0; transform: translateY(28px) rotate(2deg); }
-}
-
-.unroll-paper {
-  transform-origin: top center;
-  transform: scaleY(0.05) scaleX(0.85);
-}
-
-.unroll-paper.go {
-  animation: paperunroll 0.75s cubic-bezier(0.25, 0.85, 0.3, 1) both;
-}
-
-@keyframes paperunroll {
-  0%   { transform: scaleY(0.05) scaleX(0.85); }
-  35%  { transform: scaleY(0.3) scaleX(0.96); }
-  70%  { transform: scaleY(0.86) scaleX(1.02); }
-  100% { transform: scaleY(1) scaleX(1); }
-}
-
-.washi-detail-sheet {
-  border-radius: 8px;
-  padding: 18px 16px 14px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4), 0 2px 0 rgba(255, 255, 255, 0.8) inset;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.unroll-washi-tape {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%) rotate(-1deg);
-  width: 58px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 1px 3px rgba(90, 60, 30, 0.2);
-  border-left: 1px dashed rgba(0, 0, 0, 0.15);
-  border-right: 1px dashed rgba(0, 0, 0, 0.15);
-}
-
-.unroll-sheet-header {
+.gear-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed rgba(120, 90, 50, 0.25);
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #E2DCCF;
+  margin-bottom: 10px;
 }
-
-.unroll-author-row {
+.gear-title { font-size: 13px; font-weight: 700; color: #5D4F3E; }
+.gear-close { font-size: 15px; color: #8E887E; cursor: pointer; padding: 4px; }
+.gear-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-}
-
-.unroll-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(120, 90, 50, 0.3);
-}
-
-.unroll-author-name {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #4D3D2C;
-}
-
-.unroll-date-str {
-  display: block;
-  font-size: 9px;
-  color: #8C755E;
-}
-
-.unroll-close-ic {
-  font-size: 16px;
-  color: #8C755E;
+  padding: 10px 4px;
+  border-bottom: 1px solid #F1EFEA;
   cursor: pointer;
-  padding: 4px;
 }
-
-.unroll-sheet-body {
-  padding: 14px 4px;
-  min-height: 80px;
-}
-
-.unroll-body-title {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: #4D3D2C;
-  margin-bottom: 8px;
-}
-
-.unroll-body-content {
-  display: block;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #4D3D2C;
-}
-
-.unroll-sheet-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(120, 90, 50, 0.25);
-}
-
-.unroll-act-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: transform 0.2s;
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  &.pin-btn {
-    background: #E8D9B8;
-    color: #5A4022;
-  }
-
-  &.reply-btn {
-    background: #8A5A38;
-    color: #FFF;
-  }
-
-  &.fold-btn {
-    background: rgba(0, 0, 0, 0.08);
-    color: #6B5640;
-  }
-}
-
-.btn-ic { font-size: 11px; }
-.btn-tx { font-size: 10.5px; font-weight: 600; }
+.row-label { font-size: 11px; color: #6E685D; font-weight: 500; }
+.row-val { font-size: 11px; color: #9A7B56; font-weight: 600; }
 
 </style>
