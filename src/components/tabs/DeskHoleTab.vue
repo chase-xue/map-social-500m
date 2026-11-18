@@ -29,7 +29,7 @@
 
     <!-- 主体区域：v1 重设计 · 面对窗户的写字台拟物全景 -->
     <view class="window-zone">
-      <view class="window-frame">
+      <view class="window-frame" :class="{ 'is-open': isWindowOpen, 'is-windy': isWindowOpen }">
         <view class="sky" :class="'weather-' + currentDesk.weather">
           <!-- 窗外自然景致层 (沿用原有天气结构) -->
           <view v-if="currentDesk.weather === 'sunny'" class="sun-glow" />
@@ -49,10 +49,35 @@
           <view class="bird bird-1" />
           <view class="bird bird-2" />
 
-          <!-- 窗棂十字实木格条 -->
-          <view class="window-wood-frame">
+          <!-- 丁达尔微尘浮游微粒 (Motes) -->
+          <view class="air-motes" pointer-events="none">
+            <view class="mote m1" />
+            <view class="mote m2" />
+            <view class="mote m3" />
+            <view class="mote m4" />
+            <view class="mote m5" />
+          </view>
+
+          <!-- 窗外漂流信件 (点击拾取慢寄语) -->
+          <view class="drift-air-letter" @tap.stop="catchDriftLetter" title="窗外飘来的信">
+            <text class="drift-envelope-icon">✉️</text>
+          </view>
+
+          <!-- 窗棂十字实木格条 (轻触开窗/关窗) -->
+          <view class="window-wood-frame" @tap="toggleWindow" title="轻触窗框推窗/关窗">
             <view class="crossbar-h" />
             <view class="crossbar-v" />
+            <view class="window-sash-handle">
+              <text class="sash-tip-text">{{ isWindowOpen ? '🍃 窗已敞开' : '🪟 轻触开窗' }}</text>
+            </view>
+          </view>
+
+          <!-- 窗户 3D 左右活动窗扇 (带玻璃反光与实木内框) -->
+          <view class="window-sash sash-left">
+            <view class="sash-glass" />
+          </view>
+          <view class="window-sash sash-right">
+            <view class="sash-glass" />
           </view>
 
           <!-- 纸飞机折纸飞入动画 (写完手写纸条时的沉浸动效) -->
@@ -69,7 +94,7 @@
               class="washi-sticky-note"
               :class="['paper-' + note.color, { 'my-note': note.isMine, 'note-peeling': peelingNoteId === note.id }]"
               :style="noteSlots[idx]"
-              @tap="peelAndInspectNote(note)"
+              @tap.stop="peelAndInspectNote(note)"
             >
               <view class="washi-tape-strip" />
               <view class="note-author-row">
@@ -86,13 +111,13 @@
             </view>
 
             <!-- 贴便签入口：和纸 "+" slot (D1，唯一发贴入口 HandwritingPad) -->
-            <view class="washi-sticky-note note-plus" :style="noteSlots[visibleNotes.length]" @tap="openHandwritingPad">
+            <view class="washi-sticky-note note-plus" :style="noteSlots[visibleNotes.length]" @tap.stop="openHandwritingPad">
               <text class="plus-ic">＋</text>
               <text class="plus-tx hand">贴一张</text>
             </view>
 
             <!-- 便签换批 chip (D2) -->
-            <view v-if="remainingNotes > 0" class="batch-chip" @tap="cycleNoteBatch">
+            <view v-if="remainingNotes > 0" class="batch-chip" @tap.stop="cycleNoteBatch">
               <text class="batch-tx">+{{ remainingNotes }} 换一批</text>
             </view>
           </view>
@@ -101,13 +126,31 @@
           <view class="sheer-curtain curtain-left" />
           <view class="sheer-curtain curtain-right" />
 
-          <!-- 窗台木搁板 (v1 四件生活摆件) -->
+          <!-- 窗台木搁板 (拟物治愈交互摆件) -->
           <view class="window-shelf">
-            <view class="shelf-item"><text class="item-emoji">🪴</text><text class="shelf-label">春日多肉</text></view>
+            <!-- 🪴 春日多肉 (可互动浇水) -->
+            <view class="shelf-item shelf-succulent" :class="{ 'is-watering': isWatering }" @tap.stop="waterSucculent" title="点击给多肉浇水">
+              <view class="succulent-wrap">
+                <text class="item-emoji succulent-plant">🪴</text>
+                <view class="watering-can-anim">
+                  <text class="watering-can-icon">🫖</text>
+                  <view class="water-drops">
+                    <view class="drop d1" />
+                    <view class="drop d2" />
+                    <view class="drop d3" />
+                  </view>
+                </view>
+              </view>
+              <text class="shelf-label">春日多肉{{ isWatering ? ' · 润泽中' : '' }}</text>
+            </view>
+
+            <!-- 📚 未读完的书 -->
             <view class="shelf-item">
               <view class="books"><view class="bk b1" /><view class="bk b2" /><view class="bk b3" /></view>
               <text class="shelf-label">未读完的书</text>
             </view>
+
+            <!-- ☕ 热手冲咖啡 (袅袅热气) -->
             <view class="shelf-item">
               <view class="coffee-steaming">
                 <view class="steam steam-1" />
@@ -116,7 +159,18 @@
               </view>
               <text class="shelf-label">热手冲</text>
             </view>
-            <view class="shelf-item"><text class="item-emoji">🕯️</text><text class="shelf-label">香薰烛</text></view>
+
+            <!-- 🕯️ 香薰烛 (摇曳真实火苗与柔光，可点击开关) -->
+            <view class="shelf-item shelf-candle" @tap.stop="toggleCandle" title="点击开关香薰烛">
+              <view class="candle-box">
+                <view v-if="isCandleLit" class="candle-flame">
+                  <view class="flame-core" />
+                  <view class="flame-glow" />
+                </view>
+                <text class="item-emoji candle-base">🕯️</text>
+              </view>
+              <text class="shelf-label">香薰烛</text>
+            </view>
           </view>
         </view>
       </view>
@@ -126,10 +180,17 @@
     <view class="desk-zone">
       <view class="desk-top">
         <view v-if="currentDesk.weather === 'sunny'" class="desk-sunlight-beam" pointer-events="none" />
+        <!-- 台灯暖光漫反射层 (由台灯开关控制) -->
+        <view v-if="isLampLit" class="lamp-ambient-glow" pointer-events="none" />
+
         <view class="linen-mat">
-          <!-- 📖 生活回忆录日记本 (沿用原有装订结构) -->
+          <!-- 📖 生活回忆录日记本 (3D 翻开动效) -->
           <view class="obj obj-journal">
-            <view class="vintage-journal-book" @tap="diaryModalVisible = true">
+            <view
+              class="vintage-journal-book"
+              :class="{ 'is-opening': isJournalOpening }"
+              @tap="openJournalWithAnim"
+            >
               <view class="journal-spine-leather" />
               <view class="journal-stitch-line" />
               <view class="journal-ribbon" />
@@ -140,6 +201,18 @@
               </view>
             </view>
             <text class="obj-cap">回忆录</text>
+          </view>
+
+          <!-- 💡 复古黄铜台灯 (可点击开关灯，映射全桌暖光) -->
+          <view class="obj obj-lamp" @tap.stop="toggleLamp" title="点击开关台灯">
+            <view class="brass-lamp" :class="{ 'is-lit': isLampLit }">
+              <view class="lamp-shade">
+                <view class="lamp-bulb-glow" />
+              </view>
+              <view class="lamp-stem" />
+              <view class="lamp-base" />
+            </view>
+            <text class="obj-cap">黄铜台灯</text>
           </view>
 
           <!-- 桌面小物：墨水瓶 / 和纸胶带 / 铅笔 (纯装饰) -->
@@ -462,6 +535,82 @@ watch(targetVisitingDesk, (target) => {
 }, { immediate: true });
 
 const isDrawerPulled = ref(false);
+
+// ===== 动效拟物系统交互状态 =====
+const isWindowOpen = ref(false);
+const isWatering = ref(false);
+const isCandleLit = ref(true);
+const isLampLit = ref(true);
+const isJournalOpening = ref(false);
+
+let lastWaterTime = 0;
+let lastQuoteIdx = -1;
+
+const DRIFT_QUOTES = [
+  "路过你的窗，微风很软，灯火很暖。祝今天好。",
+  "走得很累的时候，记得给桌洞里的自己留颗糖。",
+  "生活节奏慢下来，好事情正在路上。",
+  "窗外有云在游走，把烦恼折成纸船放走吧。",
+  "今天也是值得被温柔对待的一天。",
+  "把喜欢写在纸上，就算数。"
+];
+
+function toggleWindow() {
+  isWindowOpen.value = !isWindowOpen.value;
+  uni.showToast({
+    title: isWindowOpen.value ? "轻推开窗，微风吹拂窗帘 🍃" : "合上木窗 · 室内重归静谧 🪟",
+    icon: "none"
+  });
+}
+
+function catchDriftLetter() {
+  let idx = Math.floor(Math.random() * DRIFT_QUOTES.length);
+  if (idx === lastQuoteIdx) idx = (idx + 1) % DRIFT_QUOTES.length;
+  lastQuoteIdx = idx;
+  uni.showToast({
+    title: `💌 拾得窗外信：“${DRIFT_QUOTES[idx]}”`,
+    icon: "none",
+    duration: 3500
+  });
+}
+
+function waterSucculent() {
+  const now = Date.now();
+  if (now - lastWaterTime < 7000) {
+    uni.showToast({ title: "多肉喝饱了，泥土微润舒展中 🌿", icon: "none" });
+    return;
+  }
+  lastWaterTime = now;
+  isWatering.value = true;
+  uni.showToast({ title: "清泉浸润多肉，叶片晶莹碧绿 ✨", icon: "none" });
+  setTimeout(() => {
+    isWatering.value = false;
+  }, 2200);
+}
+
+function toggleCandle() {
+  isCandleLit.value = !isCandleLit.value;
+  uni.showToast({
+    title: isCandleLit.value ? "轻点香薰烛，淡淡洋甘菊清香 🕯️" : "轻吹熄香薰烛 · 余烟袅袅",
+    icon: "none"
+  });
+}
+
+function toggleLamp() {
+  isLampLit.value = !isLampLit.value;
+  uni.showToast({
+    title: isLampLit.value ? "台灯亮起，照亮桌洞与书页 💡" : "台灯熄灭 · 月光落满桌面 🌙",
+    icon: "none"
+  });
+}
+
+function openJournalWithAnim() {
+  isJournalOpening.value = true;
+  setTimeout(() => {
+    isJournalOpening.value = false;
+    diaryModalVisible.value = true;
+  }, 260);
+}
 
 const themeSelectorVisible = ref(false);
 const diaryModalVisible = ref(false);
@@ -841,6 +990,8 @@ defineExpose({
   background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
   padding: 9px;
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 6px 16px -6px rgba(70, 45, 20, 0.5);
+  perspective: 550px;
+  transform-style: preserve-3d;
 }
 
 .sky {
@@ -1009,37 +1160,154 @@ defineExpose({
   100% { transform: translate(-20%, -140px) scale(0.8); opacity: 0; }
 }
 
-/* 纱帘 */
+/* 丁达尔微尘浮游微粒 (Motes) */
+.air-motes {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mote {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 240, 190, 0.85);
+  filter: blur(0.5px);
+  animation: mote-float 8s ease-in-out infinite;
+}
+
+.m1 { top: 32%; left: 35%; animation-duration: 7s; }
+.m2 { top: 48%; left: 42%; width: 3px; height: 3px; animation-duration: 9.5s; animation-delay: 1.8s; }
+.m3 { top: 25%; left: 58%; width: 5px; height: 5px; animation-duration: 8.2s; animation-delay: 3.5s; }
+.m4 { top: 62%; left: 28%; width: 2.5px; height: 2.5px; animation-duration: 11s; animation-delay: 2.2s; }
+.m5 { top: 40%; left: 66%; width: 3.5px; height: 3.5px; animation-duration: 9s; animation-delay: 4.8s; }
+
+@keyframes mote-float {
+  0%, 100% { transform: translate(0, 0); opacity: 0.15; }
+  50% { transform: translate(12px, -20px); opacity: 0.85; }
+}
+
+/* 窗外漂流慢信 (正弦曲线滑移) */
+.drift-air-letter {
+  position: absolute;
+  top: 66px;
+  left: -50px;
+  z-index: 3;
+  cursor: pointer;
+  animation: drift-across 18s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 6px rgba(40, 20, 10, 0.25));
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(1.2) !important;
+  }
+}
+
+.drift-envelope-icon {
+  font-size: 20px;
+  transform: rotate(-8deg);
+}
+
+@keyframes drift-across {
+  0% { transform: translateX(0) translateY(0) rotate(-6deg); }
+  25% { transform: translateX(110px) translateY(12px) rotate(6deg); }
+  50% { transform: translateX(220px) translateY(-8px) rotate(-5deg); }
+  75% { transform: translateX(330px) translateY(10px) rotate(4deg); }
+  100% { transform: translateX(460px) translateY(0) rotate(-6deg); }
+}
+
+/* 纱帘与风力联动 */
 .sheer-curtain {
   position: absolute;
   top: 0;
   bottom: 52px;
-  width: 40px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
+  width: 44px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.14));
   z-index: 6;
   pointer-events: none;
+  transition: transform 0.6s ease;
 }
 
 .curtain-left {
   left: 0;
   border-radius: 0 40% 60% 0 / 0 30% 30% 0;
   animation: curtain-sway 6s ease-in-out infinite alternate;
+  transform-origin: top left;
 }
 
 .curtain-right {
   right: 0;
-  background: linear-gradient(270deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.14));
   border-radius: 40% 0 0 60% / 30% 0 0 30%;
   animation: curtain-sway 7s ease-in-out infinite alternate-reverse;
+  transform-origin: top right;
+}
+
+.is-windy .curtain-left {
+  animation: curtain-sway 2.2s ease-in-out infinite alternate;
+}
+
+.is-windy .curtain-right {
+  animation: curtain-sway 2.4s ease-in-out infinite alternate-reverse;
 }
 
 @keyframes curtain-sway {
-  from { transform: skewY(0deg); }
-  to { transform: skewY(1.2deg); }
+  from { transform: skewY(0deg) skewX(0deg); }
+  to { transform: skewY(2.2deg) skewX(1.8deg); }
 }
 
+/* 窗户 3D 活动窗扇 */
+.window-sash {
+  position: absolute;
+  top: 0;
+  bottom: 52px;
+  width: 50%;
+  z-index: 5;
+  transition: transform 0.65s cubic-bezier(0.3, 0.8, 0.35, 1);
+  pointer-events: none;
+}
+
+.sash-left {
+  left: 0;
+  transform-origin: left center;
+}
+
+.sash-right {
+  right: 0;
+  transform-origin: right center;
+}
+
+.is-open .sash-left {
+  transform: perspective(340px) rotateY(-68deg);
+}
+
+.is-open .sash-right {
+  transform: perspective(340px) rotateY(68deg);
+}
+
+.sash-glass {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.18) 20%, transparent 35%, rgba(255, 255, 255, 0.1) 60%, transparent 75%);
+  border: 2px solid rgba(220, 190, 150, 0.7);
+}
+
+.sash-left .sash-glass { border-left-width: 0; }
+.sash-right .sash-glass { border-right-width: 0; }
+
 /* 窗棂 */
-.window-wood-frame { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.window-wood-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+}
 
 .crossbar-h, .crossbar-v {
   position: absolute;
@@ -1049,6 +1317,31 @@ defineExpose({
 
 .crossbar-h { left: 0; right: 0; top: 54%; height: 9px; }
 .crossbar-v { top: 0; bottom: 0; left: 50%; width: 9px; margin-left: -4.5px; }
+
+.window-sash-handle {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  background: rgba(60, 40, 20, 0.65);
+  border: 1px solid rgba(255, 230, 180, 0.4);
+  padding: 2px 8px;
+  border-radius: 10px;
+  backdrop-filter: blur(4px);
+  z-index: 6;
+  transition: transform 0.2s, background 0.2s;
+
+  &:active {
+    transform: translate(-50%, -50%) scale(0.92);
+  }
+}
+
+.sash-tip-text {
+  font-size: 8px;
+  color: #fff4d6;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
 
 /* ===== 便签墙：slot 错落散贴 (v1) ===== */
 .window-notes-stream {
@@ -1205,6 +1498,138 @@ defineExpose({
   position: relative;
 }
 
+/* 🪴 春日多肉互动浇水 */
+.shelf-succulent {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+
+.succulent-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.succulent-plant {
+  transition: transform 0.3s cubic-bezier(0.3, 0.8, 0.35, 1), filter 0.3s;
+}
+
+.is-watering .succulent-plant {
+  animation: leaf-bounce 1.4s ease-in-out;
+}
+
+@keyframes leaf-bounce {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  35% { transform: scale(1.15) translateY(-2px); filter: brightness(1.25); }
+  65% { transform: scale(1.05) translateY(0); filter: brightness(1.15); }
+}
+
+.watering-can-anim {
+  position: absolute;
+  top: -16px;
+  right: -12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(0deg) scale(0.8);
+  transition: opacity 0.3s, transform 0.35s ease;
+  z-index: 10;
+}
+
+.is-watering .watering-can-anim {
+  opacity: 1;
+  transform: rotate(-35deg) scale(1);
+}
+
+.watering-can-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.water-drops {
+  position: absolute;
+  left: -4px;
+  top: 14px;
+  width: 14px;
+  height: 20px;
+}
+
+.drop {
+  position: absolute;
+  width: 3px;
+  height: 5.5px;
+  border-radius: 50% 50% 60% 60%;
+  background: #8ec5fc;
+  opacity: 0;
+}
+
+.d1 { left: 2px; }
+.d2 { left: 6px; }
+.d3 { left: 10px; }
+
+.is-watering .drop {
+  animation: drop-fall 0.75s linear infinite;
+}
+
+.is-watering .d2 { animation-delay: 0.22s; }
+.is-watering .d3 { animation-delay: 0.44s; }
+
+@keyframes drop-fall {
+  0% { transform: translateY(0); opacity: 0; }
+  30% { opacity: 0.9; }
+  100% { transform: translateY(18px); opacity: 0; }
+}
+
+/* 🕯️ 香薰烛真实火苗摇曳 */
+.shelf-candle {
+  cursor: pointer;
+  user-select: none;
+}
+
+.candle-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.candle-flame {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.flame-core {
+  width: 6px;
+  height: 10px;
+  background: radial-gradient(circle at 50% 80%, #ffffff 0%, #ffeb3b 40%, #ff5722 80%);
+  border-radius: 50% 50% 35% 35%;
+  animation: flame-dance 1.8s ease-in-out infinite alternate;
+}
+
+.flame-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 200, 100, 0.45) 0%, transparent 70%);
+  animation: flame-glow-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes flame-dance {
+  0% { transform: scale(1) rotate(-3deg); }
+  50% { transform: scale(1.1, 0.95) rotate(2deg); }
+  100% { transform: scale(0.95, 1.15) rotate(-2deg); }
+}
+
+@keyframes flame-glow-pulse {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.15); }
+}
+
 .item-emoji {
   font-size: 24px;
   line-height: 1;
@@ -1286,10 +1711,29 @@ defineExpose({
   z-index: 2;
 }
 
+/* 台灯开启时的暖黄光漫反射层 */
+.lamp-ambient-glow {
+  position: absolute;
+  top: 10px;
+  left: 18%;
+  width: 290px;
+  height: 190px;
+  background: radial-gradient(ellipse 65% 55% at 48% 25%, rgba(255, 228, 140, 0.35) 0%, rgba(255, 210, 120, 0.12) 55%, transparent 75%);
+  pointer-events: none;
+  filter: blur(8px);
+  z-index: 2;
+  animation: lamp-breathe 4s ease-in-out infinite alternate;
+}
+
+@keyframes lamp-breathe {
+  0% { opacity: 0.86; }
+  100% { opacity: 1; }
+}
+
 .linen-mat {
   position: absolute;
-  left: 14px;
-  right: 14px;
+  left: 12px;
+  right: 12px;
   top: 10px;
   bottom: 6px;
   border-radius: 10px;
@@ -1303,8 +1747,8 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px 12px;
-  gap: 6px;
+  padding: 10px 8px 12px;
+  gap: 4px;
   z-index: 3;
 }
 
@@ -1323,25 +1767,93 @@ defineExpose({
   letter-spacing: 0.5px;
 }
 
-.obj-journal, .obj-caddy {
+.obj-journal, .obj-caddy, .obj-lamp {
   cursor: pointer;
   transition: transform 0.15s;
   &:active { transform: scale(0.96); }
 }
 
-/* 回忆录皮面本 (v1 比例) */
+/* 💡 复古黄铜台灯 */
+.brass-lamp {
+  position: relative;
+  width: 42px;
+  height: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lamp-shade {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  background: linear-gradient(135deg, #e4c285 0%, #c89a5b 70%, #8a6a38 100%);
+  border-radius: 12px 12px 3px 3px;
+  box-shadow: 0 4px 8px rgba(50, 30, 10, 0.35), inset 0 1px 2px rgba(255, 245, 210, 0.6);
+  transition: box-shadow 0.4s ease;
+  z-index: 2;
+}
+
+.lamp-bulb-glow {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff6d9;
+  opacity: 0;
+  transition: opacity 0.4s ease, box-shadow 0.4s ease;
+}
+
+.is-lit .lamp-shade {
+  box-shadow: 0 4px 14px rgba(230, 180, 80, 0.45), 0 0 16px 4px rgba(255, 225, 140, 0.4);
+}
+
+.is-lit .lamp-bulb-glow {
+  opacity: 1;
+  box-shadow: 0 0 18px 8px rgba(255, 225, 130, 0.7);
+}
+
+.lamp-stem {
+  width: 4px;
+  height: 35px;
+  background: linear-gradient(90deg, #8a6a38, #d9be85 50%, #6d5025);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.lamp-base {
+  width: 28px;
+  height: 9px;
+  background: linear-gradient(180deg, #d9be85, #8a6a38);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(40, 20, 5, 0.45);
+  margin-top: -2px;
+  z-index: 2;
+}
+
+/* 回忆录皮面本 (v1 比例 + 3D 翻开) */
 .vintage-journal-book {
-  width: 128px;
-  height: 96px;
+  width: clamp(100px, 28vw, 122px);
+  height: 92px;
   border-radius: 5px 8px 8px 5px;
   position: relative;
   background: linear-gradient(135deg, #5a3a24, #472c19);
   box-shadow: 0 6px 12px rgba(50, 28, 10, 0.45), inset 0 1px 0 rgba(255, 220, 170, 0.25);
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform 0.25s cubic-bezier(0.3, 0.8, 0.35, 1), box-shadow 0.25s;
   overflow: hidden;
+  perspective: 400px;
 
   &:active { transform: scale(0.97); }
+
+  &.is-opening {
+    transform: perspective(400px) rotateY(-22deg) scale(0.97);
+    box-shadow: 0 12px 24px rgba(40, 20, 10, 0.55);
+  }
 }
 
 .journal-spine-leather {
