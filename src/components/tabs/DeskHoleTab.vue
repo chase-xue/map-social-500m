@@ -22,6 +22,10 @@
             <view v-if="isVisitingOther" class="back-pill-btn" @tap="exitVisiting">
               <text>‹ 回我桌洞</text>
             </view>
+            <view class="shop-pill-btn" @tap="openDecorShop" title="会员装扮工坊">
+              <text class="shop-badge">👑</text>
+              <text class="shop-text">装扮</text>
+            </view>
             <view class="gear-btn" @tap="gearMenuVisible = !gearMenuVisible" title="设置">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <circle cx="12" cy="12" r="3"/>
@@ -57,7 +61,12 @@
             <view class="sc-tree t2" />
             <view class="sc-tree t3" />
             <view class="sc-birds"><view /><view /><view /></view>
-            <view class="drift-letter" title="窗外飘来一封信" @tap.stop="catchDriftLetter">
+            <view
+              class="drift-letter"
+              :class="{ 'crumpled': isLetterCrumpled }"
+              title="窗外飘来一封信（点击读取）"
+              @tap.stop="catchDriftLetter"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="#8B6F4E" stroke-width="1.6"><rect x="3" y="5.5" width="18" height="13" rx="2" fill="#F6EEDB"/><path d="m3 7 9 6 9-6"/></svg>
             </view>
           </view>
@@ -75,7 +84,7 @@
             <view class="lf lf1" /><view class="lf lf2" /><view class="lf lf3" />
             <view class="lf lf4" /><view class="lf lf5" /><view class="lf lf6" />
           </view>
-          <view class="plant-pot" />
+          <view class="plant-pot" :class="'pot-' + currentPotStyle" />
           <view class="water-can">
             <svg viewBox="0 0 24 24" fill="none" stroke="#7B8B94" stroke-width="1.5"><path d="M7 9h8v10H7z" fill="#E8EEF2"/><path d="M15 11l5-3.5v8L15 13"/><path d="M9.5 9V5.5h3.5V9"/><path d="M7 12h8"/></svg>
           </view>
@@ -99,7 +108,7 @@
         </view>
 
         <!-- 拟物写字课桌主体 -->
-        <view class="school-desk">
+        <view class="school-desk" :class="'desk-style-' + currentDeskStyle">
           <view class="lamp-glow" />
           <view class="osh" style="left:124px;bottom:388px;width:74px" />
           <view class="osh" style="left:44px;bottom:374px;width:68px" />
@@ -362,6 +371,105 @@
         </view>
       </view>
 
+      
+      <!-- 9. 窗外飘来的信 · 阅读弹窗 (Letter Modal) -->
+      <view v-if="driftLetterModalVisible && activeDriftLetter" class="modal show" @tap.self="driftLetterModalVisible = false">
+        <view class="backdrop" @tap="driftLetterModalVisible = false" />
+        <view class="card">
+          <button class="mclose" @tap="driftLetterModalVisible = false">✕</button>
+          <view class="paper detail-paper" :style="{ background: getPaperMoodColor(activeDriftLetter.mood) }">
+            <view class="dtxt">{{ activeDriftLetter.content }}</view>
+            <view class="dmeta">
+              <span class="ava">{{ activeDriftLetter.sender.slice(0, 1) }}</span>
+              <text>{{ activeDriftLetter.sender }} · 从窗外飘来</text>
+            </view>
+          </view>
+          <view class="letter-actions">
+            <button class="drop-btn" @tap="dropDriftLetter">丢进纸篓</button>
+            <button class="reply-btn" @tap="replyToDriftLetter">回一张纸条</button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 10. 👑 会员装扮选购工坊 (Decor Shop Modal: 窗帘、花盆、桌子) -->
+      <view v-if="decorShopVisible" class="modal show decor-shop-modal" @tap.self="decorShopVisible = false">
+        <view class="backdrop" @tap="decorShopVisible = false" />
+        <view class="card shop-card">
+          <button class="mclose" @tap="decorShopVisible = false">✕</button>
+          <view class="shop-header">
+            <text class="shop-title">👑 书桌装扮工坊</text>
+            <text class="shop-sub">会员特权选购 · 窗帘 / 花盆 / 书桌材质</text>
+          </view>
+
+          <!-- 分类标签 -->
+          <view class="shop-tabs">
+            <view class="s-tab" :class="{ 'active': activeDecorCategory === 'curtain' }" @tap="activeDecorCategory = 'curtain'">
+              <text>🎋 窗帘款式</text>
+            </view>
+            <view class="s-tab" :class="{ 'active': activeDecorCategory === 'pot' }" @tap="activeDecorCategory = 'pot'">
+              <text>🪴 花盆绿植</text>
+            </view>
+            <view class="s-tab" :class="{ 'active': activeDecorCategory === 'desk' }" @tap="activeDecorCategory = 'desk'">
+              <text>🪵 实木课桌</text>
+            </view>
+          </view>
+
+          <!-- 窗帘选项 -->
+          <view v-if="activeDecorCategory === 'curtain'" class="decor-grid">
+            <view
+              v-for="c in curtainList"
+              :key="c.id"
+              class="decor-card"
+              :class="{ 'equipped': curtainStyle === c.id }"
+              @tap="selectCurtainStyle(c)"
+            >
+              <view class="decor-preview-box" :style="{ background: c.color }">
+                <text class="preview-badge">{{ c.isVip ? '👑 会员专属' : '基础款' }}</text>
+              </view>
+              <text class="decor-name">{{ c.name }}</text>
+              <text class="decor-price">{{ c.isVip ? '¥12 / 永久特权' : '已拥有' }}</text>
+              <button class="equip-btn">{{ curtainStyle === c.id ? '当前使用中' : '换上装扮' }}</button>
+            </view>
+          </view>
+
+          <!-- 花盆选项 -->
+          <view v-if="activeDecorCategory === 'pot'" class="decor-grid">
+            <view
+              v-for="p in potList"
+              :key="p.id"
+              class="decor-card"
+              :class="{ 'equipped': currentPotStyle === p.id }"
+              @tap="selectPotStyle(p)"
+            >
+              <view class="decor-preview-box" :style="{ background: p.color }">
+                <text class="preview-badge">{{ p.isVip ? '👑 会员专属' : '基础款' }}</text>
+              </view>
+              <text class="decor-name">{{ p.name }}</text>
+              <text class="decor-price">{{ p.isVip ? '¥9 / 永久特权' : '已拥有' }}</text>
+              <button class="equip-btn">{{ currentPotStyle === p.id ? '当前使用中' : '换上装扮' }}</button>
+            </view>
+          </view>
+
+          <!-- 书桌选项 -->
+          <view v-if="activeDecorCategory === 'desk'" class="decor-grid">
+            <view
+              v-for="d in deskStyleList"
+              :key="d.id"
+              class="decor-card"
+              :class="{ 'equipped': currentDeskStyle === d.id }"
+              @tap="selectDeskStyle(d)"
+            >
+              <view class="decor-preview-box" :style="{ background: d.color }">
+                <text class="preview-badge">{{ d.isVip ? '👑 会员专属' : '基础款' }}</text>
+              </view>
+              <text class="decor-name">{{ d.name }}</text>
+              <text class="decor-price">{{ d.isVip ? '¥18 / 永久特权' : '已拥有' }}</text>
+              <button class="equip-btn">{{ currentDeskStyle === d.id ? '当前使用中' : '换上装扮' }}</button>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <!-- 8. 真迹画板手写纸条 -->
       <HandwritingPad
         v-if="handwritingPadVisible"
@@ -465,6 +573,102 @@ const activeUnrollData = ref<{
   rawItem?: any;
 } | null>(null);
 
+
+// 👑 会员装扮选购工坊 (收费项目)
+const decorShopVisible = ref(false);
+const activeDecorCategory = ref<'curtain' | 'pot' | 'desk'>('curtain');
+
+const currentPotStyle = ref('terracotta');
+const currentDeskStyle = ref('classic');
+
+const curtainList = [
+  { id: 1, name: '亚麻原色帘', isVip: false, color: '#FBF6EA' },
+  { id: 2, name: '碎花薄粉帘', isVip: true, color: '#F6E3DC' },
+  { id: 3, name: '雾蓝细格帘', isVip: true, color: '#DCE6EF' },
+  { id: 4, name: '鼠尾草绿帘', isVip: true, color: '#CBD4C7' },
+  { id: 5, name: '落日暖橙帘', isVip: true, color: '#F3D8CF' },
+];
+
+const potList = [
+  { id: 'terracotta', name: '经典陶土红盆', isVip: false, color: '#C4906F' },
+  { id: 'ceramic', name: '景德镇素白瓷', isVip: true, color: '#F0ECE1' },
+  { id: 'woodlog', name: '原木老树桩盆', isVip: true, color: '#825C38' },
+  { id: 'teapot', name: '复古铁皮水壶盆', isVip: true, color: '#7B8B94' },
+];
+
+const deskStyleList = [
+  { id: 'classic', name: '原木黄暖木桌', isVip: false, color: '#E0C79D' },
+  { id: 'cherry', name: '樱花暖木手账桌', isVip: true, color: '#D89A88' },
+  { id: 'retro', name: '学院复古墨绿桌', isVip: true, color: '#526E54' },
+  { id: 'modern', name: '极简素白静谧桌', isVip: true, color: '#C9CFD6' },
+];
+
+function openDecorShop() {
+  decorShopVisible.value = true;
+}
+
+function selectCurtainStyle(c: any) {
+  curtainStyle.value = c.id;
+  uni.showToast({
+    title: c.isVip ? `👑 已换上会员专属【${c.name}】！` : `已换上【${c.name}】`,
+    icon: 'none'
+  });
+}
+
+function selectPotStyle(p: any) {
+  currentPotStyle.value = p.id;
+  uni.showToast({
+    title: p.isVip ? `👑 已换上会员专属【${p.name}】！` : `已换上【${p.name}】`,
+    icon: 'none'
+  });
+}
+
+function selectDeskStyle(d: any) {
+  currentDeskStyle.value = d.id;
+  uni.showToast({
+    title: d.isVip ? `👑 已换上会员专属【${d.name}】！` : `已换上【${d.name}】`,
+    icon: 'none'
+  });
+}
+
+// 💌 窗外信件读取与回信
+const driftLetterModalVisible = ref(false);
+const isLetterCrumpled = ref(false);
+const activeDriftLetter = ref<{ mood: string; content: string; sender: string } | null>(null);
+
+const DRIFT_LETTERS = [
+  { mood: 'heart', content: '路过你的窗，微风很软，灯火很暖。祝今天好。', sender: '白露' },
+  { mood: 'calm', content: '今天在这条街走了很久，想跟陌生的你说：生活不赶路，慢慢来。', sender: '拾光' },
+  { mood: 'happy', content: '捡到你去年贴的折纸条，字迹还没褪色哦。抬头看看天空吧！', sender: '阿树' },
+  { mood: 'calm', content: '窗外雨声很舒服，手冲咖啡香飘过来了～☕', sender: '小夏' },
+  { mood: 'heart', content: '慢生活圈里，祝每一个路过窗前的人心情晴朗。', sender: '寻光客' }
+];
+
+function catchDriftLetter() {
+  const p = DRIFT_LETTERS[Math.floor(Math.random() * DRIFT_LETTERS.length)];
+  activeDriftLetter.value = p;
+  driftLetterModalVisible.value = true;
+}
+
+function dropDriftLetter() {
+  driftLetterModalVisible.value = false;
+  isLetterCrumpled.value = true;
+  uni.showToast({ title: '丢进了纸篓（窗外还会飘来别的信）🍂', icon: 'none' });
+  setTimeout(() => {
+    isLetterCrumpled.value = false;
+  }, 8000);
+}
+
+function replyToDriftLetter() {
+  if (!activeDriftLetter.value) return;
+  const sender = activeDriftLetter.value.sender;
+  driftLetterModalVisible.value = false;
+  uni.showToast({ title: `提笔给 ${sender} 写回信... 💌`, icon: 'none' });
+  if (openChatWithFriend) {
+    openChatWithFriend('drift_friend', sender, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80');
+  }
+}
+
 let lastWaterTime = 0;
 let lastQuoteIdx = -1;
 const DRIFT_QUOTES = [
@@ -488,17 +692,6 @@ function cycleCurtain() {
   curtainStyle.value = (curtainStyle.value % 5) + 1;
   const CURTAIN_NAMES = ["亚麻原色", "碎花薄粉", "雾蓝细格", "鼠尾草绿", "落日暖橙"];
   uni.showToast({ title: `换了窗帘：${CURTAIN_NAMES[curtainStyle.value - 1]}`, icon: "none" });
-}
-
-function catchDriftLetter() {
-  let idx = Math.floor(Math.random() * DRIFT_QUOTES.length);
-  if (idx === lastQuoteIdx) idx = (idx + 1) % DRIFT_QUOTES.length;
-  lastQuoteIdx = idx;
-  uni.showToast({
-    title: `💌 拾得窗外信：“${DRIFT_QUOTES[idx]}”`,
-    icon: "none",
-    duration: 3500
-  });
 }
 
 function waterSucculent() {
@@ -531,6 +724,20 @@ function cycleWeather() {
   saveMyDeskData(currentDesk.value);
 }
 
+function getInitialRealTimeWeather(): DeskHoleData["weather"] {
+  const hour = new Date().getHours();
+  // 晚上 18 点到次日早 6 点自动转为夜空星辰
+  if (hour >= 18 || hour < 6) {
+    return "night";
+  }
+  return "sunny";
+}
+
+// 自动根据真实时间初始化
+if (!isVisitingOther.value) {
+  currentDesk.value.weather = getInitialRealTimeWeather();
+}
+
 const weatherIcon = computed(() => {
   switch (currentDesk.value.weather) {
     case "sunny": return "☀️";
@@ -541,11 +748,13 @@ const weatherIcon = computed(() => {
 });
 
 const weatherLabel = computed(() => {
+  const hour = new Date().getHours();
+  const timeStr = `${hour}:${new Date().getMinutes().toString().padStart(2, '0')}`;
   switch (currentDesk.value.weather) {
-    case "sunny": return "晴天";
-    case "rainy": return "窗前细雨";
-    case "night": return "星空静谧";
-    default: return "午后暖阳";
+    case "sunny": return `午后晴空 · ${timeStr}`;
+    case "rainy": return `窗前细雨 · ${timeStr}`;
+    case "night": return `星空静谧 · ${timeStr}`;
+    default: return `实时天气 · ${timeStr}`;
   }
 });
 
@@ -1181,8 +1390,8 @@ function formatRelativeTime(ts: number): string {
     font-family:var(--ui); font-size:11px; font-weight:600; color:#9A948C; letter-spacing:.3em;
   }
   .window-frame{
-    position:absolute; left:50%; top:58px; transform:translateX(-50%);
-    width:224px; height:202px; border-radius:6px; z-index:5;
+    position:absolute; left:50%; top:66px; transform:translateX(-50%);
+    width:280px; height:240px; border-radius:8px; z-index:5;
     border:11px solid; border-color:#E4CFB2 #D3BC98 #C4A87F #D3BC98; background:#CFE0E4; overflow:hidden;
     box-shadow:0 18px 34px rgba(90,70,45,.25), inset 0 0 0 2px rgba(255,248,235,.4), inset 0 -4px 10px rgba(90,65,35,.32);
     cursor:pointer;
@@ -1314,12 +1523,12 @@ function formatRelativeTime(ts: number): string {
   }
   .weather-tag b{ font-size:11.5px; font-weight:600; }
   .windowsill{
-    position:absolute; left:50%; top:254px; transform:translateX(-50%);
-    width:262px; height:16px; border-radius:4px; z-index:6;
+    position:absolute; left:50%; top:300px; transform:translateX(-50%);
+    width:316px; height:16px; border-radius:4px; z-index:6;
     background:linear-gradient(180deg,#F0E3C8,#DFCBA6);
     box-shadow:0 8px 14px rgba(90,70,45,.22);
   }
-  .succulent{ position:absolute; left:76px; top:196px; z-index:9; width:64px; height:82px; cursor:pointer; }
+  .succulent{ position:absolute; left:calc(50% - 146px); top:228px; z-index:9; width:64px; height:82px; cursor:pointer; }
   .succulent .foliage{ position:absolute; left:8px; right:8px; top:0; height:56px; }
   .succulent .blf{
     position:absolute; width:16px; height:24px;
@@ -1427,7 +1636,7 @@ function formatRelativeTime(ts: number): string {
     content:""; position:absolute; left:0; right:0; top:0; height:9px;
     background:linear-gradient(180deg,rgba(255,246,228,.9),transparent);
   }
-  .curtains{ position:absolute; top:42px; left:0; right:0; height:232px; z-index:9; pointer-events:none; }
+  .curtains{ position:absolute; top:46px; left:0; right:0; height:270px; z-index:9; pointer-events:none; }
   .curtains::before{
     content:""; position:absolute; top:0; left:34px; right:34px; height:5px; border-radius:3px;
     background:linear-gradient(180deg,#C9A96F,#B08F5F); box-shadow:0 3px 6px rgba(90,70,45,.25);
@@ -1442,8 +1651,8 @@ function formatRelativeTime(ts: number): string {
     box-shadow:0 6px 16px rgba(90,70,45,.18);
     animation:sway var(--swd,5.2s) ease-in-out infinite;
   }
-  .curtain.cl{ left:40px; }
-  .curtain.cr{ right:40px; }
+  .curtain.cl{ left:calc(50% - 152px); }
+  .curtain.cr{ right:calc(50% - 152px); }
   .desk-page.windy{ --swd:2.2s; }
   .curtains[data-style="2"] .curtain{
     --curt:#F6E3DC;
@@ -2170,13 +2379,16 @@ function formatRelativeTime(ts: number): string {
     100%{ transform:translate(150px,150px) rotate(560deg) scale(.12); opacity:0; }
   }
   .album{
-    position:absolute; right:56px; bottom:332px; z-index:5; width:46px; height:30px; cursor:pointer;
-    background:#E8D9BC; border-radius:3px; transform:rotate(3deg);
-    box-shadow:0 6px 12px rgba(90,70,45,.2);
+    position:absolute; right:38px; bottom:338px; width:72px; height:34px; z-index:5;
+    background:linear-gradient(165deg,#6E5338,#563F28);
+    border-radius:4px 9px 9px 4px;
+    box-shadow:0 10px 22px rgba(90,70,45,.32), inset 0 1px 0 rgba(255,246,228,.2);
+    transform:rotate(4deg); cursor:pointer;
     display:flex; align-items:center; justify-content:center;
+    white-space:nowrap;
   }
   .album::before{ content:""; position:absolute; left:-4px; top:3px; width:5px; height:24px; border-radius:3px; background:#C9A96F; }
-  .album span{ font-size:7px; color:#8A7A5C; letter-spacing:.05em; }
+  .album span, .album text{ font-family:var(--serif); font-size:10px; color:#EBD9BD; letter-spacing:.15em; font-weight:600; white-space:nowrap; }
 
   .stamp-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
   .stamp{
@@ -2495,5 +2707,177 @@ function formatRelativeTime(ts: number): string {
 }
 .row-label { font-size: 11px; color: #6E685D; font-weight: 500; }
 .row-val { font-size: 11px; color: #9A7B56; font-weight: 600; }
+
+
+/* 👑 会员装扮工坊与信件样式 */
+.shop-pill-btn {
+  background: linear-gradient(135deg, #FFE8B6, #F5D38A);
+  border: 1px solid #DDB86C;
+  border-radius: 14px;
+  padding: 3px 9px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(120, 90, 40, 0.2);
+  transition: transform 0.2s;
+  &:active { transform: scale(0.94); }
+}
+.shop-badge { font-size: 11px; }
+.shop-text { font-size: 10px; font-weight: 700; color: #6D4C1B; }
+
+.letter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.letter-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.letter-actions .drop-btn {
+  background: #F1EFEA;
+  border: 1px solid #D8D4CC;
+  color: #74695A;
+}
+.letter-actions .reply-btn {
+  background: #A85A44;
+  border: 0;
+  color: #FFF;
+  box-shadow: 0 4px 10px rgba(168, 90, 68, 0.3);
+}
+
+.decor-shop-modal .shop-card {
+  max-width: 340px;
+  padding: 20px 16px;
+}
+.shop-header {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.shop-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #4D3D2C;
+}
+.shop-sub {
+  display: block;
+  font-size: 9px;
+  color: #8C755E;
+  margin-top: 3px;
+}
+.shop-tabs {
+  display: flex;
+  border-bottom: 1px solid #EBE5DB;
+  margin-bottom: 14px;
+}
+.s-tab {
+  flex: 1;
+  text-align: center;
+  padding: 6px 0 8px;
+  font-size: 11px;
+  color: #8E887E;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.s-tab.active {
+  color: #7A5E1E;
+  font-weight: 700;
+  border-bottom-color: #7A5E1E;
+}
+.decor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.decor-card {
+  border: 1.5px solid #E5E0D5;
+  border-radius: 10px;
+  padding: 8px;
+  background: #FFF;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.decor-card.equipped {
+  border-color: #C9A24B;
+  background: #FFFDF8;
+}
+.decor-preview-box {
+  width: 100%;
+  height: 52px;
+  border-radius: 6px;
+  position: relative;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: flex-start;
+  padding: 4px;
+}
+.preview-badge {
+  font-size: 7.5px;
+  background: rgba(0,0,0,0.6);
+  color: #FFE6A8;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.decor-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4D3D2C;
+  margin-top: 6px;
+}
+.decor-price {
+  font-size: 9px;
+  color: #A2825B;
+  margin-top: 2px;
+}
+.equip-btn {
+  margin-top: 6px;
+  font-size: 9.5px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #D8D4CC;
+  background: #F8F6F1;
+  color: #6E685D;
+}
+.decor-card.equipped .equip-btn {
+  background: #7A5E1E;
+  color: #FFF;
+  border-color: #7A5E1E;
+}
+
+/* 花盆款式换肤 */
+.plant-pot.pot-ceramic {
+  background: linear-gradient(180deg, #F8F6F0, #E0DBD0) !important;
+  box-shadow: 0 6px 10px rgba(40,30,20,.2), inset 0 2px 0 rgba(255,255,255,.9) !important;
+}
+.plant-pot.pot-woodlog {
+  background: linear-gradient(180deg, #8A633F, #614225) !important;
+}
+.plant-pot.pot-teapot {
+  background: linear-gradient(180deg, #9BA9B2, #6F7D86) !important;
+}
+
+/* 课桌材质换肤 */
+.school-desk.desk-style-cherry .sd-top,
+.school-desk.desk-style-cherry .sd-front {
+  background: linear-gradient(180deg, #DE9A8B, #C27D6E) !important;
+}
+.school-desk.desk-style-retro .sd-top,
+.school-desk.desk-style-retro .sd-front {
+  background: linear-gradient(180deg, #648267, #48634A) !important;
+}
+.school-desk.desk-style-modern .sd-top,
+.school-desk.desk-style-modern .sd-front {
+  background: linear-gradient(180deg, #DCE2EA, #C2C8D1) !important;
+}
 
 </style>
