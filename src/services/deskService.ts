@@ -392,6 +392,41 @@ export function getOtherDeskData(userId: string, name: string, avatar: string): 
   };
 }
 
+export const getOtherUserDeskData = getOtherDeskData;
+
+export function postWindowNote(payload: {
+  authorId?: string;
+  authorName?: string;
+  authorAvatar?: string;
+  content: string;
+  color?: NotePaperColor;
+  isMine?: boolean;
+}): DeskHoleData {
+  const desk = getMyDeskData();
+  const newNote: WindowNoteItem = {
+    id: "wn_" + Date.now(),
+    authorId: payload.authorId || "my_user_id",
+    authorName: payload.authorName || desk.ownerName,
+    authorAvatar: payload.authorAvatar || desk.ownerAvatar,
+    content: payload.content,
+    color: payload.color || "yellow",
+    createdAt: Date.now(),
+    rotationDeg: Math.floor(Math.random() * 7) - 3,
+    likes: 1,
+    isMine: payload.isMine ?? true,
+  };
+  desk.windowNotes.unshift(newNote);
+  saveMyDeskData(desk);
+  return desk;
+}
+
+export function removeWindowNote(noteId: string): DeskHoleData {
+  const desk = getMyDeskData();
+  desk.windowNotes = desk.windowNotes.filter((n) => n.id !== noteId);
+  saveMyDeskData(desk);
+  return desk;
+}
+
 export function addWindowNote(
   desk: DeskHoleData,
   content: string,
