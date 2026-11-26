@@ -70,19 +70,19 @@
           </view>
         </view>
 
-        <!-- 普通文字输入模式 -->
+        <!-- 普通文字输入模式 (收紧为 70 字轻便签) -->
         <view v-else class="note-input-inner">
           <textarea
             class="note-textarea"
             v-model="newPostContent"
             :placeholder="placeholderText"
             placeholder-class="note-placeholder"
-            maxlength="500"
+            maxlength="70"
             :auto-height="true"
           />
         </view>
 
-        <!-- 便签底色内嵌选择条 (告别占整行大表格的说明文字) -->
+        <!-- 便签底色内嵌选择条 -->
         <view class="note-card-toolbar">
           <view class="palette-group">
             <text class="palette-label">底色</text>
@@ -96,47 +96,44 @@
               />
             </view>
           </view>
-          <text v-if="!handwritingImg" class="word-counter">{{ newPostContent.length }}/500</text>
+          <text v-if="!handwritingImg" class="word-counter" :class="{ 'counter-max': newPostContent.length >= 70 }">
+            {{ newPostContent.length }}/70
+          </text>
         </view>
       </view>
 
-      <!-- 街景与配图选择区 (九宫格) -->
+      <!-- 单张配图选择区 (70字 + 1张图 拍立得质感) -->
       <view class="media-section">
         <view class="media-header">
-          <text class="media-title">添加配图</text>
-          <text class="media-sub">{{ pickedImages.length }}/9</text>
+          <text class="media-title">配图（限 1 张）</text>
+          <text class="media-sub">{{ pickedImages.length }}/1</text>
         </view>
 
-        <view class="wechat-grid-media">
-          <view
-            v-for="(img, index) in pickedImages"
-            :key="index"
-            class="media-grid-item"
-          >
+        <view class="polaroid-single-wrap">
+          <view v-if="pickedImages.length > 0" class="polaroid-card">
             <image
-              class="media-preview-img"
-              :src="img"
+              class="polaroid-img"
+              :src="pickedImages[0]"
               mode="aspectFill"
-              @tap="previewImage(img, pickedImages)"
+              @tap="previewImage(pickedImages[0], pickedImages)"
             />
-            <view class="media-delete-btn" @tap.stop="removePickedImage(index)">✕</view>
+            <view class="media-delete-btn" @tap.stop="removePickedImage(0)">✕</view>
           </view>
 
-          <!-- 添加图片方块 (+) -->
           <view
-            v-if="pickedImages.length < 9"
-            class="media-grid-item add-box"
+            v-else
+            class="polaroid-add-box"
             @tap="chooseImages"
             hover-class="add-box-hover"
           >
             <text class="plus-icon">+</text>
+            <text class="add-hint">添 1 张照片</text>
           </view>
         </view>
 
-        <!-- 极简快捷配图引导 -->
-        <view v-if="pickedImages.length < 9" class="quick-sample-row">
+        <view v-if="pickedImages.length < 1" class="quick-sample-row">
           <view class="quick-sample-btn" @tap="addPresetSamplePhoto">
-            <text class="sample-btn-txt">📸 快捷选用街景样例图</text>
+            <text class="sample-btn-txt">📸 选用样例图</text>
           </view>
         </view>
       </view>
@@ -182,22 +179,25 @@
           />
         </view>
 
-        <!-- 二次元动态开关 -->
-        <view v-if="currentPublishMode !== 'emergency'" class="settings-row">
-          <view class="label-with-hint">
-            <text class="settings-label">🌸 二次元同好</text>
-            <text class="settings-hint">漫展 / 吃谷 / 痛包 / 番剧</text>
+        <!-- 兴趣标签选择 (宠物 / 二次元 / 风景 / 极限运动) -->
+        <view v-if="currentPublishMode !== 'emergency'" class="settings-row interest-tags-row">
+          <text class="settings-label">便签标签</text>
+          <view class="interest-chips-wrap">
+            <view
+              v-for="t in interestTagOptions"
+              :key="t.value"
+              class="interest-chip"
+              :class="{ 'chip-selected': publishInterestTag === t.value }"
+              @tap="selectInterestTag(t.value)"
+            >
+              <text class="chip-ico">{{ t.icon }}</text>
+              <text class="chip-txt">{{ t.label }}</text>
+            </view>
           </view>
-          <switch
-            :checked="isAcgnPost"
-            @change="isAcgnPost = $event.detail.value"
-            color="#ec4899"
-            class="compact-switch"
-          />
         </view>
 
-        <!-- 二次元细分标签展开区 -->
-        <view v-if="currentPublishMode !== 'emergency' && isAcgnPost" class="acgn-subtags-section">
+        <!-- 二次元细分标签展开区 (仅选择二次元时展示) -->
+        <view v-if="currentPublishMode !== 'emergency' && publishInterestTag === '二次元'" class="acgn-subtags-section">
           <view class="subtags-pills-wrap">
             <view
               v-for="tag in ACGN_TAGS"
@@ -264,7 +264,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { NotePaperColor } from "../../types";
+import { NotePaperColor, InterestTag } from "../../types";
 import { useAppState } from "../../composables/useAppState";
 import { ACGN_TAG_CATEGORIES as ACGN_TAGS } from "../../constants/acgn";
 import HandwritingPad from "../common/HandwritingPad.vue";
@@ -272,10 +272,22 @@ import HandwritingPad from "../common/HandwritingPad.vue";
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
   isPublishing, myProfile, helpContactPhone,
-  isAcgnPost, acgnTag, selectedPaperColor,
+  isAcgnPost, acgnTag, selectedPaperColor, publishInterestTag,
   closePublishSheet, chooseImages, removePickedImage, previewImage, addPresetSamplePhoto,
   submitNewPost, submitHelpPost, openMyProfileSheet, switchMainTab
 } = useAppState();
+
+const interestTagOptions: { value: InterestTag; label: string; icon: string }[] = [
+  { value: "宠物", label: "宠物", icon: "🐾" },
+  { value: "二次元", label: "二次元", icon: "🌸" },
+  { value: "风景", label: "风景", icon: "🏔️" },
+  { value: "极限运动", label: "极限运动", icon: "🏂" },
+];
+
+function selectInterestTag(tag: InterestTag) {
+  publishInterestTag.value = tag;
+  isAcgnPost.value = tag === "二次元";
+}
 
 const isBrushingGlue = ref(false);
 const showHandwritingPad = ref(false);
@@ -875,5 +887,114 @@ async function handlePublish() {
 @keyframes brush-stroke {
   0% { transform: translate(-18px, 0) rotate(-15deg); }
   100% { transform: translate(18px, 0) rotate(15deg); }
+}
+.counter-max {
+  color: #c25b38;
+  font-weight: 700;
+}
+
+.polaroid-single-wrap {
+  margin-top: 8px;
+}
+
+.polaroid-card {
+  position: relative;
+  width: 140px;
+  padding: 6px 6px 18px;
+  background: #fffdf8;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(62, 39, 35, 0.1);
+  border: 1px solid #ece4d6;
+
+  .polaroid-img {
+    width: 128px;
+    height: 128px;
+    border-radius: 4px;
+    display: block;
+  }
+
+  .media-delete-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #3e2723;
+    color: #fff;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
+
+.polaroid-add-box {
+  width: 108px;
+  height: 108px;
+  border-radius: 12px;
+  border: 1.5px dashed #cbbba6;
+  background: #faf6ef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+
+  .plus-icon {
+    font-size: 26px;
+    color: #8d6e63;
+    line-height: 1;
+  }
+
+  .add-hint {
+    font-size: 11px;
+    color: #8d6e63;
+  }
+}
+
+.interest-tags-row {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 10px;
+}
+
+.interest-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.interest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: #f5f1e8;
+  border: 1px solid #e2d8c8;
+  cursor: pointer;
+
+  .chip-ico {
+    font-size: 13px;
+  }
+
+  .chip-txt {
+    font-size: 12px;
+    font-weight: 600;
+    color: #5d4037;
+  }
+
+  &.chip-selected {
+    background: #3e2723;
+    border-color: #3e2723;
+
+    .chip-txt {
+      color: #fffdf8;
+    }
+  }
 }
 </style>

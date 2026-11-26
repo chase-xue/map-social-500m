@@ -148,6 +148,20 @@
           </view>
           <switch :checked="myProfile.showPhone" color="#07c160" @change="toggleShowPhone" />
         </view>
+        <view class="cell-action-row" @tap="openMemoryDrawer">
+          <view class="cell-left">
+            <text class="cell-icon">🧠</text>
+            <text class="cell-title">传输记忆 / 账号互传（本地优先）</text>
+          </view>
+          <text class="cell-arrow">›</text>
+        </view>
+        <view class="cell-action-row" @tap="openPushDrawer">
+          <view class="cell-left">
+            <text class="cell-icon">🔔</text>
+            <text class="cell-title">小标签推送订阅</text>
+          </view>
+          <text class="cell-arrow">{{ pushSettings.enabled ? '已开启 ›' : '已关闭 ›' }}</text>
+        </view>
         <view class="cell-action-row" @tap="showAboutApp">
           <view class="cell-left">
             <text class="cell-icon">📜</text>
@@ -174,6 +188,8 @@
               mallDrawerType === 'themes' ? '🪵 治愈桌洞拟物化装扮皮肤' :
               mallDrawerType === 'merch' ? '🎁 《小纸条》实体文创慢寄礼盒' :
               mallDrawerType === 'merchant' ? '🏪 本地商户 500m 慢递合作' :
+              mallDrawerType === 'memory' ? '🧠 传输记忆 · 账号与设备互传' :
+              mallDrawerType === 'push' ? '🔔 小标签订阅推送偏好' :
               '🕊️ 关于《小纸条 (Slow Notes 500m)》'
             }}
           </text>
@@ -184,6 +200,8 @@
               mallDrawerType === 'themes' ? '雨夜咖啡馆、老书屋写字台，沉浸书桌氛围' :
               mallDrawerType === 'merch' ? '手工黄铜折纸飞机书签 + 手账和纸胶带盲盒 + 慢递信笺' :
               mallDrawerType === 'merchant' ? '支持周边独立小店、手作人投放专属福利便签' :
+              mallDrawerType === 'memory' ? '个人数据优先存本地 · 一键导出记忆包或口令互传' :
+              mallDrawerType === 'push' ? '仅推送你订阅的兴趣标签与关注地标新便签' :
               '现代快节奏生活里的一方温柔自留地'
             }}
           </text>
@@ -325,6 +343,71 @@
           </button>
         </view>
 
+        <!-- 传输记忆 / 账号互传抽屉（需求 10 & 17） -->
+        <view v-else-if="mallDrawerType === 'memory'" class="drawer-info-flow">
+          <view class="info-content-card">
+            <view class="mem-stats-row">
+              <text class="mem-stat-pill">💾 优先本地存储</text>
+              <text class="mem-stat-pill">已保存 {{ memoryStats.keysCount }} 项 · {{ memoryStats.sizeKB }} KB</text>
+            </view>
+            <text class="info-body-p">你的桌洞装扮、日记、课程表、记账本、收藏纸条与聊天记录全部优先保存在本机。换机或切换账号时，可通过下方记忆包无损互传：</text>
+
+            <view class="mem-action-grid">
+              <view class="mem-btn" @tap="handleDownloadMemory">💾 导出记忆文件</view>
+              <view class="mem-btn" @tap="handleCopyMemoryToken">📋 复制记忆口令</view>
+            </view>
+
+            <textarea
+              class="mem-import-box"
+              v-model="importMemoryText"
+              placeholder="在此粘贴另一台设备/账号导出的记忆口令或 JSON 内容..."
+              maxlength="200000"
+            />
+          </view>
+          <button class="drawer-confirm-btn" @tap="handleImportMemory">
+            📥 导入并恢复全部本地记忆
+          </button>
+        </view>
+
+        <!-- 小标签订阅推送抽屉（需求 19） -->
+        <view v-else-if="mallDrawerType === 'push'" class="drawer-info-flow">
+          <view class="info-content-card">
+            <view class="push-switch-row">
+              <text class="push-label">开启小标签新动态轻推送</text>
+              <switch :checked="pushSettings.enabled" color="#3e2723" @change="togglePushEnabled" />
+            </view>
+
+            <text class="push-group-title">订阅兴趣标签</text>
+            <view class="push-chips-wrap">
+              <view
+                v-for="tag in pushTagOptions"
+                :key="tag"
+                class="push-chip"
+                :class="{ active: pushSettings.tags.includes(tag) }"
+                @tap="togglePushTag(tag)"
+              >
+                {{ tag }}
+              </view>
+            </view>
+
+            <text class="push-group-title">关注远方地标</text>
+            <view class="push-chips-wrap">
+              <view
+                v-for="city in pushCityOptions"
+                :key="city"
+                class="push-chip"
+                :class="{ active: pushSettings.cities.includes(city) }"
+                @tap="togglePushCity(city)"
+              >
+                📍 {{ city }}
+              </view>
+            </view>
+          </view>
+          <button class="drawer-confirm-btn" @tap="sendTestPush">
+            🔔 发送一条测试推送横幅
+          </button>
+        </view>
+
         <!-- 关于我们抽屉 -->
         <view v-else-if="mallDrawerType === 'about'" class="drawer-info-flow">
           <view class="info-content-card">
@@ -361,17 +444,104 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { GradeLevel, DeskTheme } from "../../types";
+import { GradeLevel, DeskTheme, InterestTag } from "../../types";
 import { useAppState } from "../../composables/useAppState";
 import { saveUserProfile } from "../../services/storage";
+import {
+  getLocalMemoryStats,
+  exportMemoryToken,
+  downloadMemoryJsonFile,
+  importMemoryFromText
+} from "../../services/memoryTransfer";
 
 const {
   statusBarHeight,
   myProfile,
-  openMyProfileSheet
+  openMyProfileSheet,
+  pushSettings,
+  savePushSettings,
+  triggerPushNotification,
+  allStatuses,
+  initApp
 } = useAppState();
 
-const mallDrawerType = ref<'seals' | 'papers' | 'themes' | 'merch' | 'merchant' | 'about' | null>(null);
+const mallDrawerType = ref<'seals' | 'papers' | 'themes' | 'merch' | 'merchant' | 'memory' | 'push' | 'about' | null>(null);
+const memoryStats = ref(getLocalMemoryStats());
+const importMemoryText = ref("");
+const pushTagOptions: InterestTag[] = ["宠物", "二次元", "风景", "极限运动"];
+const pushCityOptions = ["丽江", "大理", "成都", "北京", "厦门"];
+
+function openMemoryDrawer() {
+  memoryStats.value = getLocalMemoryStats();
+  importMemoryText.value = "";
+  mallDrawerType.value = "memory";
+}
+
+function openPushDrawer() {
+  mallDrawerType.value = "push";
+}
+
+function handleDownloadMemory() {
+  const ok = downloadMemoryJsonFile();
+  uni.showToast({
+    title: ok ? "已导出 .slownotes.json 记忆文件 💾" : "当前环境请使用「复制记忆口令」",
+    icon: "none"
+  });
+}
+
+function handleCopyMemoryToken() {
+  const token = exportMemoryToken();
+  uni.setClipboardData({
+    data: token,
+    success: () => {
+      uni.showToast({ title: "记忆口令已复制，可粘贴到另一账号导入 📋", icon: "none" });
+    }
+  });
+}
+
+function handleImportMemory() {
+  const res = importMemoryFromText(importMemoryText.value);
+  if (res.ok) {
+    initApp();
+    memoryStats.value = getLocalMemoryStats();
+    mallDrawerType.value = null;
+    uni.showToast({ title: res.msg, icon: "success" });
+  } else {
+    uni.showToast({ title: res.msg, icon: "none" });
+  }
+}
+
+function togglePushEnabled(e: any) {
+  savePushSettings({ ...pushSettings.value, enabled: !!e.detail?.value });
+}
+
+function togglePushTag(tag: InterestTag) {
+  const tags = [...pushSettings.value.tags];
+  const idx = tags.indexOf(tag);
+  if (idx >= 0) tags.splice(idx, 1);
+  else tags.push(tag);
+  savePushSettings({ ...pushSettings.value, tags });
+}
+
+function togglePushCity(city: string) {
+  const cities = [...pushSettings.value.cities];
+  const idx = cities.indexOf(city);
+  if (idx >= 0) cities.splice(idx, 1);
+  else cities.push(city);
+  savePushSettings({ ...pushSettings.value, cities });
+}
+
+function sendTestPush() {
+  const sample = allStatuses.value.find((s) => s.address?.includes("丽江")) || allStatuses.value[0];
+  if (sample) {
+    savePushSettings({ ...pushSettings.value, enabled: true });
+    mallDrawerType.value = null;
+    triggerPushNotification({
+      ...sample,
+      interestTag: pushSettings.value.tags[0] || "风景"
+    });
+  }
+}
 
 const sealsData = [
   { name: "古铜月相印", icon: "🌙", bg: "linear-gradient(135deg, #78350f, #92400e)", border: "#f59e0b", desc: "复古古铜压痕，月相清冷" },
@@ -1266,5 +1436,98 @@ function showAboutApp() {
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
+}
+.mem-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+
+  .mem-stat-pill {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5d4037;
+    background: #f5efe0;
+    border: 0.5px solid #e2d5b2;
+    padding: 3px 9px;
+    border-radius: 10px;
+  }
+}
+
+.mem-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+
+  .mem-btn {
+    text-align: center;
+    padding: 10px 8px;
+    border-radius: 12px;
+    background: #fff8e1;
+    border: 1px solid #e6c675;
+    font-size: 12px;
+    font-weight: 700;
+    color: #3e2723;
+    cursor: pointer;
+  }
+}
+
+.mem-import-box {
+  width: 100%;
+  height: 86px;
+  background: #faf6ee;
+  border: 1px dashed #cbbba6;
+  border-radius: 12px;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 12px;
+  color: #3e2723;
+}
+
+.push-switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 0.5px dashed #e2d8c8;
+  margin-bottom: 10px;
+
+  .push-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3e2723;
+  }
+}
+
+.push-group-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #795548;
+  margin: 10px 0 8px;
+}
+
+.push-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.push-chip {
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: #f5f0e4;
+  border: 1px solid #e2d8c8;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5d4037;
+  cursor: pointer;
+
+  &.active {
+    background: #3e2723;
+    border-color: #3e2723;
+    color: #fffdf8;
+  }
 }
 </style>

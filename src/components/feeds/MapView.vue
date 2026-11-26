@@ -59,18 +59,6 @@
         <text class="dock-btn-icon">🔄</text>
       </view>
     </view>
-
-    <!-- 底部操作栏 -->
-    <view class="bottom-action-bar">
-      <view class="summary-info">
-        <text class="count-highlight">附近 {{ visibleStatuses.length }} 张便签</text>
-        <text class="sub-tip">严格按 {{ searchRadius }}m 精准圈可见 · 支持现场回复</text>
-      </view>
-      <button class="publish-trigger-btn" @tap="openPublishSheet" hover-class="btn-hover">
-        <text class="btn-plus">🖌️</text>
-        <text class="btn-label">在此贴便签</text>
-      </button>
-    </view>
   </view>
 </template>
 

@@ -5,6 +5,34 @@ export interface Coordinates {
 
 export type NotePaperColor = 'yellow' | 'pink' | 'blue' | 'green' | 'kraft';
 
+export type InterestTag = '宠物' | '二次元' | '风景' | '极限运动';
+
+export type TerrainType = 'city' | 'ancient' | 'mountain' | 'coastal';
+
+export interface LandmarkPreset {
+  id: string;
+  name: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  terrain: TerrainType;
+  desc: string;
+}
+
+export interface PushSubscriptionSettings {
+  enabled: boolean;
+  tags: InterestTag[];
+  cities: string[];
+}
+
+export interface TrashNoteItem {
+  id: string;
+  sourceFriendId: string;
+  sourceFriendName: string;
+  message: ChatMessage;
+  deletedAt: number;
+}
+
 export type DeskTheme = 'wood' | 'cherry' | 'retro' | 'modern';
 
 export type GradeLevel = '幼儿园' | '小学生' | '初中生' | '高中生' | '大学生' | '老教授';
@@ -54,19 +82,29 @@ export interface FriendItem {
   lastMessageTime?: number;
   unreadCount?: number;
   distanceMeters?: number;       // 与我的物理距离 (米)
+  // 关系时长与群聊扩展
+  firstChatTime?: number;        // 首次互动时间，用于解锁聊天时长称号
+  chatDays?: number;             // 累计聊天天数
+  isGroup?: boolean;             // 是否为群聊
+  members?: string[];            // 群成员名称列表
 }
 
 export interface ChatMessage {
   id: string;
   senderId: string;
   receiverId: string;
+  senderName?: string;           // 群聊中发送者昵称
+  senderAvatar?: string;         // 群聊中发送者头像
   content: string;
   contentType: 'text' | 'image';
   createdAt: number;
-  // 小纸条慢聊天特性
+  // 小纸条双轨特性 (文字速发 vs 纸团)
+  noteMode?: 'fast' | 'crumpled';// fast=文字速发, crumpled=纸团(需点击全屏展开动画)
+  crumpledText?: string;         // 纸团内附带的文字内容
+  crumpledImage?: string;        // 纸团内附带的手写/涂鸦/素描图画
   isSealed?: boolean;            // 火漆印私密纸条
   sealType?: string;             // 火漆印章外观 (如 "古铜月相印", "玫瑰金猫爪印")
-  paperType?: string;            // 信纸外观 (如 "京都和纸", "星空纸")
+  paperType?: string;            // 信纸外观 (默认淡黄纸质)
   isOpened?: boolean;            // 是否已拆开火漆或折纸
   isPinnedToDesk?: boolean;      // 是否已珍藏收入我的桌洞
   isAccelerated?: boolean;       // 是否已被加速
@@ -75,9 +113,10 @@ export interface ChatMessage {
   deliveredAt?: number;          // 预计或实际送达时间戳
   isDelivered?: boolean;         // 是否已到达
   flightProgress?: number;       // 0~100 飞行进度
-  currentFlyLocation?: string;   // 航迹描述 (如 "正飞跃海淀黄庄...")
+  currentFlyLocation?: string;   // 航迹描述
   passByUsers?: string[];        // 途经中转路人印记
   sketchMode?: boolean;          // 配图素描滤镜
+  originalImage?: string;        // 素描转换前的原图(便于对比)
 }
 
 export interface CommentItem {
@@ -126,6 +165,8 @@ export interface StatusItem {
   isAcgn?: boolean;
   acgnTag?: string;
   // 小纸条/小便签新增特性
+  interestTag?: InterestTag;     // 宠物 | 二次元 | 风景 | 极限运动
+  address?: string;              // 地标/城市名称（如 丽江古城）
   paperColor?: NotePaperColor;   // 便签纸张颜色
   paperTag?: '闲聊' | '小告示' | '商户优惠' | '求助' | '回忆录' | '同好';
   isMerchant?: boolean;          // 是否为本地商户便签

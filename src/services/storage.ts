@@ -864,8 +864,118 @@ export function ensureInitialMockData(currentPos: Coordinates): StatusItem[] {
     ...acgnList
   ];
 
-  writeLocalData(initialList);
-  return initialList;
+  const merged = mergeLandmarkPresets(initialList);
+  writeLocalData(merged);
+  return merged;
+}
+
+/**
+ * 注入丽江/大理/成都/厦门等跨城地标示例便签（幂等，已有缓存用户也会自动补齐）
+ */
+export function mergeLandmarkPresets(existing: StatusItem[]): StatusItem[] {
+  const presets: StatusItem[] = [
+    {
+      id: "city_lijiang_1",
+      userId: "user_lijiang_1",
+      userName: "阿木 · 丽江木屋",
+      userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
+      latitude: 26.8721,
+      longitude: 100.2330,
+      address: "丽江古城 · 四方街",
+      interestTag: "风景",
+      paperColor: "yellow",
+      content: "午后四方街的青石板泛着暖光，远处玉龙雪山云散了，听见民谣吉他声飘过来。",
+      images: ["https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=700&auto=format&fit=crop&q=80"],
+      createdAt: Date.now() - 1000 * 60 * 35,
+      comments: [],
+      likes: ["小夏 (精品咖啡师)", "探索者小晨"]
+    },
+    {
+      id: "city_lijiang_2",
+      userId: "user_lijiang_2",
+      userName: "柴犬布丁",
+      userAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80",
+      latitude: 26.8758,
+      longitude: 100.2365,
+      address: "丽江古城 · 大水车旁",
+      interestTag: "宠物",
+      paperColor: "pink",
+      content: "小桥边晒太阳的柯基睡着啦，路过的游客都在轻轻拍它，古城慢节奏太治愈！",
+      images: ["https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=700&auto=format&fit=crop&q=80"],
+      createdAt: Date.now() - 1000 * 60 * 68,
+      comments: [],
+      likes: ["阿泽"]
+    },
+    {
+      id: "city_lijiang_3",
+      userId: "user_lijiang_3",
+      userName: "雪山滑翔阿风",
+      userAvatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80",
+      latitude: 26.8685,
+      longitude: 100.2292,
+      address: "丽江 · 拉市海山脊",
+      interestTag: "极限运动",
+      paperColor: "blue",
+      content: "海拔三千米的山脊起飞滑翔伞，脚下是纳西村落和云海，风声呼啸太自由！",
+      images: ["https://images.unsplash.com/photo-1503220317375-aaad61436b1b?w=700&auto=format&fit=crop&q=80"],
+      createdAt: Date.now() - 1000 * 60 * 95,
+      comments: [],
+      likes: ["夜跑阿健"]
+    },
+    {
+      id: "city_dali_1",
+      userId: "user_dali_1",
+      userName: "洱海骑行客",
+      userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80",
+      latitude: 25.6936,
+      longitude: 100.1636,
+      address: "大理 · 洱海生态廊道",
+      interestTag: "风景",
+      paperColor: "green",
+      content: "沿洱海逆风骑行十公里，苍山顶飘着一圈棉花糖云，晚霞把水面染成橘子汽水。",
+      images: ["https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&auto=format&fit=crop&q=80"],
+      createdAt: Date.now() - 1000 * 60 * 110,
+      comments: [],
+      likes: ["小夏 (精品咖啡师)"]
+    },
+    {
+      id: "city_chengdu_1",
+      userId: "user_chengdu_1",
+      userName: "秋叶原小葵",
+      userAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80",
+      latitude: 30.6512,
+      longitude: 104.0823,
+      address: "成都 · 天府红二次元街",
+      interestTag: "二次元",
+      paperColor: "pink",
+      content: "在天府红淘到绝版吧唧！满墙痛包同好交换无料，今天的二次元浓度超标啦～",
+      images: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=700&auto=format&fit=crop&q=80"],
+      createdAt: Date.now() - 1000 * 60 * 52,
+      comments: [],
+      likes: ["荧光喵喵 (Coser)"]
+    }
+  ];
+
+  // 给老数据补齐默认兴趣标签
+  const normalized = existing.map((item, idx) => {
+    if (!item.interestTag) {
+      if (item.isAcgn) {
+        return { ...item, interestTag: "二次元" as const };
+      }
+      const fallbackTags = ["风景", "宠物", "极限运动", "风景"] as const;
+      return { ...item, interestTag: fallbackTags[idx % fallbackTags.length] };
+    }
+    return item;
+  });
+
+  const existingIds = new Set(normalized.map((s) => s.id));
+  const missing = presets.filter((p) => !existingIds.has(p.id));
+  if (missing.length > 0) {
+    const result = [...normalized, ...missing];
+    writeLocalData(result);
+    return result;
+  }
+  return normalized;
 }
 
 /**

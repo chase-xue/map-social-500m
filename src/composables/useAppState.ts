@@ -14,6 +14,10 @@ import {
   AiMatchUserResult,
   DriftBottleItem,
   DriftBottleReply,
+  NotePaperColor,
+  InterestTag,
+  LandmarkPreset,
+  PushSubscriptionSettings,
 } from "../types";
 import {
   filterStatusesWithinRange,
@@ -37,6 +41,7 @@ import {
   addNewStatus,
   addCommentToStatus,
   ensureInitialMockData,
+  mergeLandmarkPresets,
   saveLocalImageFile,
   getUserProfile,
   saveUserProfile,
@@ -115,10 +120,93 @@ const userCardVisible = ref(false);
 const viewingProfile = ref<UserProfile | null>(null);
 const viewingDistance = ref<number | undefined>(undefined);
 
-// ============ 状态数据 ============
+// ============ 状态数据与跨城地标漫游 ============
+export const LANDMARK_PRESETS: LandmarkPreset[] = [
+  { id: "lm_lijiang", name: "丽江古城", city: "丽江", latitude: 26.8721, longitude: 100.2330, terrain: "ancient", desc: "云南 · 青石板与玉龙雪山下的慢生活" },
+  { id: "lm_dali", name: "大理洱海", city: "大理", latitude: 25.6936, longitude: 100.1636, terrain: "coastal", desc: "云南 · 苍山洱海生态廊道" },
+  { id: "lm_chengdu", name: "成都太古里", city: "成都", latitude: 30.6512, longitude: 104.0823, terrain: "city", desc: "四川 · 烟火茶馆与二次元街区" },
+  { id: "lm_beijing", name: "北京什刹海", city: "北京", latitude: 39.9403, longitude: 116.3863, terrain: "ancient", desc: "北京 · 胡同垂柳与落日冰面" },
+  { id: "lm_xiamen", name: "厦门鼓浪屿", city: "厦门", latitude: 24.4475, longitude: 118.0672, terrain: "coastal", desc: "福建 · 琴声海风与红砖老洋房" },
+];
+
 const allStatuses = ref<StatusItem[]>([]);
 const searchRadius = ref<number>(500);
 const mapSearchKeyword = ref<string>("");
+const activeLandmark = ref<LandmarkPreset | null>(null);
+const selectedInterestTag = ref<InterestTag | "全部">("全部");
+const publishInterestTag = ref<InterestTag>("风景");
+
+// ============ 小标签推送订阅与轻提醒横幅 ============
+const PUSH_SUB_KEY = "LOCAL_PUSH_SUBSCRIPTION_V1";
+function loadPushSettings(): PushSubscriptionSettings {
+  try {
+    const raw = uni.getStorageSync(PUSH_SUB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { enabled: true, tags: ["宠物", "风景"], cities: ["丽江"] };
+}
+const pushSettings = ref<PushSubscriptionSettings>(loadPushSettings());
+const activePushBanner = ref<{ id: string; title: string; content: string; tag?: InterestTag; status?: StatusItem } | null>(null);
+let pushBannerTimer: any = null;
+
+function savePushSettings(next: PushSubscriptionSettings) {
+  pushSettings.value = { ...next };
+  try {
+    uni.setStorageSync(PUSH_SUB_KEY, JSON.stringify(pushSettings.value));
+  } catch (e) {}
+}
+
+function triggerPushNotification(status: StatusItem) {
+  if (!pushSettings.value.enabled) return;
+  const tagMatched = status.interestTag && pushSettings.value.tags.includes(status.interestTag);
+  const cityMatched = status.address && pushSettings.value.cities.some((c) => status.address!.includes(c));
+  if (!tagMatched && !cityMatched) return;
+
+  activePushBanner.value = {
+    id: status.id,
+    title: status.interestTag ? `🔔 订阅标签 · ${status.interestTag}` : `🔔 关注地标新便签`,
+    content: `${status.userName}：${status.content.slice(0, 28)}`,
+    tag: status.interestTag,
+    status,
+  };
+  if (pushBannerTimer) clearTimeout(pushBannerTimer);
+  pushBannerTimer = setTimeout(() => {
+    activePushBanner.value = null;
+  }, 5000);
+}
+
+function dismissPushBanner() {
+  activePushBanner.value = null;
+  if (pushBannerTimer) clearTimeout(pushBannerTimer);
+}
+
+function jumpToLandmark(lm: LandmarkPreset) {
+  activeLandmark.value = lm;
+  mapCenter.value = { latitude: lm.latitude, longitude: lm.longitude };
+  mapScale.value = 14;
+  uni.showToast({ title: `✈️ 已飞往 ${lm.name}`, icon: "none" });
+}
+
+function searchAndJumpToLandmark(keyword: string) {
+  const kw = keyword.trim().toLowerCase();
+  if (!kw) return;
+  const match = LANDMARK_PRESETS.find(
+    (lm) => lm.name.toLowerCase().includes(kw) || lm.city.toLowerCase().includes(kw)
+  );
+  if (match) {
+    jumpToLandmark(match);
+  } else {
+    uni.showToast({ title: `已筛选包含“${keyword}”的便签`, icon: "none" });
+  }
+}
+
+function exitRoamingToLocal() {
+  activeLandmark.value = null;
+  mapSearchKeyword.value = "";
+  mapCenter.value = { ...userLocation.value };
+  mapScale.value = 16;
+  uni.showToast({ title: "已回到当前所在位置", icon: "none" });
+}
 
 function toggleSearchRadius() {
   searchRadius.value = searchRadius.value === 500 ? 1000 : 500;
@@ -129,14 +217,37 @@ function toggleSearchRadius() {
 }
 
 const visibleStatuses = computed(() => {
-  let list = filterStatusesWithinRange(userLocation.value, allStatuses.value, searchRadius.value);
+  let list: StatusItem[];
+  if (activeLandmark.value) {
+    // 跨城漫游模式：展示目标城市/地标周边 20km 内便签
+    list = filterStatusesWithinRange(
+      { latitude: activeLandmark.value.latitude, longitude: activeLandmark.value.longitude },
+      allStatuses.value,
+      20000
+    );
+  } else {
+    list = filterStatusesWithinRange(userLocation.value, allStatuses.value, searchRadius.value);
+  }
+
+  if (selectedInterestTag.value !== "全部") {
+    list = list.filter((s) => s.interestTag === selectedInterestTag.value);
+  }
+
   if (mapSearchKeyword.value.trim()) {
     const kw = mapSearchKeyword.value.trim().toLowerCase();
-    list = list.filter(s =>
-      s.content.toLowerCase().includes(kw) ||
-      s.userName.toLowerCase().includes(kw) ||
-      (s.address && s.address.toLowerCase().includes(kw))
+    // 如果正在漫游且关键词就是当前城市名，不再二次过滤掉该城市的便签
+    const isCurrentCityKw = activeLandmark.value && (
+      activeLandmark.value.city.toLowerCase().includes(kw) ||
+      activeLandmark.value.name.toLowerCase().includes(kw)
     );
+    if (!isCurrentCityKw) {
+      list = list.filter(s =>
+        s.content.toLowerCase().includes(kw) ||
+        s.userName.toLowerCase().includes(kw) ||
+        (s.address && s.address.toLowerCase().includes(kw)) ||
+        (s.interestTag && s.interestTag.toLowerCase().includes(kw))
+      );
+    }
   }
   return list;
 });
@@ -422,8 +533,8 @@ function initApp() {
   getSystemInfo();
   myProfile.value = getUserProfile();
   friendsList.value = getFriendsList();
-  // 同步初始化状态数据，杜绝异步定位等待过程中的界面白板或空数据
-  allStatuses.value = ensureInitialMockData(userLocation.value);
+  // 同步初始化状态数据并补齐丽江等跨城示例便签
+  allStatuses.value = mergeLandmarkPresets(ensureInitialMockData(userLocation.value));
   initGeolocation();
 }
 
@@ -1006,18 +1117,18 @@ function closePublishSheet(force = false) {
 }
 
 function chooseImages() {
-  const count = 9 - pickedImages.value.length;
+  const count = 1 - pickedImages.value.length;
   if (count <= 0) {
-    uni.showToast({ title: "最多选择9张图片", icon: "none" });
+    uni.showToast({ title: "每张小便签限配 1 张图", icon: "none" });
     return;
   }
   uni.chooseImage({
-    count,
+    count: 1,
     sizeType: ["compressed"],
     sourceType: ["album", "camera"],
     success: (res) => {
       if (res.tempFilePaths?.length) {
-        pickedImages.value = [...pickedImages.value, ...res.tempFilePaths].slice(0, 9);
+        pickedImages.value = [res.tempFilePaths[0]];
       }
     },
   });
@@ -1032,12 +1143,12 @@ const PRESET_SAMPLE_PHOTOS = [
 ];
 
 function addPresetSamplePhoto() {
-  if (pickedImages.value.length >= 9) {
-    uni.showToast({ title: "最多添加9张图片", icon: "none" });
+  if (pickedImages.value.length >= 1) {
+    uni.showToast({ title: "每张小便签限配 1 张图", icon: "none" });
     return;
   }
-  const nextImg = PRESET_SAMPLE_PHOTOS[pickedImages.value.length % PRESET_SAMPLE_PHOTOS.length];
-  pickedImages.value.push(nextImg);
+  const nextImg = PRESET_SAMPLE_PHOTOS[Math.floor(Math.random() * PRESET_SAMPLE_PHOTOS.length)];
+  pickedImages.value = [nextImg];
 }
 
 function removePickedImage(idx: number) {
@@ -1045,7 +1156,7 @@ function removePickedImage(idx: number) {
 }
 
 async function submitNewPost() {
-  const content = newPostContent.value.trim();
+  const content = newPostContent.value.trim().slice(0, 70);
   if (!content && pickedImages.value.length === 0) {
     uni.showToast({ title: "请填写文字或添加图片", icon: "none" });
     return;
@@ -1053,7 +1164,7 @@ async function submitNewPost() {
   isPublishing.value = true;
   try {
     const savedPaths: string[] = [];
-    for (const p of pickedImages.value) {
+    for (const p of pickedImages.value.slice(0, 1)) {
       savedPaths.push(await saveLocalImageFile(p));
     }
     const offsetPos = createOffsetCoordinates(userLocation.value, 15, Math.random() * 360);
@@ -1066,13 +1177,15 @@ async function submitNewPost() {
       content: content || "分享了此地的风景",
       images: savedPaths,
       authorProfile: { ...myProfile.value },
-      isAcgn: isAcgnPost.value,
-      acgnTag: isAcgnPost.value ? acgnTag.value : undefined,
+      interestTag: publishInterestTag.value,
+      isAcgn: publishInterestTag.value === "二次元",
+      acgnTag: publishInterestTag.value === "二次元" ? acgnTag.value : undefined,
       paperColor: selectedPaperColor.value,
     });
     allStatuses.value = readLocalData();
     closePublishSheet(true);
-    uni.showToast({ title: "发布成功！已在地图打点", icon: "success" });
+    uni.showToast({ title: "发布成功！已贴在当前位置", icon: "success" });
+    triggerPushNotification(created);
   } catch (err) {
     console.error("发布失败:", err);
     uni.showToast({ title: "保存异常，请重试", icon: "none" });
@@ -1223,6 +1336,9 @@ export function useAppState() {
     // 状态
     allStatuses, visibleStatuses, locationClusters, sortedMomentsStatuses, recommendedStatuses, acgnStatuses, dailySponsoredAd,
     searchRadius, mapSearchKeyword, toggleSearchRadius,
+    LANDMARK_PRESETS, activeLandmark, selectedInterestTag, publishInterestTag,
+    jumpToLandmark, searchAndJumpToLandmark, exitRoamingToLocal,
+    pushSettings, activePushBanner, savePushSettings, triggerPushNotification, dismissPushBanner,
     // 地图
     mapCircles, mapMarkers, onMarkerTap, onCalloutTap, onRegionChange: () => {},
     recenterToUser, refreshNearbyStatuses, simulateUserMove,

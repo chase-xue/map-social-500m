@@ -63,7 +63,13 @@
             <view class="author-row">
               <view class="author-name-box" @tap.stop="viewAuthorProfile(item)">
                 <text class="author-name">{{ item.userName }}</text>
-                <text v-if="item.isAcgn" class="acgn-badge">🌸 二次元 · {{ item.acgnTag || '同好' }}</text>
+                <text v-if="item.interestTag" class="interest-tag-badge">
+                  {{
+                    item.interestTag === '宠物' ? '🐾 宠物' :
+                    item.interestTag === '二次元' ? '🌸 二次元' :
+                    item.interestTag === '风景' ? '🏔️ 风景' : '🏂 极限运动'
+                  }}
+                </text>
                 <text v-if="item.isHelp && isHelpResolvedPromptVisible(item)" class="help-mini-tag" :class="{ emergency: item.isEmergency && !item.helpResolved, resolved: item.helpResolved }">
                   {{ item.helpResolved ? '✅已解决' : item.isEmergency ? '🚨救命求助' : '🆘急事求助' }}
                 </text>
@@ -297,5 +303,15 @@ const topEmergencyHelp = computed(() => {
     color: #b45309;
     font-weight: 600;
   }
+}
+.interest-tag-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5d4037;
+  background: #f5efe6;
+  border: 0.5px solid #e2d6c5;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: 6px;
 }
 </style>
