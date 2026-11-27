@@ -2,7 +2,7 @@
   <scroll-view
     scroll-y
     class="moments-scroll-view"
-    :style="{ paddingTop: (statusBarHeight + 52) + 'px' }"
+    :style="{ paddingTop: statusBarHeight + 'px' }"
     @tap="closeActionMenu"
   >
     <view class="moments-inner-feed">

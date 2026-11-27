@@ -956,14 +956,19 @@ export function mergeLandmarkPresets(existing: StatusItem[]): StatusItem[] {
     }
   ];
 
-  // 给老数据补齐默认兴趣标签
-  const normalized = existing.map((item, idx) => {
+  // 给老数据补齐合理的默认兴趣标签
+  const normalized = existing.map((item) => {
     if (!item.interestTag) {
       if (item.isAcgn) {
         return { ...item, interestTag: "二次元" as const };
       }
-      const fallbackTags = ["风景", "宠物", "极限运动", "风景"] as const;
-      return { ...item, interestTag: fallbackTags[idx % fallbackTags.length] };
+      if (/猫|狗|柯基|柴犬|宠物/.test(item.content)) {
+        return { ...item, interestTag: "宠物" as const };
+      }
+      if (/跑|滑翔|攀岩|滑雪|冲浪|极限/.test(item.content)) {
+        return { ...item, interestTag: "极限运动" as const };
+      }
+      return { ...item, interestTag: "风景" as const };
     }
     return item;
   });

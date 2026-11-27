@@ -1,7 +1,20 @@
 <template>
-  <view class="pure-top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
+  <!-- 列表流模式：隐藏搜索框与标签栏，仅保留右上角极简「返回地图」悬浮按钮 -->
+  <view v-if="mapSubTab !== 'map'" class="moments-back-map-wrap" :style="{ top: (statusBarHeight + 12) + 'px' }">
+    <view class="moments-back-map-pill" @tap="toggleViewMode">
+      <svg class="pill-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+        <line x1="8" y1="2" x2="8" y2="18"/>
+        <line x1="16" y1="6" x2="16" y2="22"/>
+      </svg>
+      <text class="pill-txt">地图</text>
+    </view>
+  </view>
+
+  <!-- 地图模式：保留搜索框 + 兴趣标签筛选条 + 切换列表流按钮 -->
+  <view v-else class="pure-top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
     <view class="nav-glass-bar">
-      <!-- 地标与便签搜索框 (去掉前面 500m 胶囊，支持搜索丽江等城市地标) -->
+      <!-- 地标与便签搜索框 (支持搜索丽江等城市地标) -->
       <view class="nav-search-box">
         <text class="search-ico">🔍</text>
         <input
@@ -20,9 +33,16 @@
         <text class="roam-txt">📍 {{ activeLandmark.city }} · 返回</text>
       </view>
 
-      <!-- 右侧：地图 / 列表流视图无缝切换 -->
-      <view class="view-switch-btn" @tap="toggleViewMode" :title="mapSubTab === 'map' ? '切换为列表流' : '切换为地图'">
-        <text class="switch-icon">{{ mapSubTab === 'map' ? '📜' : '🗺️' }}</text>
+      <!-- 右侧：定制线框 SVG 切换为列表流 -->
+      <view class="view-switch-btn" @tap="toggleViewMode">
+        <svg class="switch-svg" viewBox="0 0 24 24" fill="none" stroke="#5D4037" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
       </view>
     </view>
 
@@ -332,6 +352,42 @@ function toggleViewMode() {
     .pill-label {
       color: #fffdf8;
     }
+  }
+}
+.switch-svg {
+  width: 16px;
+  height: 16px;
+}
+
+.moments-back-map-wrap {
+  position: absolute;
+  right: 14px;
+  z-index: 55;
+}
+
+.moments-back-map-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 18px;
+  background: rgba(255, 253, 248, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(226, 217, 204, 0.9);
+  box-shadow: 0 4px 14px rgba(44, 34, 26, 0.16);
+  color: #3e2723;
+  cursor: pointer;
+
+  .pill-svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .pill-txt {
+    font-size: 12px;
+    font-weight: 700;
+    color: #3e2723;
   }
 }
 </style>
