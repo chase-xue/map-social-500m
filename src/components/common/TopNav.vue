@@ -11,16 +11,20 @@
     </view>
   </view>
 
-  <!-- 地图模式：保留搜索框 + 兴趣标签筛选条 + 切换列表流按钮 -->
+  <!-- 地图模式：精致一体化搜索栏 + 极简标签筛选条 -->
   <view v-else class="pure-top-nav" :style="{ paddingTop: statusBarHeight + 'px' }">
     <view class="nav-glass-bar">
-      <!-- 地标与便签搜索框 (支持搜索丽江等城市地标) -->
+      <!-- 地标与便签搜索框 (定制线框搜索图标 + 修正 H5 输入框字号) -->
       <view class="nav-search-box">
-        <text class="search-ico">🔍</text>
+        <svg class="search-svg" viewBox="0 0 24 24" fill="none" stroke="#8D7B6C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
         <input
           class="search-inp"
           v-model="mapSearchKeyword"
-          placeholder="搜索地标（如丽江）或便签..."
+          placeholder="搜索地标（如丽江）或便签"
+          placeholder-style="font-size: 13px; color: #A09284;"
           confirm-type="search"
           @focus="showSuggestions = true"
           @confirm="handleSearchConfirm"
@@ -30,7 +34,7 @@
 
       <!-- 若正在远方漫游，显示返回当前位置小胶囊 -->
       <view v-if="activeLandmark" class="roaming-back-pill" @tap="exitRoamingToLocal">
-        <text class="roam-txt">📍 {{ activeLandmark.city }} · 返回</text>
+        <text class="roam-txt">{{ activeLandmark.city }} · 返回</text>
       </view>
 
       <!-- 右侧：定制线框 SVG 切换为列表流 -->
@@ -49,7 +53,7 @@
     <!-- 搜索联想下拉抽屉 (快速选丽江等地标) -->
     <view v-if="showSuggestions && filteredLandmarks.length > 0" class="search-suggest-panel">
       <view class="suggest-header">
-        <text class="suggest-title">✈️ 探索远方地标</text>
+        <text class="suggest-title">探索远方地标</text>
         <text class="suggest-close" @tap="showSuggestions = false">收起</text>
       </view>
       <view
@@ -66,7 +70,7 @@
       </view>
     </view>
 
-    <!-- 兴趣标签筛选条 (宠物 / 二次元 / 风景 / 极限运动) -->
+    <!-- 极简克制兴趣标签筛选条 (去杂乱 Emoji，统一手账胶囊质感) -->
     <scroll-view scroll-x class="interest-filter-strip" :show-scrollbar="false">
       <view class="filter-pills-row">
         <view
@@ -76,7 +80,6 @@
           :class="{ 'pill-active': selectedInterestTag === tag.value }"
           @tap="selectedInterestTag = tag.value"
         >
-          <text class="pill-ico">{{ tag.icon }}</text>
           <text class="pill-label">{{ tag.label }}</text>
         </view>
       </view>
@@ -163,44 +166,53 @@ function toggleViewMode() {
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 44px;
   background: rgba(255, 253, 248, 0.94);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 24px;
-  padding: 5px 8px 5px 10px;
-  box-shadow: 0 4px 18px rgba(62, 39, 35, 0.08), 0 1px 3px rgba(62, 39, 35, 0.04);
-  border: 0.5px solid rgba(226, 217, 204, 0.9);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 22px;
+  padding: 0 6px 0 12px;
+  box-shadow: 0 6px 20px rgba(62, 39, 35, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(218, 204, 184, 0.85);
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
 .nav-search-box {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: #f5f1e8;
-  border-radius: 16px;
-  padding: 5px 10px;
+  gap: 7px;
+  height: 32px;
+  background: transparent;
   min-width: 0;
 
-  .search-ico {
-    font-size: 13px;
-    opacity: 0.65;
+  .search-svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
   }
 
   .search-inp {
     flex: 1;
+    height: 28px;
+    line-height: 28px;
     font-size: 13px;
     color: #3e2723;
     border: none;
     background: transparent;
     min-width: 0;
+
+    :deep(input) {
+      font-size: 13px !important;
+      color: #3e2723 !important;
+    }
   }
 
   .clear-ico {
     font-size: 12px;
     color: #8d6e63;
-    padding: 0 4px;
+    padding: 0 6px;
     cursor: pointer;
   }
 }
@@ -311,7 +323,7 @@ function toggleViewMode() {
 }
 
 .interest-filter-strip {
-  margin-top: 7px;
+  margin-top: 8px;
   width: 100%;
   white-space: nowrap;
   pointer-events: auto;
@@ -320,34 +332,35 @@ function toggleViewMode() {
 .filter-pills-row {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 2px;
+  gap: 7px;
+  padding: 1px 2px;
 }
 
 .filter-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  justify-content: center;
+  height: 28px;
+  padding: 0 13px;
   border-radius: 14px;
-  background: rgba(255, 253, 248, 0.9);
-  border: 1px solid rgba(215, 204, 196, 0.8);
-  box-shadow: 0 2px 6px rgba(62, 39, 35, 0.05);
+  background: rgba(255, 253, 248, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(218, 204, 184, 0.85);
+  box-shadow: 0 3px 10px rgba(62, 39, 35, 0.07);
   cursor: pointer;
-
-  .pill-ico {
-    font-size: 11px;
-  }
+  transition: all 0.18s ease;
 
   .pill-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: #5d4037;
+    letter-spacing: 0.2px;
   }
 
   &.pill-active {
     background: #3e2723;
     border-color: #3e2723;
+    box-shadow: 0 4px 12px rgba(62, 39, 35, 0.22);
 
     .pill-label {
       color: #fffdf8;

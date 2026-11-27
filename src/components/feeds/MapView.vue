@@ -32,13 +32,6 @@
       </view>
     </view>
 
-    <!-- 附近新增便签轻量悬浮胶囊 (位于顶栏下方) -->
-    <view v-if="newNoteAlertVisible && latestNote" class="new-note-float-capsule" @tap="openDetailSheet(latestNote)">
-      <text class="capsule-icon">🔔</text>
-      <text class="capsule-text">周边新便签：《{{ latestNote.content.slice(0, 16) }}...》</text>
-      <text class="capsule-action">查看 ›</text>
-    </view>
-
     <map
       id="mainMap"
       class="map-view"
