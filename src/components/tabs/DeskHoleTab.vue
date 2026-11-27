@@ -2,19 +2,19 @@
   <view class="desk-container" :style="{ paddingTop: statusBarHeight + 'px' }">
     <view class="desk-phone" :class="{ 'lamp-on': isLampLit, 'windy': isWindowOpen }">
       <!-- 1. 书桌小景全貌 (Diorama Desk View) -->
-      <view v-show="!isHolePageActive" class="page desk-page">
-        <view class="wall" :class="'wp-' + currentWallpaperStyle"><view class="tex tex-noise" /></view>
+      <view v-show="!isHolePageActive" class="page desk-page" :class="{ 'night-mode': currentDesk.weather === 'night' }">
+        <view class="wall" :class="['wp-' + currentWallpaperStyle, { 'night-room': currentDesk.weather === 'night' }]"><view class="tex tex-noise" /></view>
 
-        <!-- 顶栏信息与状态 -->
+        <!-- 顶栏信息与状态 (独立安全区，彻底杜绝与窗帘杆重叠) -->
         <view class="desk-header">
           <view class="desk-meta-box" @tap="handleViewOwnerProfile" title="点击查看资料">
             <image class="owner-ava" :src="currentDesk.ownerAvatar" mode="aspectFill" />
             <view class="meta-texts">
               <view class="title-row">
-                <text class="desk-title">{{ isVisitingOther ? (currentDesk.ownerName + '的桌洞') : '我的桌洞' }}</text>
+                <text class="desk-title-inline">{{ isVisitingOther ? (currentDesk.ownerName + '的桌洞') : '我的桌洞' }}</text>
                 <text class="desk-tag">{{ isVisitingOther ? '客座' : '书房' }}</text>
               </view>
-              <text class="sub-text">访客 {{ currentDesk.visitorCount }} · {{ weatherLabel }}{{ liveTempC !== null ? ' ' + liveTempC + '°C' : '' }} · {{ terrainLabel }}</text>
+              <text class="sub-text">{{ weatherIcon }} {{ weatherLabel }}{{ liveTempC !== null ? ' ' + liveTempC + '°C' : '' }} · {{ terrainLabel }}</text>
             </view>
           </view>
 
@@ -22,11 +22,11 @@
             <view v-if="isVisitingOther" class="back-pill-btn" @tap="exitVisiting">
               <text>‹ 回我桌洞</text>
             </view>
-            <view class="shop-pill-btn" @tap="openDecorShop" title="会员装扮工坊">
-              <text class="shop-badge">👑</text>
+            <view class="shop-pill-btn" @tap="openDecorShop" title="桌洞装扮工坊">
+              <text class="shop-badge">🎨</text>
               <text class="shop-text">装扮</text>
             </view>
-            <view class="gear-btn" @tap="gearMenuVisible = !gearMenuVisible" title="设置">
+            <view class="gear-btn" @tap="gearMenuVisible = !gearMenuVisible" title="天气与地形设置">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.36a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.36 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/>
@@ -55,13 +55,35 @@
             <view class="cloud c2" />
             <view class="stars" />
             <view class="rainlayer" />
-            <view class="sc-hill h1" />
-            <view class="sc-hill h2" />
-            <!-- 根据附近地形动态切换的楼房/古城/雪山/海滨轮廓 -->
-            <view class="sc-buildings" :class="'tr-' + currentTerrain" />
-            <view class="sc-tree t1" />
-            <view class="sc-tree t2" />
-            <view class="sc-tree t3" />
+            <!-- 柔雾分层地形插画 SVG (告别生硬灰块，随地形/城市切换) -->
+            <svg v-if="currentTerrain === 'ancient'" class="sc-terrain-svg" viewBox="0 0 220 112" preserveAspectRatio="none">
+              <path d="M0,112 L0,76 Q45,52 95,72 Q155,48 220,70 L220,112 Z" fill="#9BB19B" opacity="0.55"/>
+              <path d="M0,112 L0,86 L24,72 L52,86 L82,66 L116,86 L146,68 L178,86 L204,74 L220,84 L220,112 Z" fill="#63554B"/>
+              <path d="M18,74 Q24,66 30,74 M74,68 Q82,58 90,68 M138,70 Q146,60 154,70" stroke="#473B33" stroke-width="2.5" fill="none"/>
+              <circle cx="82" cy="82" r="2.4" fill="#F6C16C"/>
+              <circle cx="146" cy="84" r="2.4" fill="#F6C16C"/>
+            </svg>
+            <svg v-else-if="currentTerrain === 'city'" class="sc-terrain-svg" viewBox="0 0 220 112" preserveAspectRatio="none">
+              <path d="M0,112 L0,62 L24,62 L24,44 L48,44 L48,68 L74,68 L74,36 L106,36 L106,64 L138,64 L138,48 L168,48 L168,66 L194,66 L194,52 L220,52 L220,112 Z" fill="#8A9DAD" opacity="0.55"/>
+              <path d="M0,112 L0,76 L32,76 L32,58 L62,58 L62,82 L94,82 L94,50 L128,50 L128,78 L162,78 L162,62 L192,62 L192,80 L220,80 L220,112 Z" fill="#607385"/>
+              <g fill="#FFE49E" opacity="0.8">
+                <rect x="40" y="66" width="4" height="5"/><rect x="49" y="66" width="4" height="5"/>
+                <rect x="104" y="58" width="4" height="5"/><rect x="114" y="58" width="4" height="5"/>
+                <rect x="104" y="68" width="4" height="5"/><rect x="170" y="70" width="4" height="5"/>
+              </g>
+            </svg>
+            <svg v-else-if="currentTerrain === 'mountain'" class="sc-terrain-svg" viewBox="0 0 220 112" preserveAspectRatio="none">
+              <path d="M0,112 L48,38 L94,86 L152,24 L220,92 L220,112 Z" fill="#8BA59B" opacity="0.6"/>
+              <path d="M138,40 L152,24 L166,40 L158,37 L152,43 L146,37 Z" fill="#FFFFFF" opacity="0.88"/>
+              <path d="M0,112 Q55,74 118,92 Q172,72 220,94 L220,112 Z" fill="#6B8A6E"/>
+            </svg>
+            <svg v-else class="sc-terrain-svg" viewBox="0 0 220 112" preserveAspectRatio="none">
+              <path d="M0,112 L0,78 Q60,72 110,78 Q165,84 220,74 L220,112 Z" fill="#6AA8CC" opacity="0.75"/>
+              <path d="M0,112 L0,90 Q55,84 115,92 Q175,98 220,88 L220,112 Z" fill="#4D8EB5"/>
+              <rect x="166" y="42" width="12" height="36" rx="2" fill="#FFFDF6"/>
+              <rect x="166" y="52" width="12" height="6" fill="#C95E46"/>
+              <circle cx="172" cy="40" r="5" fill="#FFE69A"/>
+            </svg>
             <view class="sc-birds"><view /><view /><view /></view>
             <view
               class="drift-letter"
@@ -77,6 +99,8 @@
         </view>
 
         <view class="windowsill" />
+        <!-- 斜射进桌面的温暖窗光光束 -->
+        <view class="desk-sunbeam" />
         <view class="motes"><view /><view /><view /><view /><view /></view>
 
         <!-- 春日多肉 (可浇水) -->
@@ -142,39 +166,30 @@
             <view class="base" />
           </view>
 
-          <!-- 桌面日记手账本 (写今天的日记) -->
-          <view class="notebook" title="写今天的日记" @tap="openJournalWithAnim" />
-
-          <!-- 桌面小画架 (天气与地形切换) -->
-          <view class="wboard" title="切换天气与地形" @tap="cycleWeather">
-            <view class="wb-face">
-              <view class="wb-icon">{{ weatherIcon }}</view>
-              <view class="wb-text">{{ weatherLabel }}</view>
-            </view>
-            <view class="wb-leg l" />
-            <view class="wb-leg r" />
+          <!-- 左前：精装手账日记本 (一本书，带书签丝带) -->
+          <view class="notebook hardcover-book" title="写今天的日记" @tap="openJournalWithAnim">
+            <text class="hb-title">手账日记</text>
+            <text class="hb-sub">{{ currentDesk.diaryEntries.length }} 篇</text>
+            <view class="hb-ribbon" />
           </view>
 
-          <!-- 桌面立式课程表 (需求 18) -->
+          <!-- 中后：精致木框立式课程表 (需求 18) -->
           <view class="desk-schedule-card" title="桌面课程表" @tap="scheduleModalVisible = true">
             <view class="dsc-clip" />
             <text class="dsc-title">📅 课程表</text>
             <text class="dsc-next">{{ nextScheduleBrief }}</text>
           </view>
 
-          <!-- 桌面宠物扩展位 (装扮页开启后现身，需求 14) -->
-          <view v-if="currentPetSlot !== 'none'" class="desk-pet-companion" title="我的桌宠" @tap="openDecorShop">
-            <text class="pet-emoji">{{ currentPetSlot === 'cat' ? '🐱' : currentPetSlot === 'shiba' ? '🐕' : '🐦' }}</text>
-          </view>
-
-          <view class="pen" />
-          <view class="cup">
+          <!-- 中前：冒热气的陶瓷咖啡杯 -->
+          <view class="cup" title="热气袅袅的咖啡">
+            <view class="cup-steam"><view class="st s1" /><view class="st s2" /><view class="st s3" /></view>
             <view class="cup-css" />
           </view>
 
-          <!-- 足迹册 -->
-          <view class="album" title="足迹册" @tap="albumModalVisible = true">
-            <text>足迹册</text>
+          <!-- 右侧：桌面宠物小窝 (不与右墙便签墙撞车，点击可去装扮切换宠物) -->
+          <view class="desk-pet-nest" title="我的桌宠小窝" @tap="openDecorShop">
+            <text class="pet-emoji">{{ currentPetSlot === 'cat' ? '🐱' : currentPetSlot === 'shiba' ? '🐕' : currentPetSlot === 'bird' ? '🐦' : '🐾' }}</text>
+            <view class="pet-cushion" />
           </view>
 
           <!-- 课桌面板与前脸几何 -->
@@ -3632,5 +3647,336 @@ function formatRelativeTime(ts: number): string {
     color: #5D4037;
     &.on { background: #3E2723; color: #FFFDF8; }
   }
+}
+/* ============ 原型级构图与光影精细升级（彻底解决顶栏叠压、左右侧墙透视零遮挡、桌面分区明晰） ============ */
+.desk-page .wall.night-room {
+  background: radial-gradient(85% 70% at 50% 28%, #343949 0%, #262A36 62%, #1D202A 100%) !important;
+}
+
+.desk-header {
+  position: absolute !important;
+  top: 10px !important;
+  left: 14px !important;
+  right: 14px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  z-index: 30 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  .desk-meta-box {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 4px 12px 4px 5px !important;
+    border-radius: 22px !important;
+    background: rgba(255, 253, 248, 0.88) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(214, 198, 174, 0.78) !important;
+    box-shadow: 0 4px 12px rgba(62, 39, 35, 0.08) !important;
+    max-width: 230px !important;
+    overflow: hidden !important;
+
+    .owner-ava {
+      width: 30px !important;
+      height: 30px !important;
+      border-radius: 50% !important;
+      flex-shrink: 0 !important;
+    }
+
+    .meta-texts {
+      display: flex !important;
+      flex-direction: column !important;
+      min-width: 0 !important;
+    }
+
+    .title-row {
+      display: flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+    }
+
+    .desk-title-inline {
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      color: #3E2723 !important;
+      line-height: 1.2 !important;
+      position: static !important;
+      letter-spacing: 0 !important;
+    }
+
+    .desk-tag {
+      font-size: 9px !important;
+      padding: 1px 5px !important;
+      border-radius: 6px !important;
+      background: #F3E8D2 !important;
+      color: #8B5A2B !important;
+      font-weight: 600 !important;
+    }
+
+    .sub-text {
+      font-size: 10px !important;
+      color: #795548 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      margin-top: 1px !important;
+    }
+  }
+
+  .shop-pill-btn {
+    background: linear-gradient(135deg, #4A3128, #3E2723) !important;
+    color: #FFF8EB !important;
+    border: none !important;
+    padding: 6px 12px !important;
+    border-radius: 18px !important;
+    box-shadow: 0 4px 12px rgba(62, 39, 35, 0.22) !important;
+    .shop-text { color: #FFF8EB !important; font-weight: 600 !important; }
+  }
+}
+
+/* 窗帘下移至安全区下方，绝不穿插顶栏 */
+.curtains {
+  top: 64px !important;
+  height: 230px !important;
+  z-index: 12 !important;
+}
+.curtains::before {
+  left: 56px !important;
+  right: 56px !important;
+}
+.curtain {
+  width: 44px !important;
+  height: 218px !important;
+}
+.curtain.cl { left: calc(50% - 122px) !important; }
+.curtain.cr { right: calc(50% - 122px) !important; }
+
+/* 居中收窄大窗，为左右侧墙留出完整透视空间 */
+.window-frame {
+  top: 74px !important;
+  width: 214px !important;
+  height: 218px !important;
+  border-width: 9px !important;
+  z-index: 7 !important;
+}
+
+.sc-terrain-svg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 112px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.windowsill {
+  top: 288px !important;
+  width: 248px !important;
+  height: 15px !important;
+  z-index: 9 !important;
+}
+
+/* 窗台多肉保留浇水特效并精准落位 */
+.succulent {
+  left: calc(50% - 116px) !important;
+  top: 216px !important;
+  z-index: 14 !important;
+}
+
+/* 斜射进桌面的温暖窗光光束 */
+.desk-sunbeam {
+  position: absolute;
+  top: 294px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 290px;
+  height: 210px;
+  background: linear-gradient(180deg, rgba(255, 244, 208, 0.32) 0%, rgba(255, 240, 195, 0.06) 78%, transparent 100%);
+  clip-path: polygon(16% 0, 84% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+  z-index: 11;
+  transition: opacity 0.6s ease;
+}
+.desk-page.night-mode .desk-sunbeam {
+  opacity: 0.04;
+}
+
+/* 左右对称侧墙：完全悬于桌面上方，带真实空间透视，绝不遮挡！ */
+.board {
+  left: 8px !important;
+  top: 162px !important;
+  width: 68px !important;
+  z-index: 10 !important;
+
+  .bd {
+    width: 68px !important;
+    height: 128px !important;
+    border-width: 4px !important;
+    transform: perspective(260px) rotateY(16deg) !important;
+  }
+
+  .mini {
+    width: 52px !important;
+    left: 4px !important;
+    right: auto !important;
+    font-size: 6.5px !important;
+    padding: 4px 3px !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+  }
+  .m1 { top: 8px !important; }
+  .m2 { top: 44px !important; }
+  .m3 { top: 82px !important; }
+}
+
+.right-sticky-board {
+  right: 8px !important;
+  top: 162px !important;
+  width: 68px !important;
+  z-index: 10 !important;
+
+  .rsb-bd {
+    width: 68px !important;
+    height: 128px !important;
+    transform: perspective(260px) rotateY(-16deg) !important;
+    padding: 5px 4px !important;
+  }
+
+  .rsb-mini {
+    width: 54px !important;
+    left: 5px !important;
+    right: auto !important;
+    &.s1 { top: 22px !important; }
+    &.s2 { top: 56px !important; }
+    &.s3 { top: 90px !important; bottom: auto !important; }
+  }
+}
+
+/* 近景桌面道具精准分区：台灯(左后)、手账书(左前)、课程表(中后)、冒热气咖啡(中前)、宠物窝(右侧) */
+.desk-lamp {
+  left: 54px !important;
+  bottom: 392px !important;
+  z-index: 6 !important;
+}
+
+.notebook.hardcover-book {
+  left: 28px !important;
+  bottom: 318px !important;
+  width: 92px !important;
+  height: 62px !important;
+  padding: 8px 10px !important;
+  border-radius: 4px 10px 10px 4px !important;
+  background: linear-gradient(135deg, #FFFBF0, #F3E3BD) !important;
+  box-shadow: -4px 5px 0 #7C583A, 0 10px 18px rgba(70, 50, 28, 0.24) !important;
+  border: 1px solid #E3CFA0 !important;
+  transform: rotate(-5deg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  z-index: 7 !important;
+
+  &::after { display: none !important; }
+  .hb-title { font-size: 11px; font-weight: 700; color: #3E2723; }
+  .hb-sub { font-size: 9px; color: #8D6E63; }
+  .hb-ribbon {
+    position: absolute;
+    right: 10px;
+    bottom: -10px;
+    width: 8px;
+    height: 15px;
+    background: #B94A38;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%);
+  }
+}
+
+.desk-schedule-card {
+  left: 142px !important;
+  right: auto !important;
+  bottom: 378px !important;
+  width: 106px !important;
+  height: 64px !important;
+  transform: none !important;
+  border: 2px solid #C8AD82 !important;
+  border-radius: 8px !important;
+  padding: 7px 8px !important;
+  z-index: 7 !important;
+
+  .dsc-title { font-size: 10px !important; }
+  .dsc-next { font-size: 9px !important; color: #C25B38 !important; font-weight: 600 !important; }
+}
+
+.cup {
+  left: 170px !important;
+  right: auto !important;
+  bottom: 316px !important;
+  z-index: 8 !important;
+}
+
+.cup-steam {
+  position: absolute;
+  top: -18px;
+  left: 8px;
+  width: 18px;
+  height: 16px;
+  pointer-events: none;
+
+  .st {
+    position: absolute;
+    bottom: 0;
+    width: 2px;
+    height: 12px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    filter: blur(1px);
+    animation: cupSteamRise 2.4s ease-in-out infinite;
+  }
+  .s1 { left: 3px; }
+  .s2 { left: 9px; animation-delay: 0.8s; }
+  .s3 { left: 15px; animation-delay: 1.5s; }
+}
+@keyframes cupSteamRise {
+  0% { transform: translateY(4px) scaleY(0.6); opacity: 0; }
+  50% { opacity: 0.78; }
+  100% { transform: translateY(-10px) scaleY(1.2); opacity: 0; }
+}
+
+.desk-pet-nest {
+  position: absolute;
+  right: 22px;
+  bottom: 320px;
+  width: 84px;
+  height: 66px;
+  z-index: 8;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+
+  .pet-emoji {
+    font-size: 32px;
+    margin-bottom: -12px;
+    z-index: 2;
+    filter: drop-shadow(0 4px 6px rgba(60, 40, 20, 0.24));
+    animation: petNestBreathe 3s ease-in-out infinite;
+  }
+
+  .pet-cushion {
+    width: 74px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, #F5E6CC, #D4B48C);
+    box-shadow: 0 6px 12px rgba(70, 50, 28, 0.22);
+  }
+}
+@keyframes petNestBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.04); }
 }
 </style>
