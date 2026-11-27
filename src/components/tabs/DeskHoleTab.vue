@@ -211,108 +211,140 @@
       <!-- 2. 镜头潜入放大转场 -->
       <view v-if="isHoleZooming" class="hole-zoom play" />
 
-      <!-- 3. 「桌洞里」次级拟物空间 (Page Hole) -->
-      <view v-if="isHolePageActive" class="page hole-page">
+      <!-- 3. 「桌洞里」实木分隔抽屉全景空间 (Page Hole) -->
+      <view v-if="isHolePageActive" class="page hole-page hole-organizer-page">
         <view class="tex tex-noise" />
-        <button class="hole-back" @tap="closeHolePage">‹ 回到桌前</button>
-        <view class="hole-title">桌 洞 里</view>
+        <view class="hole-top-light" />
 
-        <!-- 模块化收纳盒快捷栏 (在保留心情铁盒与翻页册基础上扩展，需求 16) -->
-        <scroll-view scroll-x class="hole-modular-dock" :show-scrollbar="false">
-          <view class="dock-pills-row">
-            <view class="hole-mod-pill" @tap="activeHoleModule = 'album'">📷 相册</view>
-            <view class="hole-mod-pill" @tap="activeHoleModule = 'collected'">📌 收藏分类</view>
-            <view class="hole-mod-pill" @tap="activeHoleModule = 'ledger'">📒 记账本</view>
-            <view class="hole-mod-pill" @tap="activeHoleModule = 'gifts'">🎁 礼物</view>
-            <view class="hole-mod-pill" @tap="activeHoleModule = 'jewelry'">💍 首饰盒</view>
-            <view class="hole-mod-pill extra" @tap="activeHoleModule = 'extra'">➕ 扩展槽位({{ currentDesk.extraSlots?.length || 0 }})</view>
+        <!-- 极简顶栏 -->
+        <view class="hole-org-header">
+          <view class="hole-back-btn" @tap="closeHolePage">‹ 回到桌前</view>
+          <text class="hole-org-title">桌 洞 里</text>
+          <text class="hole-org-count">{{ 6 + (currentDesk.extraSlots?.length || 0) }} 格收纳</text>
+        </view>
+
+        <!-- 实木分隔抽屉主体（严格预留底部悬浮导航栏安全区，绝不遮挡！） -->
+        <scroll-view scroll-y class="hole-org-scroll">
+          <view class="drawer-organizer">
+            <!-- 第一排：拍立得相册 + 墨绿丝绒首饰盒 -->
+            <view class="org-row-top">
+              <view class="wood-comp" @tap="activeHoleModule = 'album'">
+                <text class="comp-badge">{{ currentDesk.albumPhotos?.length || 0 }} 张</text>
+                <view class="prop-album">
+                  <text class="prop-album-t">足迹相册</text>
+                  <text class="prop-album-s">POLAROID</text>
+                  <view class="album-polaroid-peek">
+                    <view class="album-polaroid-pic" />
+                  </view>
+                </view>
+                <text class="comp-label">相 册</text>
+              </view>
+
+              <view class="wood-comp" @tap="activeHoleModule = 'jewelry'">
+                <text class="comp-badge">{{ currentDesk.jewelry?.length || 0 }} 件</text>
+                <view class="prop-jewelry">
+                  <text class="jw-ico">🏅</text>
+                  <text class="jw-ico">🍂</text>
+                  <view class="jewelry-clasp" />
+                </view>
+                <text class="comp-label">首饰盒</text>
+              </view>
+            </view>
+
+            <!-- 第二排 C 位：完整保留原版 3D 带锁金属「心情盒子」（点击开锁翻盖 + 纸卷舒展！） -->
+            <view class="wood-comp org-row-mid" @tap="toggleBigBox">
+              <text class="comp-badge">{{ isBoxOpen ? '已解锁' : '点击开锁' }}</text>
+              <view class="bigbox org-bigbox" :class="{ 'open': isBoxOpen, 'unlocked': isBoxUnlocked }">
+                <view class="bb-hinge" />
+                <view class="bb-lid">
+                  <view class="lf">
+                    <view class="tex tex-metal" />
+                    <view class="bb-lock" />
+                  </view>
+                  <view class="li" @tap.stop>
+                    <view class="tex tex-metal" />
+                    <view class="hud-tl">
+                      <text class="hm">11月</text>
+                      <view
+                        v-for="(dateStr, dIdx) in holeTimelineDates"
+                        :key="dateStr"
+                        class="hud-node"
+                        :class="{ 'on': selectedHoleDateIdx === dIdx }"
+                        @tap="selectHoleDate(dIdx)"
+                      >
+                        <view class="hf">✦</view>
+                        <view class="hd">{{ dateStr === '全部' ? '全部' : (dateStr.split('月')[1] || dateStr) }}</view>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+
+                <view class="bb-inside" @tap.stop>
+                  <view class="rolls">
+                    <view
+                      v-for="roll in renderedHoleRolls"
+                      :key="roll.id"
+                      class="roll"
+                      :class="{ 'dim': roll.isDim }"
+                      :style="roll.style"
+                      @tap="openHoleRoll(roll)"
+                    >
+                      <view class="rc" :style="{ '--mc': getPaperMoodColor(roll.color) }" />
+                      <view class="rtag">{{ roll.cleanDate }}</view>
+                    </view>
+                  </view>
+                  <view v-if="renderedHoleRolls.filter(r => !r.isDim).length === 0" class="hole-empty">那天没写字</view>
+                </view>
+
+                <view class="bb-body"><view class="tex tex-metal" /></view>
+                <view class="bb-depth" />
+              </view>
+              <text class="comp-label">心情盒子 · 3D 铁盒</text>
+            </view>
+
+            <!-- 第三排：皮革「收藏的纸条」翻页册（带彩色分类索引条） + 牛皮记账本 -->
+            <view class="org-row-lower">
+              <view class="wood-comp" @tap="activeHoleModule = 'collected'">
+                <text class="comp-badge">{{ Math.max(1, (currentDesk.noteCategories?.length || 1) - 1) }} 分类</text>
+                <view class="prop-notes-book">
+                  <text class="pnb-title">收藏的纸条</text>
+                  <text class="pnb-sub">含收到的慢信</text>
+                  <view class="index-tab t1">心</view>
+                  <view class="index-tab t2">旅</view>
+                  <view class="index-tab t3">灵</view>
+                </view>
+                <text class="comp-label">收藏纸条 & 分类</text>
+              </view>
+
+              <view class="wood-comp" @tap="activeHoleModule = 'ledger'">
+                <text class="comp-badge">¥{{ ledgerBalance }}</text>
+                <view class="prop-ledger">
+                  <view class="ledger-band" />
+                  <text class="pl-title">记账本</text>
+                  <text class="pl-sub">本月结余</text>
+                </view>
+                <text class="comp-label">记账本</text>
+              </view>
+            </view>
+
+            <!-- 第四排：绯红丝带礼物盒 + 虚线扩展槽位 -->
+            <view class="org-row-bottom">
+              <view class="wood-comp" @tap="activeHoleModule = 'gifts'">
+                <text class="comp-badge">{{ currentDesk.gifts?.length || 0 }} 件</text>
+                <view class="prop-gift">
+                  <text class="gift-bow">🎀</text>
+                </view>
+                <text class="comp-label">收到礼物</text>
+              </view>
+
+              <view class="wood-comp extra-slot-comp" @tap="activeHoleModule = 'extra'">
+                <text class="comp-badge">{{ currentDesk.extraSlots?.length || 0 }} 个</text>
+                <text class="extra-plus-ico">＋</text>
+                <text class="comp-label extra-lbl">扩展槽位</text>
+              </view>
+            </view>
           </view>
         </scroll-view>
-
-        <view class="bshadow" />
-
-        <!-- 拟物心情铁盒 (BigBox) -->
-        <view class="bigbox" :class="{ 'open': isBoxOpen, 'unlocked': isBoxUnlocked }" @tap="toggleBigBox">
-          <view class="bb-hinge" />
-          <view class="bb-lid">
-            <view class="lf">
-              <view class="tex tex-metal" />
-              <view class="bb-lock" />
-            </view>
-            <view class="li" @tap.stop>
-              <view class="tex tex-metal" />
-              <view class="hud-tl">
-                <text class="hm">11月</text>
-                <view
-                  v-for="(dateStr, dIdx) in holeTimelineDates"
-                  :key="dateStr"
-                  class="hud-node"
-                  :class="{ 'on': selectedHoleDateIdx === dIdx }"
-                  @tap="selectHoleDate(dIdx)"
-                >
-                  <view class="hf">✦</view>
-                  <view class="hd">{{ dateStr === '全部' ? '全部' : (dateStr.split('月')[1] || dateStr) }}</view>
-                </view>
-              </view>
-            </view>
-          </view>
-
-          <view class="bb-inside" @tap.stop>
-            <view class="rolls">
-              <view
-                v-for="roll in renderedHoleRolls"
-                :key="roll.id"
-                class="roll"
-                :class="{ 'dim': roll.isDim }"
-                :style="roll.style"
-                @tap="openHoleRoll(roll)"
-              >
-                <view class="rc" :style="{ '--mc': getPaperMoodColor(roll.color) }" />
-                <view class="rtag">{{ roll.cleanDate }}</view>
-              </view>
-            </view>
-            <view v-if="renderedHoleRolls.filter(r => !r.isDim).length === 0" class="hole-empty">那天没写字</view>
-          </view>
-
-          <view class="bb-body"><view class="tex tex-metal" /></view>
-          <view class="bb-depth" />
-        </view>
-
-        <!-- 悬浮微光微尘 -->
-        <view class="motes" style="left:64px;top:340px;width:270px;height:200px">
-          <view /><view /><view /><view />
-        </view>
-
-        <!-- 「收到的纸条」手账翻页册 (Book) -->
-        <view class="book" :class="{ 'open': isBookOpen, 'flipping': isBookFlipping }">
-          <view class="bk-backboard" />
-          <view class="bk-sheet" @tap.stop>
-            <view class="bk-pagehead">
-              <text class="d">{{ currentBookPage.date }}</text>
-              <text class="pg">{{ (bookDateIdx + 1) + '/' + bookDateGroups.length }}</text>
-            </view>
-            <view class="bk-hearts">
-              <view
-                v-for="note in currentBookPage.notes"
-                :key="note.id"
-                class="bk-heart"
-                style="--mc:#F7D4E4"
-                @tap="openBookNoteSlip(note)"
-              >
-                <view class="crease" />
-                <view v-if="note.isSealed && !note.read" class="bs-seal" />
-                <text class="bh-label">{{ note.receivedTime }}</text>
-              </view>
-            </view>
-          </view>
-          <view class="bk-turn" />
-          <view class="bk-cover" @tap="toggleBook">
-            <view class="bcf"><text>收到的纸条</text></view>
-            <view class="bcb" />
-          </view>
-          <button class="bk-nav prev" @tap.stop="flipBook(-1)">‹</button>
-          <button class="bk-nav next" @tap.stop="flipBook(1)">›</button>
-        </view>
       </view>
 
       <!-- 4. 纸卷舒展阅读弹窗 (Unroll Modal) -->
@@ -3978,5 +4010,374 @@ function formatRelativeTime(ts: number): string {
 @keyframes petNestBreathe {
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-3px) scale(1.04); }
+}
+/* ============ 「桌洞里」实木分隔抽屉全景样式（零空洞、全拟物实物、避开悬浮导航栏） ============ */
+.hole-organizer-page {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 18px !important;
+  box-sizing: border-box !important;
+}
+
+.hole-top-light {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 140px;
+  background: linear-gradient(180deg, rgba(255, 232, 182, 0.2) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hole-org-header {
+  position: relative;
+  z-index: 20;
+  padding: 14px 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+
+  .hole-back-btn {
+    padding: 6px 13px;
+    border-radius: 18px;
+    background: rgba(255, 248, 232, 0.12);
+    border: 1px solid rgba(226, 198, 148, 0.35);
+    color: #F6E7C8;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .hole-org-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(246, 231, 200, 0.9);
+    letter-spacing: 5px;
+  }
+
+  .hole-org-count {
+    font-size: 10px;
+    color: rgba(226, 198, 148, 0.68);
+  }
+}
+
+.hole-org-scroll {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  min-height: 0;
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+
+.drawer-organizer {
+  padding: 10px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: rgba(30, 20, 13, 0.44);
+  border: 2px solid #5E452F;
+  box-shadow: inset 0 10px 26px rgba(0, 0, 0, 0.58), 0 2px 0 rgba(255, 235, 200, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wood-comp {
+  position: relative;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(64, 47, 32, 0.54) 0%, rgba(42, 30, 20, 0.74) 100%);
+  border: 1.5px solid rgba(132, 98, 66, 0.56);
+  box-shadow: inset 0 6px 14px rgba(0, 0, 0, 0.48), 0 1px 0 rgba(255, 236, 200, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.comp-label {
+  position: absolute;
+  bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(246, 231, 200, 0.88);
+  letter-spacing: 0.8px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+}
+
+.comp-badge {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 245, 224, 0.14);
+  color: #EBD4AA;
+  z-index: 5;
+}
+
+.org-row-top {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 10px;
+  height: 142px;
+}
+
+.prop-album {
+  position: relative;
+  width: 112px;
+  height: 80px;
+  margin-bottom: 12px;
+  border-radius: 4px 10px 10px 4px;
+  background: linear-gradient(155deg, #ECE2CE, #D5C4A6);
+  box-shadow: -4px 6px 0 #8F7554, 0 10px 18px rgba(0, 0, 0, 0.45);
+  transform: rotate(-3deg);
+  padding: 8px 10px;
+  box-sizing: border-box;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background: #9B7E5A;
+    border-radius: 4px 0 0 4px;
+  }
+
+  .prop-album-t {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #5D4037;
+    margin-left: 8px;
+    margin-top: 6px;
+  }
+
+  .prop-album-s {
+    display: block;
+    font-size: 8px;
+    color: #8D6E63;
+    margin-left: 8px;
+    margin-top: 3px;
+  }
+
+  .album-polaroid-peek {
+    position: absolute;
+    right: -8px;
+    top: -10px;
+    width: 42px;
+    height: 48px;
+    background: #FFFDF8;
+    padding: 4px 4px 11px;
+    border-radius: 3px;
+    transform: rotate(11deg);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    box-sizing: border-box;
+  }
+
+  .album-polaroid-pic {
+    width: 100%;
+    height: 100%;
+    border-radius: 1px;
+    background: linear-gradient(180deg, #8BC0DF, #E8CFA2 70%, #6B5C4E);
+  }
+}
+
+.prop-jewelry {
+  position: relative;
+  width: 82px;
+  height: 74px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: linear-gradient(155deg, #2F5242, #1D372B);
+  border: 2px solid #C8A563;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.48), inset 0 2px 8px rgba(255, 255, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  .jw-ico { font-size: 17px; }
+
+  .jewelry-clasp {
+    position: absolute;
+    bottom: -4px;
+    width: 18px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #F0D28A, #C49A45);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* 第二排 C 位：完整保留原版 3D 金属心情铁盒 */
+.org-row-mid {
+  height: 196px;
+  padding-top: 12px;
+  overflow: visible;
+}
+
+.bigbox.org-bigbox {
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin: 0 0 12px 0 !important;
+  width: 244px !important;
+  height: 132px !important;
+}
+
+.org-row-lower {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 10px;
+  height: 136px;
+}
+
+.prop-notes-book {
+  position: relative;
+  width: 122px;
+  height: 76px;
+  margin-bottom: 12px;
+  border-radius: 4px 10px 10px 4px;
+  background: linear-gradient(165deg, #8F5B3C, #6B4024);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 240, 215, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(1.5deg);
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 11px;
+    background: repeating-linear-gradient(90deg, #6E492A 0 3px, #855C39 3px 6px);
+    border-radius: 4px 0 0 4px;
+  }
+
+  .pnb-title { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #F5E3C2; margin-left: 8px; }
+  .pnb-sub { font-size: 8px; color: rgba(245, 227, 194, 0.72); margin-left: 8px; margin-top: 3px; }
+
+  .index-tab {
+    position: absolute;
+    right: -13px;
+    width: 15px;
+    height: 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #4A3525;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+
+    &.t1 { top: 9px; background: #F9D7DF; }
+    &.t2 { top: 30px; background: #D8ECD9; }
+    &.t3 { top: 51px; background: #FBE8B6; }
+  }
+}
+
+.prop-ledger {
+  position: relative;
+  width: 74px;
+  height: 80px;
+  margin-bottom: 12px;
+  border-radius: 4px 8px 8px 4px;
+  background: linear-gradient(160deg, #D8B480, #B88E56);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-2deg);
+
+  .ledger-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 12px;
+    width: 6px;
+    background: #4E342E;
+  }
+
+  .pl-title { font-size: 11px; font-weight: 700; color: #4E342E; margin-right: 8px; }
+  .pl-sub { font-size: 8px; color: #6D4C41; margin-right: 8px; margin-top: 3px; }
+}
+
+.org-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  height: 112px;
+}
+
+.prop-gift {
+  position: relative;
+  width: 76px;
+  height: 52px;
+  margin-bottom: 14px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #E8C59B, #CE9F6E);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    margin-left: -5px;
+    background: #C2523E;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 10px;
+    margin-top: -5px;
+    background: #C2523E;
+  }
+
+  .gift-bow {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 16px;
+    z-index: 2;
+  }
+}
+
+.extra-slot-comp {
+  border: 1.5px dashed rgba(232, 198, 140, 0.45) !important;
+  background: rgba(34, 24, 16, 0.36) !important;
+
+  .extra-plus-ico {
+    font-size: 26px;
+    color: rgba(243, 209, 156, 0.82);
+    margin-bottom: 14px;
+  }
+
+  .extra-lbl {
+    color: #F3D19C;
+  }
 }
 </style>
