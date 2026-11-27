@@ -1,178 +1,184 @@
 <template>
   <view class="growth-settings-tab" :style="{ paddingTop: statusBarHeight + 'px' }">
     <scroll-view scroll-y class="settings-scroll">
-      <!-- 个人资料卡片与学级头衔 -->
-      <view class="user-hero-card">
-        <view class="hero-main-row">
-          <image class="hero-avatar" :src="myProfile.avatar" mode="aspectFill" @tap="openMyProfileSheet" />
-          <view class="hero-info" @tap="openMyProfileSheet">
-            <view class="hero-name-row">
-              <text class="hero-name">{{ myProfile.name }}</text>
-              <text class="grade-badge">{{ myGrowth.grade }}</text>
+      <view class="settings-inner-body">
+        <!-- 1. 手账个人名片护照卡 -->
+        <view class="passport-card">
+          <view class="passport-washi-tape" />
+          <view class="passport-top-row">
+            <view class="ava-ring" @tap="openMyProfileSheet">
+              <image class="passport-avatar" :src="myProfile.avatar" mode="aspectFill" />
             </view>
-            <view class="title-tag-row">
-              <text class="title-pill">🏅 {{ myGrowth.title }}</text>
-              <text class="phone-tip">{{ myProfile.phone ? myProfile.phone.slice(0, 3) + '****' + myProfile.phone.slice(7) : '未绑定手机号' }}</text>
+            <view class="passport-info" @tap="openMyProfileSheet">
+              <view class="passport-name-row">
+                <text class="passport-name">{{ myProfile.name }}</text>
+                <view class="passport-title-pill" @tap.stop="mallDrawerType = 'titles'">
+                  <text>{{ myGrowth.grade }} · {{ myGrowth.title }} ▾</text>
+                </view>
+              </view>
+              <text class="passport-bio">{{ myProfile.bio || '在慢生活里写下真实的自己' }}</text>
             </view>
-            <text class="hero-bio">{{ myProfile.bio || '慢下来，在500米里写下真实的自己' }}</text>
+            <text class="passport-arrow" @tap="openMyProfileSheet">›</text>
           </view>
-          <view class="edit-arrow" @tap="openMyProfileSheet">›</view>
-        </view>
 
-        <!-- 学级经验与成长进度条 -->
-        <view class="growth-exp-section">
-          <view class="exp-header">
-            <text class="exp-title">学级成长值</text>
-            <text class="exp-val">{{ myGrowth.experience }}/1000 EXP</text>
-          </view>
-          <view class="exp-progress-bar">
-            <view class="exp-progress-fill" :style="{ width: (myGrowth.experience / 10) + '%' }" />
-          </view>
-          <view class="grades-step-row">
-            <view
-              v-for="g in gradesList"
-              :key="g"
-              class="grade-step-item"
-              :class="{ 'step-active': myGrowth.grade === g }"
-              @tap="switchGrade(g)"
-            >
-              <text class="grade-badge-icon">{{ getGradeIcon(g) }}</text>
-              <text class="grade-badge-text">{{ g }}</text>
+          <view class="passport-exp-wrap">
+            <view class="passport-exp-head">
+              <text class="exp-lbl">手账成长值</text>
+              <text class="exp-num">{{ myGrowth.experience }} / 1000 EXP</text>
+            </view>
+            <view class="passport-exp-track">
+              <view class="passport-exp-fill" :style="{ width: Math.min(100, myGrowth.experience / 10) + '%' }" />
             </view>
           </view>
         </view>
-      </view>
 
-      <!-- 钱包与纸条文创资产区 -->
-      <view class="assets-grid-box">
-        <view class="asset-item" @tap="buyCoins">
-          <text class="asset-num">{{ myGrowth.coins }}</text>
-          <text class="asset-label">🪙 慢币余额</text>
-        </view>
-        <view class="asset-item" @tap="openSealsMall">
-          <text class="asset-num">{{ myGrowth.ownedSeals?.length || 2 }} 款</text>
-          <text class="asset-label">🔏 火漆印章库</text>
-        </view>
-        <view class="asset-item" @tap="openPapersMall">
-          <text class="asset-num">{{ myGrowth.ownedPapers?.length || 2 }} 款</text>
-          <text class="asset-label">📜 典藏特权信纸</text>
-        </view>
-      </view>
-
-      <!-- 称号库选择区 -->
-      <view class="section-card">
-        <view class="section-header">
-          <text class="section-title">🎖️ 佩戴专属趣味称号</text>
-          <text class="section-sub">在小纸条与便签详情展示</text>
-        </view>
-        <view class="titles-flow">
-          <view
-            v-for="t in titlesList"
-            :key="t"
-            class="title-chip"
-            :class="{ 'title-chip-active': myGrowth.title === t }"
-            @tap="selectTitle(t)"
-          >
-            <text>{{ t }}</text>
+        <!-- 2. 极简三列资产条 -->
+        <view class="assets-strip-card">
+          <view class="asset-col" @tap="buyCoins">
+            <text class="a-num">{{ myGrowth.coins }}</text>
+            <text class="a-lbl">慢币余额</text>
+          </view>
+          <view class="asset-col" @tap="openSealsMall">
+            <text class="a-num">{{ myGrowth.ownedSeals?.length || 2 }} 款</text>
+            <text class="a-lbl">火漆印章</text>
+          </view>
+          <view class="asset-col" @tap="openPapersMall">
+            <text class="a-num">{{ myGrowth.ownedPapers?.length || 2 }} 款</text>
+            <text class="a-lbl">典藏信纸</text>
           </view>
         </view>
-      </view>
 
-      <!-- 🏮 小纸条情怀文创小铺 & 拟物空间馆 (皮肤经济) -->
-      <view class="section-card">
-        <view class="section-header">
-          <text class="section-title">🏮 小纸条情怀文创小铺 & 拟物空间馆</text>
-          <text class="section-sub">坚守慢节奏纯粹性 · 拒绝破坏慢社交的提速特权</text>
-        </view>
-        <view class="privilege-list">
-          <view class="privilege-item" @tap="openSealsMall">
-            <view class="privilege-icon">🔏</view>
-            <view class="privilege-desc">
-              <text class="p-title">珍藏特权火漆印章外观包</text>
-              <text class="p-sub">古铜月相印、玫瑰金猫爪印、欧式皇家徽印（永久个性盖章）</text>
+        <!-- 3. 核心功能前置：记忆、推送与偏好设置 -->
+        <text class="st-group-title">记忆与偏好</text>
+        <view class="st-group-card">
+          <view class="st-row" @tap="openMemoryDrawer">
+            <view class="st-ico accent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
             </view>
-            <button class="buy-btn">¥6 / 永久拥有</button>
-          </view>
-
-          <view class="privilege-item" @tap="openPapersMall">
-            <view class="privilege-icon">📜</view>
-            <view class="privilege-desc">
-              <text class="p-title">典藏和纸与星空信笺套装</text>
-              <text class="p-sub">京都古法和纸、星空流光纸、午后羊皮卷信纸（信纸皮肤外观）</text>
+            <view class="st-main">
+              <text class="st-title">传输记忆 · 账号互传</text>
+              <text class="st-sub">优先本地存储 · 一键导出或口令迁移</text>
             </view>
-            <button class="buy-btn">¥9 / 永久解锁</button>
-          </view>
-
-          <view class="privilege-item" @tap="openThemesMall">
-            <view class="privilege-icon">🪵</view>
-            <view class="privilege-desc">
-              <text class="p-title">治愈桌洞拟物化装扮皮肤</text>
-              <text class="p-sub">雨夜咖啡馆、京都老书屋、温室花房花草写字台（沉浸书桌皮肤）</text>
+            <view class="st-right">
+              <text class="st-val">{{ memoryStats.sizeKB }} KB</text>
+              <text class="st-arr">›</text>
             </view>
-            <button class="buy-btn">¥12 / 沉浸装扮</button>
           </view>
 
-          <view class="privilege-item" @tap="openMerchOrder">
-            <view class="privilege-icon">🎁</view>
-            <view class="privilege-desc">
-              <text class="p-title">《小纸条》实体文创慢寄礼盒</text>
-              <text class="p-sub">手工黄铜折纸飞机书签 + 手账和纸胶带盲盒 + 慢递信笺</text>
+          <view class="st-row" @tap="openPushDrawer">
+            <view class="st-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
             </view>
-            <button class="buy-btn merch-btn">¥39 / 慢递包邮</button>
-          </view>
-
-          <view class="privilege-item" @tap="openMerchantPublishModal">
-            <view class="privilege-icon">🏪</view>
-            <view class="privilege-desc">
-              <text class="p-title">本地小店 500m 生活圈便签定向投放</text>
-              <text class="p-sub">面向周边500米生活圈定向发布优惠打卡便签</text>
+            <view class="st-main">
+              <text class="st-title">小标签订阅推送</text>
+              <text class="st-sub">已订阅：{{ pushSettings.tags.join('、') || '未选择' }}</text>
             </view>
-            <button class="buy-btn merchant-btn">商户入驻</button>
+            <view class="st-right">
+              <text class="st-val">{{ pushSettings.enabled ? '已开启' : '已关闭' }}</text>
+              <text class="st-arr">›</text>
+            </view>
           </view>
-        </view>
-      </view>
 
-      <!-- 个人设置功能列表 -->
-      <view class="section-card">
-        <view class="cell-action-row" @tap="openMyProfileSheet">
-          <view class="cell-left">
-            <text class="cell-icon">👤</text>
-            <text class="cell-title">个人信息修改 (头像/昵称/职业/MBTI)</text>
+          <view class="st-row" @tap="toggleShowPhone">
+            <view class="st-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </view>
+            <view class="st-main">
+              <text class="st-title">向附近邻友公开联系电话</text>
+              <text class="st-sub">关闭后仅通过小纸条联系</text>
+            </view>
+            <switch :checked="myProfile.showPhone" color="#c25b38" @change="toggleShowPhone" />
           </view>
-          <text class="cell-arrow">›</text>
-        </view>
-        <view class="cell-action-row" @tap="toggleShowPhone">
-          <view class="cell-left">
-            <text class="cell-icon">📱</text>
-            <text class="cell-title">向 500 米内邻友公开联系电话</text>
-          </view>
-          <switch :checked="myProfile.showPhone" color="#07c160" @change="toggleShowPhone" />
-        </view>
-        <view class="cell-action-row" @tap="openMemoryDrawer">
-          <view class="cell-left">
-            <text class="cell-icon">🧠</text>
-            <text class="cell-title">传输记忆 / 账号互传（本地优先）</text>
-          </view>
-          <text class="cell-arrow">›</text>
-        </view>
-        <view class="cell-action-row" @tap="openPushDrawer">
-          <view class="cell-left">
-            <text class="cell-icon">🔔</text>
-            <text class="cell-title">小标签推送订阅</text>
-          </view>
-          <text class="cell-arrow">{{ pushSettings.enabled ? '已开启 ›' : '已关闭 ›' }}</text>
-        </view>
-        <view class="cell-action-row" @tap="showAboutApp">
-          <view class="cell-left">
-            <text class="cell-icon">📜</text>
-            <text class="cell-title">关于《小纸条》与慢生活理念</text>
-          </view>
-          <text class="cell-arrow">›</text>
-        </view>
-      </view>
 
-      <view class="settings-footer">
-        <text>《小纸条》v2.0 · 让生活重回慢节奏与真诚</text>
+          <view class="st-row" @tap="mallDrawerType = 'titles'">
+            <view class="st-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8" r="7"/>
+                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+              </svg>
+            </view>
+            <view class="st-main">
+              <text class="st-title">学级与趣味称号</text>
+              <text class="st-sub">切换佩戴的专属身份徽章</text>
+            </view>
+            <view class="st-right">
+              <text class="st-val">更换</text>
+              <text class="st-arr">›</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 4. 克制优雅的「文创手账馆」横向小卡 -->
+        <view class="atelier-head-row">
+          <text class="st-group-title no-margin">文创手账馆</text>
+          <text class="atelier-motto">只做情怀 · 拒绝提速</text>
+        </view>
+        <scroll-view scroll-x class="atelier-scroll" :show-scrollbar="false">
+          <view class="atelier-row">
+            <view class="atelier-card" @tap="openSealsMall">
+              <view class="atelier-swatch sw-seal"><text>🔏</text></view>
+              <text class="atelier-name">特权火漆印章</text>
+              <text class="atelier-price">¥6 · 永久</text>
+            </view>
+            <view class="atelier-card" @tap="openPapersMall">
+              <view class="atelier-swatch sw-paper"><text>📜</text></view>
+              <text class="atelier-name">京都和纸信笺</text>
+              <text class="atelier-price">¥9 · 永久</text>
+            </view>
+            <view class="atelier-card" @tap="openThemesMall">
+              <view class="atelier-swatch sw-desk"><text>🪵</text></view>
+              <text class="atelier-name">桌洞装扮皮肤</text>
+              <text class="atelier-price">¥12 · 典藏</text>
+            </view>
+            <view class="atelier-card" @tap="openMerchOrder">
+              <view class="atelier-swatch sw-gift"><text>🎁</text></view>
+              <text class="atelier-name">实体文创礼盒</text>
+              <text class="atelier-price">¥39 · 包邮</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <!-- 5. 关于与个人资料 -->
+        <view class="st-group-card">
+          <view class="st-row" @tap="openMyProfileSheet">
+            <view class="st-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </view>
+            <view class="st-main">
+              <text class="st-title">个人信息修改</text>
+            </view>
+            <view class="st-right"><text class="st-arr">›</text></view>
+          </view>
+          <view class="st-row" @tap="showAboutApp">
+            <view class="st-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </view>
+            <view class="st-main">
+              <text class="st-title">关于《小纸条》</text>
+            </view>
+            <view class="st-right">
+              <text class="st-val">v3.0</text>
+              <text class="st-arr">›</text>
+            </view>
+          </view>
+        </view>
       </view>
     </scroll-view>
 
@@ -190,6 +196,7 @@
               mallDrawerType === 'merchant' ? '🏪 本地商户 500m 慢递合作' :
               mallDrawerType === 'memory' ? '🧠 传输记忆 · 账号与设备互传' :
               mallDrawerType === 'push' ? '🔔 小标签订阅推送偏好' :
+              mallDrawerType === 'titles' ? '🏅 学级与专属趣味称号' :
               '🕊️ 关于《小纸条 (Slow Notes 500m)》'
             }}
           </text>
@@ -408,6 +415,38 @@
           </button>
         </view>
 
+        <!-- 学级与趣味称号抽屉 -->
+        <view v-else-if="mallDrawerType === 'titles'" class="drawer-info-flow">
+          <view class="info-content-card">
+            <text class="push-group-title">切换学级身份</text>
+            <view class="push-chips-wrap">
+              <view
+                v-for="g in gradesList"
+                :key="g"
+                class="push-chip"
+                :class="{ active: myGrowth.grade === g }"
+                @tap="switchGrade(g)"
+              >
+                {{ g }}
+              </view>
+            </view>
+
+            <text class="push-group-title">佩戴趣味称号</text>
+            <view class="push-chips-wrap">
+              <view
+                v-for="t in titlesList"
+                :key="t"
+                class="push-chip"
+                :class="{ active: myGrowth.title === t }"
+                @tap="selectTitle(t)"
+              >
+                {{ t }}
+              </view>
+            </view>
+          </view>
+          <button class="drawer-confirm-btn" @tap="mallDrawerType = null">完成佩戴</button>
+        </view>
+
         <!-- 关于我们抽屉 -->
         <view v-else-if="mallDrawerType === 'about'" class="drawer-info-flow">
           <view class="info-content-card">
@@ -465,7 +504,7 @@ const {
   initApp
 } = useAppState();
 
-const mallDrawerType = ref<'seals' | 'papers' | 'themes' | 'merch' | 'merchant' | 'memory' | 'push' | 'about' | null>(null);
+const mallDrawerType = ref<'seals' | 'papers' | 'themes' | 'merch' | 'merchant' | 'memory' | 'push' | 'titles' | 'about' | null>(null);
 const memoryStats = ref(getLocalMemoryStats());
 const importMemoryText = ref("");
 const pushTagOptions: InterestTag[] = ["宠物", "二次元", "风景", "极限运动"];
@@ -1529,5 +1568,283 @@ function showAboutApp() {
     border-color: #3e2723;
     color: #fffdf8;
   }
+}
+/* ============ 吉卜力手账风设置页重塑样式 ============ */
+.settings-inner-body {
+  padding: 14px 16px calc(100px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.passport-card {
+  position: relative;
+  background: linear-gradient(165deg, #fffdf5 0%, #faf1d8 100%);
+  border: 1px solid #e9dbb7;
+  border-radius: 20px;
+  padding: 18px 16px 15px;
+  box-shadow: 0 6px 20px rgba(62, 39, 35, 0.06);
+}
+
+.passport-washi-tape {
+  position: absolute;
+  top: -6px;
+  right: 28px;
+  width: 48px;
+  height: 13px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 0.5px dashed rgba(141, 110, 99, 0.35);
+  transform: rotate(3deg);
+  border-radius: 2px;
+}
+
+.passport-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ava-ring {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, #d9b170, #b07d42);
+  flex-shrink: 0;
+  cursor: pointer;
+
+  .passport-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #fffdf5;
+    box-sizing: border-box;
+  }
+}
+
+.passport-info {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.passport-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.passport-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3e2723;
+}
+
+.passport-title-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8b5a2b;
+  background: rgba(217, 155, 64, 0.18);
+  padding: 2px 7px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.passport-bio {
+  display: block;
+  font-size: 11.5px;
+  color: #795548;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.passport-arrow {
+  font-size: 18px;
+  color: #a1887f;
+  padding-left: 4px;
+}
+
+.passport-exp-wrap {
+  margin-top: 14px;
+}
+
+.passport-exp-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: #8d7b6c;
+  .exp-num { font-weight: 600; color: #5d4037; }
+}
+
+.passport-exp-track {
+  height: 5px;
+  border-radius: 4px;
+  background: rgba(139, 110, 78, 0.14);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.passport-exp-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #c89b54, #b8502c);
+}
+
+.assets-strip-card {
+  background: #fffdf8;
+  border: 1px solid #eae1d2;
+  border-radius: 16px;
+  padding: 13px 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  box-shadow: 0 3px 12px rgba(62, 39, 35, 0.04);
+
+  .asset-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+    position: relative;
+
+    &:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 18%;
+      bottom: 18%;
+      width: 1px;
+      background: #ece4d7;
+    }
+
+    .a-num { font-size: 17px; font-weight: 700; color: #3e2723; }
+    .a-lbl { font-size: 10.5px; color: #8d7b6c; }
+  }
+}
+
+.st-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9a8776;
+  padding-left: 6px;
+  margin-bottom: -6px;
+  letter-spacing: 0.6px;
+
+  &.no-margin { margin-bottom: 0; }
+}
+
+.st-group-card {
+  background: #fffdf8;
+  border: 1px solid #eae1d2;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 3px 12px rgba(62, 39, 35, 0.04);
+}
+
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  cursor: pointer;
+
+  &:not(:last-child) {
+    border-bottom: 0.5px solid #f0e9dc;
+  }
+
+  .st-ico {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f6efe2;
+    color: #5d4037;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg { width: 17px; height: 17px; }
+
+    &.accent {
+      background: rgba(194, 91, 56, 0.11);
+      color: #c25b38;
+    }
+  }
+
+  .st-main {
+    flex: 1;
+    min-width: 0;
+
+    .st-title { display: block; font-size: 13.5px; font-weight: 600; color: #3e2723; }
+    .st-sub { display: block; font-size: 11px; color: #9a8776; margin-top: 2px; }
+  }
+
+  .st-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    color: #8d7b6c;
+    flex-shrink: 0;
+    .st-arr { font-size: 15px; color: #b5a392; }
+  }
+}
+
+.atelier-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 6px;
+  margin-bottom: -6px;
+
+  .atelier-motto {
+    font-size: 10.5px;
+    color: #b09a84;
+  }
+}
+
+.atelier-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.atelier-row {
+  display: inline-flex;
+  gap: 10px;
+  padding: 2px 2px 4px;
+}
+
+.atelier-card {
+  width: 132px;
+  background: #fffdf8;
+  border: 1px solid #eae1d2;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 3px 10px rgba(62, 39, 35, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  box-sizing: border-box;
+
+  .atelier-swatch {
+    height: 52px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+
+    &.sw-seal { background: linear-gradient(135deg, #f7e7ce, #ead0a8); }
+    &.sw-paper { background: linear-gradient(135deg, #e7eef5, #d2dfec); }
+    &.sw-desk { background: linear-gradient(135deg, #e8efe4, #d0dfc9); }
+    &.sw-gift { background: linear-gradient(135deg, #f6e4df, #e8cac1); }
+  }
+
+  .atelier-name { font-size: 12.5px; font-weight: 700; color: #3e2723; }
+  .atelier-price { font-size: 11px; font-weight: 600; color: #b8502c; }
 }
 </style>
