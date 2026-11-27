@@ -1,260 +1,182 @@
 <template>
   <view v-if="publishVisible" class="wechat-publish-page" :style="{ paddingTop: statusBarHeight + 'px' }">
-    <!-- 1. 极简优雅顶栏: 取消 (左) | 居中标题 | 贴上 (右) -->
+    <!-- 1. 极简优雅顶栏 -->
     <view class="wechat-pub-header">
       <view class="pub-cancel-btn" @tap="closePublishSheet(true)">
         <text class="cancel-text">取消</text>
       </view>
 
-      <view class="pub-title-box">
-        <text class="pub-title">
-          {{ currentPublishMode === 'emergency' ? '🚨 救命求助' : '贴便签' }}
-        </text>
-      </view>
+      <text class="pub-title">
+        {{ currentPublishMode === 'emergency' ? '🚨 救命求助' : '贴便签' }}
+      </text>
 
-      <view class="pub-action-btn-box">
-        <button
-          class="wechat-pub-btn"
-          :class="{
-            'btn-emergency': currentPublishMode === 'emergency',
-            'btn-active': canSubmit && !isPublishing
-          }"
-          :disabled="!canSubmit || isPublishing"
-          :loading="isPublishing"
-          @tap="handlePublish"
-        >
-          {{ currentPublishMode === 'emergency' ? '发送求助' : '贴上' }}
-        </button>
-      </view>
+      <button
+        class="wechat-pub-btn"
+        :class="{
+          'btn-emergency': currentPublishMode === 'emergency',
+          'btn-active': canSubmit && !isPublishing
+        }"
+        :disabled="!canSubmit || isPublishing"
+        :loading="isPublishing"
+        @tap="handlePublish"
+      >
+        {{ currentPublishMode === 'emergency' ? '发送' : '贴上' }}
+      </button>
     </view>
 
     <!-- 2. 救命呼救模式警示横幅 -->
     <view v-if="currentPublishMode === 'emergency'" class="emergency-notice-banner">
-      <text class="notice-icon">⚡</text>
-      <text class="notice-text">紧急求助将在周边 500 米地图标红，并向附近邻友广播！</text>
+      <text class="notice-text">⚡ 紧急求助将在周边地图标红，并向附近邻友广播</text>
     </view>
 
-    <!-- 3. 滚动输入与选项区 -->
+    <!-- 3. 一体化拍立得手账主体 -->
     <scroll-view scroll-y class="pub-scroll-area">
-      <!-- 模式切换：键盘打字 / 真迹手写 -->
-      <view v-if="currentPublishMode !== 'emergency'" class="pub-type-switcher-bar">
-        <view
-          class="pub-switch-pill"
-          :class="{ 'pill-selected': !handwritingImg }"
-          @tap="handwritingImg = ''"
-        >
-          <text class="pill-ico">📝</text>
-          <text class="pill-txt">键盘便签</text>
-        </view>
-        <view
-          class="pub-switch-pill"
-          :class="{ 'pill-selected': !!handwritingImg }"
-          @tap="showHandwritingPad = true"
-        >
-          <text class="pill-ico">✍️</text>
-          <text class="pill-txt">真迹手写</text>
-        </view>
-      </view>
-
-      <!-- 核心便签纸编辑卡片 (真实拟物纸张质感) -->
-      <view class="note-canvas-card" :class="'paper-' + selectedPaperColor">
-        <!-- 拟物和纸胶带 -->
-        <view class="washi-tape-strip" />
-
-        <!-- 手写真迹模式 -->
-        <view v-if="handwritingImg" class="hw-preview-inner">
-          <image class="hw-preview-img" :src="handwritingImg" mode="widthFix" />
-          <view class="hw-preview-actions">
-            <text class="hw-action-btn redo-btn" @tap="showHandwritingPad = true">✏️ 重新手写</text>
-            <text class="hw-action-btn del-btn" @tap="handwritingImg = ''">✕ 清除</text>
+      <view class="pub-inner-body">
+        <!-- 键盘 / 手写轻盈分段切换 -->
+        <view v-if="currentPublishMode !== 'emergency'" class="mode-switch">
+          <view
+            class="mode-btn"
+            :class="{ active: !handwritingImg }"
+            @tap="handwritingImg = ''"
+          >
+            <text>文字便签</text>
+          </view>
+          <view
+            class="mode-btn"
+            :class="{ active: !!handwritingImg }"
+            @tap="showHandwritingPad = true"
+          >
+            <text>真迹手写</text>
           </view>
         </view>
 
-        <!-- 普通文字输入模式 (收紧为 70 字轻便签) -->
-        <view v-else class="note-input-inner">
-          <textarea
-            class="note-textarea"
-            v-model="newPostContent"
-            :placeholder="placeholderText"
-            placeholder-class="note-placeholder"
-            maxlength="70"
-            :auto-height="true"
-          />
-        </view>
+        <!-- 核心：一体化「拍立得 + 70字」实体和纸便签卡 -->
+        <view class="note-stage-card" :class="'p-' + selectedPaperColor">
+          <view class="note-tape" />
 
-        <!-- 便签底色内嵌选择条 -->
-        <view class="note-card-toolbar">
-          <view class="palette-group">
-            <text class="palette-label">底色</text>
-            <view class="palette-dots">
+          <!-- 手写真迹预览模式 -->
+          <view v-if="handwritingImg" class="hw-preview-inner">
+            <image class="hw-preview-img" :src="handwritingImg" mode="widthFix" />
+            <view class="hw-preview-actions">
+              <text class="hw-op-btn" @tap="showHandwritingPad = true">重新手写</text>
+              <text class="hw-op-btn del" @tap="handwritingImg = ''">清除</text>
+            </view>
+          </view>
+
+          <!-- 文字 + 拍立得插槽一体化模式 -->
+          <template v-else>
+            <!-- 内嵌拍立得单图插槽 (限 1 张) -->
+            <view
+              class="polaroid-slot"
+              :class="{ 'has-photo': pickedImages.length > 0 }"
+              @tap="pickedImages.length === 0 ? chooseImages() : previewImage(pickedImages[0], pickedImages)"
+            >
+              <template v-if="pickedImages.length > 0">
+                <image class="polaroid-img" :src="pickedImages[0]" mode="aspectFill" />
+                <view class="photo-remove" @tap.stop="removePickedImage(0)">✕</view>
+              </template>
+              <template v-else>
+                <svg class="slot-cam-svg" viewBox="0 0 24 24" fill="none" stroke="#9C8772" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <text class="slot-main-txt">轻触添 1 张拍立得照片</text>
+                <view class="slot-sample-link" @tap.stop="addPresetSamplePhoto">
+                  <text>或点此选用街景样例图</text>
+                </view>
+              </template>
+            </view>
+
+            <!-- 横线手账 70 字书写区 -->
+            <textarea
+              class="note-textarea"
+              v-model="newPostContent"
+              :placeholder="placeholderText"
+              placeholder-style="color: #A69582; font-size: 14px;"
+              maxlength="70"
+              :auto-height="true"
+            />
+          </template>
+
+          <!-- 莫兰迪 5 色纸盘 + 字数计数 -->
+          <view class="note-toolbar">
+            <view class="morandi-dots">
+              <text class="palette-label">纸色</text>
               <view
                 v-for="c in paperColorList"
                 :key="c.key"
-                class="palette-dot"
-                :class="['dot-' + c.key, { 'dot-active': selectedPaperColor === c.key }]"
+                class="m-dot"
+                :class="['dot-' + c.key, { active: selectedPaperColor === c.key }]"
                 @tap="selectedPaperColor = c.key"
               />
             </view>
+            <text v-if="!handwritingImg" class="char-cnt" :class="{ max: newPostContent.length >= 70 }">
+              {{ newPostContent.length }} / 70
+            </text>
           </view>
-          <text v-if="!handwritingImg" class="word-counter" :class="{ 'counter-max': newPostContent.length >= 70 }">
-            {{ newPostContent.length }}/70
-          </text>
-        </view>
-      </view>
-
-      <!-- 单张配图选择区 (70字 + 1张图 拍立得质感) -->
-      <view class="media-section">
-        <view class="media-header">
-          <text class="media-title">配图（限 1 张）</text>
-          <text class="media-sub">{{ pickedImages.length }}/1</text>
         </view>
 
-        <view class="polaroid-single-wrap">
-          <view v-if="pickedImages.length > 0" class="polaroid-card">
-            <image
-              class="polaroid-img"
-              :src="pickedImages[0]"
-              mode="aspectFill"
-              @tap="previewImage(pickedImages[0], pickedImages)"
+        <!-- 下方紧凑标签与元数据区（一屏看完，告别 5 行微信长表单） -->
+        <view class="meta-section">
+          <!-- 4 大兴趣标签 -->
+          <template v-if="currentPublishMode !== 'emergency'">
+            <text class="meta-label">选择便签标签</text>
+            <view class="tags-row">
+              <view
+                v-for="t in interestTagOptions"
+                :key="t.value"
+                class="tag-pill"
+                :class="{ active: publishInterestTag === t.value }"
+                @tap="selectInterestTag(t.value)"
+              >
+                <text>{{ t.label }}</text>
+              </view>
+            </view>
+          </template>
+
+          <!-- 紧急联系电话 (仅求助模式显示) -->
+          <view v-if="currentPublishMode === 'emergency'" class="emergency-phone-bar">
+            <text class="ep-label">紧急电话</text>
+            <input
+              class="ep-inp"
+              v-model="helpContactPhone"
+              placeholder="方便邻友联系的手机号"
+              maxlength="11"
             />
-            <view class="media-delete-btn" @tap.stop="removePickedImage(0)">✕</view>
           </view>
 
-          <view
-            v-else
-            class="polaroid-add-box"
-            @tap="chooseImages"
-            hover-class="add-box-hover"
-          >
-            <text class="plus-icon">+</text>
-            <text class="add-hint">添 1 张照片</text>
-          </view>
-        </view>
+          <!-- 一行极简状态微胶囊（当前位置 + 发布场景切换 + 发布身份） -->
+          <view class="compact-meta-bar">
+            <view class="loc-part">
+              <svg class="loc-svg" viewBox="0 0 24 24" fill="none" stroke="#C25B38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <text class="loc-txt">当前所在位置</text>
+            </view>
 
-        <view v-if="pickedImages.length < 1" class="quick-sample-row">
-          <view class="quick-sample-btn" @tap="addPresetSamplePhoto">
-            <text class="sample-btn-txt">📸 选用样例图</text>
+            <view class="meta-right-group">
+              <view class="scene-pill" @tap="cyclePublishScene">
+                <text>{{ sceneLabel }} ▾</text>
+              </view>
+              <image class="mini-ava" :src="myProfile.avatar" mode="aspectFill" @tap="openMyProfileSheet" />
+            </view>
           </view>
         </view>
       </view>
-
-      <!-- 便签属性设置卡片 (精致分组列表) -->
-      <view class="settings-card">
-        <!-- 发布场景选择 -->
-        <view class="settings-row">
-          <text class="settings-label">发布场景</text>
-          <view class="scene-segmented">
-            <view
-              class="scene-seg-item"
-              :class="{ 'seg-active': currentPublishMode === 'moments' }"
-              @tap="currentPublishMode = 'moments'"
-            >
-              <text>关注动态</text>
-            </view>
-            <view
-              class="scene-seg-item"
-              :class="{ 'seg-active': currentPublishMode === 'status' }"
-              @tap="currentPublishMode = 'status'"
-            >
-              <text>地图便签</text>
-            </view>
-            <view
-              class="scene-seg-item seg-emergency"
-              :class="{ 'seg-active': currentPublishMode === 'emergency' }"
-              @tap="currentPublishMode = 'emergency'"
-            >
-              <text>求助</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 紧急联系电话 (求助模式专属) -->
-        <view v-if="currentPublishMode === 'emergency'" class="settings-row">
-          <text class="settings-label">紧急电话</text>
-          <input
-            class="phone-input"
-            v-model="helpContactPhone"
-            placeholder="方便邻友联系的手机号"
-            maxlength="11"
-          />
-        </view>
-
-        <!-- 兴趣标签选择 (宠物 / 二次元 / 风景 / 极限运动) -->
-        <view v-if="currentPublishMode !== 'emergency'" class="settings-row interest-tags-row">
-          <text class="settings-label">便签标签</text>
-          <view class="interest-chips-wrap">
-            <view
-              v-for="t in interestTagOptions"
-              :key="t.value"
-              class="interest-chip"
-              :class="{ 'chip-selected': publishInterestTag === t.value }"
-              @tap="selectInterestTag(t.value)"
-            >
-              <text class="chip-ico">{{ t.icon }}</text>
-              <text class="chip-txt">{{ t.label }}</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 二次元细分标签展开区 (仅选择二次元时展示) -->
-        <view v-if="currentPublishMode !== 'emergency' && publishInterestTag === '二次元'" class="acgn-subtags-section">
-          <view class="subtags-pills-wrap">
-            <view
-              v-for="tag in ACGN_TAGS"
-              :key="tag.name"
-              class="acgn-pill"
-              :class="{ 'acgn-pill-active': acgnTag === tag.name }"
-              @tap="acgnTag = tag.name"
-            >
-              <text class="pill-emoji">{{ tag.emoji }}</text>
-              <text class="pill-label">{{ tag.name }}</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 所在位置 -->
-        <view class="settings-row cell-clickable">
-          <text class="settings-label">所在位置</text>
-          <view class="settings-value-box">
-            <text class="settings-value">北京 · 500m 生活圈内</text>
-            <text class="settings-arrow">›</text>
-          </view>
-        </view>
-
-        <!-- 谁可以看 -->
-        <view class="settings-row cell-clickable">
-          <text class="settings-label">谁可以看</text>
-          <view class="settings-value-box">
-            <text class="settings-value">公开（周边 500 米内可见）</text>
-            <text class="settings-arrow">›</text>
-          </view>
-        </view>
-
-        <!-- 发布身份 -->
-        <view class="settings-row cell-clickable" @tap="openMyProfileSheet">
-          <text class="settings-label">发布身份</text>
-          <view class="settings-value-box">
-            <image class="author-mini-avatar" :src="myProfile.avatar" mode="aspectFill" />
-            <text class="settings-value">{{ myProfile.name }}</text>
-            <text class="settings-arrow">›</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="pub-bottom-safe-padding" />
     </scroll-view>
 
     <!-- 小刷子刷胶水拟物动效遮罩 -->
     <view v-if="isBrushingGlue" class="brush-glue-overlay">
       <view class="brush-hand-icon">🖌️</view>
-      <view class="glue-streak" />
-      <text class="brush-hint-text">正在粘贴便签...</text>
+      <text class="brush-hint-text">正在刷胶贴上便签...</text>
     </view>
 
-    <!-- 真迹手写画板组件 -->
+    <!-- 真迹手写画板 -->
     <HandwritingPad
       v-if="showHandwritingPad"
-      actionConfirmText="💌 保存并贴在便签上"
+      actionConfirmText="保存并贴在便签上"
       :defaultPattern="selectedPaperColor"
       @confirm="onHandwritingConfirmed"
       @close="showHandwritingPad = false"
@@ -266,22 +188,33 @@
 import { ref, computed } from "vue";
 import { NotePaperColor, InterestTag } from "../../types";
 import { useAppState } from "../../composables/useAppState";
-import { ACGN_TAG_CATEGORIES as ACGN_TAGS } from "../../constants/acgn";
 import HandwritingPad from "../common/HandwritingPad.vue";
 
 const {
   statusBarHeight, currentPublishMode, publishVisible, newPostContent, pickedImages,
   isPublishing, myProfile, helpContactPhone,
-  isAcgnPost, acgnTag, selectedPaperColor, publishInterestTag,
+  isAcgnPost, selectedPaperColor, publishInterestTag,
   closePublishSheet, chooseImages, removePickedImage, previewImage, addPresetSamplePhoto,
   submitNewPost, submitHelpPost, openMyProfileSheet, switchMainTab
 } = useAppState();
 
-const interestTagOptions: { value: InterestTag; label: string; icon: string }[] = [
-  { value: "宠物", label: "宠物", icon: "🐾" },
-  { value: "二次元", label: "二次元", icon: "🌸" },
-  { value: "风景", label: "风景", icon: "🏔️" },
-  { value: "极限运动", label: "极限运动", icon: "🏂" },
+const isBrushingGlue = ref(false);
+const showHandwritingPad = ref(false);
+const handwritingImg = ref("");
+
+const interestTagOptions: { value: InterestTag; label: string }[] = [
+  { value: "宠物", label: "宠物" },
+  { value: "二次元", label: "二次元" },
+  { value: "风景", label: "风景" },
+  { value: "极限运动", label: "极限运动" },
+];
+
+const paperColorList: { key: NotePaperColor; name: string }[] = [
+  { key: "yellow", name: "鹅黄" },
+  { key: "pink", name: "落樱" },
+  { key: "blue", name: "雾蓝" },
+  { key: "green", name: "鼠尾草" },
+  { key: "kraft", name: "牛皮纸" }
 ];
 
 function selectInterestTag(tag: InterestTag) {
@@ -289,22 +222,22 @@ function selectInterestTag(tag: InterestTag) {
   isAcgnPost.value = tag === "二次元";
 }
 
-const isBrushingGlue = ref(false);
-const showHandwritingPad = ref(false);
-const handwritingImg = ref("");
-
 function onHandwritingConfirmed(dataUrl: string) {
   showHandwritingPad.value = false;
   handwritingImg.value = dataUrl;
 }
 
-const paperColorList: { key: NotePaperColor; name: string }[] = [
-  { key: "yellow", name: "鹅黄" },
-  { key: "pink", name: "樱粉" },
-  { key: "blue", name: "天蓝" },
-  { key: "green", name: "薄荷绿" },
-  { key: "kraft", name: "牛皮纸" }
-];
+const sceneLabel = computed(() => {
+  if (currentPublishMode.value === "emergency") return "紧急求助";
+  if (currentPublishMode.value === "status") return "地图便签";
+  return "关注动态";
+});
+
+function cyclePublishScene() {
+  const order: ("status" | "moments" | "emergency")[] = ["status", "moments", "emergency"];
+  const idx = order.indexOf(currentPublishMode.value);
+  currentPublishMode.value = order[(idx + 1) % order.length];
+}
 
 const canSubmit = computed(() => {
   return !!newPostContent.value.trim() || pickedImages.value.length > 0 || !!handwritingImg.value;
@@ -312,28 +245,23 @@ const canSubmit = computed(() => {
 
 const placeholderText = computed(() => {
   if (currentPublishMode.value === "emergency") {
-    return "请详细描述您遇到的紧急求助情况及位置，周边 500 米邻友将收到广播警报...";
+    return "请简述遇到的紧急求助情况与位置...";
   }
-  if (currentPublishMode.value === "status") {
-    return "写下此刻周边的风景、心情或新鲜事，贴在 500 米地图上...";
-  }
-  return "这一刻在想什么，或是周围的新鲜事...";
+  return "写下此刻的风景或心情，贴在此处（限 70 字）...";
 });
 
 async function handlePublish() {
   if (!canSubmit.value) return;
 
   isBrushingGlue.value = true;
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise((r) => setTimeout(r, 550));
 
   try {
     if (handwritingImg.value) {
       if (!newPostContent.value.trim()) {
-        newPostContent.value = handwritingImg.value;
+        newPostContent.value = "分享了一张手写小便签";
       }
-      if (!pickedImages.value.includes(handwritingImg.value)) {
-        pickedImages.value.unshift(handwritingImg.value);
-      }
+      pickedImages.value = [handwritingImg.value];
     }
 
     if (currentPublishMode.value === "emergency") {
@@ -361,7 +289,7 @@ async function handlePublish() {
   inset: 0;
   width: 100%;
   height: 100%;
-  background-color: #f7f6f2;
+  background-color: #f5f1e9;
   z-index: 120;
   display: flex;
   flex-direction: column;
@@ -369,632 +297,369 @@ async function handlePublish() {
   box-sizing: border-box;
 }
 
-/* 极简顶栏 */
 .wechat-pub-header {
-  height: 48px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  background-color: #ffffff;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+  padding: 0 18px;
+  background: rgba(255, 253, 248, 0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid rgba(214, 200, 180, 0.6);
   flex-shrink: 0;
 
   .pub-cancel-btn {
     cursor: pointer;
     padding: 6px 4px;
-
-    .cancel-text {
-      font-size: 15px;
-      color: #666666;
-    }
+    .cancel-text { font-size: 14px; color: #7d6a58; }
   }
 
-  .pub-title-box {
-    .pub-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #2c2c2c;
-    }
+  .pub-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #3e2723;
   }
 
-  .pub-action-btn-box {
-    .wechat-pub-btn {
-      margin: 0;
-      padding: 0 16px;
-      height: 32px;
-      line-height: 32px;
-      background-color: #eae8e3;
-      color: #b0aba4;
-      border-radius: 16px;
-      font-size: 14px;
-      font-weight: 600;
-      border: none;
-      transition: all 0.2s ease;
+  .wechat-pub-btn {
+    margin: 0;
+    padding: 0 16px;
+    height: 32px;
+    line-height: 32px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    background: #e8e2d6;
+    color: #a89c8e;
+    transition: all 0.2s ease;
 
-      &.btn-active {
-        background-color: #3e2723;
-        color: #ffffff;
-        box-shadow: 0 2px 8px rgba(62, 39, 35, 0.2);
-      }
+    &.btn-active {
+      background: linear-gradient(135deg, #d97742, #b8502c);
+      color: #fffdf8;
+      box-shadow: 0 4px 12px rgba(184, 80, 44, 0.3);
+    }
 
-      &.btn-emergency.btn-active {
-        background-color: #e53e3e;
-        color: #ffffff;
-        box-shadow: 0 2px 8px rgba(229, 62, 62, 0.35);
-      }
+    &.btn-emergency.btn-active {
+      background: #dc2626;
+      color: #fff;
     }
   }
 }
 
-/* 救命提示条 */
 .emergency-notice-banner {
-  background-color: #fef2f2;
+  background: #fef2f2;
   border-bottom: 1px solid #fee2e2;
-  padding: 8px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-
-  .notice-icon { font-size: 14px; }
+  padding: 8px 18px;
   .notice-text { font-size: 12px; color: #dc2626; font-weight: 600; }
 }
 
-/* 滚动区域 */
 .pub-scroll-area {
   flex: 1;
-  background-color: #f7f6f2;
+  min-height: 0;
+}
 
-  /* 模式切换胶囊 */
-  .pub-type-switcher-bar {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 16px 4px;
+.pub-inner-body {
+  padding: 14px 18px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-    .pub-switch-pill {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 16px;
-      border-radius: 16px;
-      background: #eae7e0;
-      color: #7a736a;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
+.mode-switch {
+  align-self: center;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 18px;
+  background: #eae3d5;
+  gap: 2px;
 
-      &.pill-selected {
-        background: #ffffff;
-        color: #3e2723;
-        font-weight: 600;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-      }
+  .mode-btn {
+    padding: 5px 16px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #7d6a58;
+    cursor: pointer;
+
+    &.active {
+      background: #fffdf8;
+      color: #3e2723;
+      box-shadow: 0 2px 6px rgba(62, 39, 35, 0.1);
     }
-  }
-
-  /* 真实拟物便签纸卡片 */
-  .note-canvas-card {
-    margin: 10px 14px 14px;
-    border-radius: 12px;
-    padding: 18px 16px 12px;
-    position: relative;
-    box-shadow: 0 3px 12px rgba(62, 39, 35, 0.06);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: background-color 0.25s ease, border-color 0.25s ease;
-
-    &.paper-yellow { background-color: #fffdec; border-color: #faecc0; }
-    &.paper-pink   { background-color: #fef2f4; border-color: #fad2dc; }
-    &.paper-blue   { background-color: #f0f7fe; border-color: #cde4fa; }
-    &.paper-green  { background-color: #f1f9f2; border-color: #d1ebd5; }
-    &.paper-kraft  { background-color: #f5efe6; border-color: #ded1c1; }
-
-    /* 拟物和纸胶带 */
-    .washi-tape-strip {
-      position: absolute;
-      top: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 54px;
-      height: 15px;
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 2px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-      border-left: 2px dashed rgba(0, 0, 0, 0.15);
-      border-right: 2px dashed rgba(0, 0, 0, 0.15);
-    }
-
-    .note-input-inner {
-      .note-textarea {
-        width: 100%;
-        min-height: 110px;
-        font-size: 16px;
-        line-height: 1.6;
-        color: #2c2420;
-        border: none;
-        background: transparent;
-        box-sizing: border-box;
-      }
-
-      .note-placeholder {
-        color: #aba29a;
-        font-size: 15px;
-      }
-    }
-
-    /* 真迹预览 */
-    .hw-preview-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-
-      .hw-preview-img {
-        width: 100%;
-        border-radius: 4px;
-        object-fit: contain;
-      }
-
-      .hw-preview-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 10px;
-
-        .hw-action-btn {
-          font-size: 12px;
-          padding: 4px 12px;
-          border-radius: 12px;
-          background: rgba(0, 0, 0, 0.06);
-          color: #4e342e;
-          font-weight: 500;
-          cursor: pointer;
-
-          &.del-btn {
-            color: #d32f2f;
-            background: #ffebee;
-          }
-        }
-      }
-    }
-
-    /* 便签卡片底部内嵌工具条 */
-    .note-card-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px dashed rgba(0, 0, 0, 0.08);
-
-      .palette-group {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        .palette-label {
-          font-size: 12px;
-          color: #8c827a;
-        }
-
-        .palette-dots {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-
-          .palette-dot {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            cursor: pointer;
-            box-sizing: border-box;
-            border: 1.5px solid transparent;
-            transition: all 0.15s ease;
-
-            &.dot-active {
-              border-color: #3e2723;
-              transform: scale(1.15);
-              box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-            }
-
-            &.dot-yellow { background-color: #fde047; }
-            &.dot-pink   { background-color: #f472b6; }
-            &.dot-blue   { background-color: #60a5fa; }
-            &.dot-green  { background-color: #4ade80; }
-            &.dot-kraft  { background-color: #d4a373; }
-          }
-        }
-      }
-
-      .word-counter {
-        font-size: 11px;
-        color: #aba29a;
-      }
-    }
-  }
-
-  /* 配图区域 */
-  .media-section {
-    background: #ffffff;
-    margin: 0 14px 12px;
-    border-radius: 12px;
-    padding: 14px 14px 12px;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-
-    .media-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-
-      .media-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: #333333;
-      }
-
-      .media-sub {
-        font-size: 12px;
-        color: #999999;
-      }
-    }
-
-    .wechat-grid-media {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-
-      .media-grid-item {
-        width: calc((100% - 16px) / 3);
-        aspect-ratio: 1 / 1;
-        position: relative;
-        border-radius: 8px;
-        overflow: hidden;
-        background-color: #f5f5f5;
-
-        .media-preview-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .media-delete-btn {
-          position: absolute;
-          top: 4px;
-          right: 4px;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background-color: rgba(0, 0, 0, 0.55);
-          color: #ffffff;
-          font-size: 11px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-
-        &.add-box {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          border: 1.5px dashed #d5d5d5;
-          background: #fafafa;
-
-          .plus-icon {
-            font-size: 28px;
-            color: #b0b0b0;
-            font-weight: 300;
-          }
-
-          &.add-box-hover {
-            background-color: #f0f0f0;
-          }
-        }
-      }
-    }
-
-    .quick-sample-row {
-      margin-top: 10px;
-
-      .quick-sample-btn {
-        display: inline-flex;
-        padding: 5px 12px;
-        border-radius: 14px;
-        background: #f4f6f9;
-        cursor: pointer;
-
-        .sample-btn-txt {
-          font-size: 12px;
-          color: #576b95;
-        }
-      }
-    }
-  }
-
-  /* 设置列表卡片 */
-  .settings-card {
-    background: #ffffff;
-    margin: 0 14px 16px;
-    border-radius: 12px;
-    padding: 2px 14px;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-
-    .settings-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 13px 0;
-      border-bottom: 0.5px solid #f2f2f2;
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      &.cell-clickable {
-        cursor: pointer;
-      }
-
-      .settings-label {
-        font-size: 14px;
-        color: #333333;
-        font-weight: 500;
-      }
-
-      .label-with-hint {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-
-        .settings-hint {
-          font-size: 11px;
-          color: #ec4899;
-        }
-      }
-
-      .compact-switch {
-        transform: scale(0.8);
-        transform-origin: right center;
-      }
-
-      .phone-input {
-        font-size: 13px;
-        text-align: right;
-        color: #333333;
-        width: 170px;
-      }
-
-      .settings-value-box {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        .author-mini-avatar {
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-        }
-
-        .settings-value {
-          font-size: 13px;
-          color: #888888;
-        }
-
-        .settings-arrow {
-          font-size: 16px;
-          color: #cccccc;
-        }
-      }
-
-      .scene-segmented {
-        display: flex;
-        gap: 6px;
-
-        .scene-seg-item {
-          padding: 4px 10px;
-          border-radius: 12px;
-          background: #f3f3f3;
-          font-size: 12px;
-          color: #666666;
-          cursor: pointer;
-          transition: all 0.15s ease;
-
-          &.seg-active {
-            background: #3e2723;
-            color: #ffffff;
-            font-weight: 500;
-          }
-
-          &.seg-emergency.seg-active {
-            background: #e53e3e;
-            color: #ffffff;
-          }
-        }
-      }
-    }
-
-    .acgn-subtags-section {
-      padding: 6px 0 12px;
-      border-bottom: 0.5px solid #f2f2f2;
-
-      .subtags-pills-wrap {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-
-        .acgn-pill {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 10px;
-          border-radius: 12px;
-          background-color: #fdf2f8;
-          border: 1px solid #fbcfe8;
-          cursor: pointer;
-
-          .pill-emoji { font-size: 12px; }
-          .pill-label { font-size: 11px; color: #be185d; }
-
-          &.acgn-pill-active {
-            background-color: #ec4899;
-            border-color: #db2777;
-            .pill-label { color: #ffffff; font-weight: 600; }
-          }
-        }
-      }
-    }
-  }
-
-  .pub-bottom-safe-padding {
-    height: 40px;
   }
 }
 
-/* 刷浆糊拟物动效遮罩 */
-.brush-glue-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  z-index: 200;
+/* 核心一体化「拍立得 + 70字」和纸便签卡 */
+.note-stage-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 20px 16px 14px;
+  border: 1px solid #ebd9a7;
+  box-shadow: 0 12px 30px rgba(62, 39, 35, 0.09), 0 2px 6px rgba(62, 39, 35, 0.04);
+  transition: background 0.25s ease;
+
+  &.p-yellow { background: linear-gradient(180deg, #fffdf2 0%, #fcf3d4 100%); border-color: #ebd9a7; }
+  &.p-pink { background: linear-gradient(180deg, #fff8fa 0%, #fce8ee 100%); border-color: #eccad4; }
+  &.p-blue { background: linear-gradient(180deg, #f6fafd 0%, #e6f0f8 100%); border-color: #c7dbec; }
+  &.p-green { background: linear-gradient(180deg, #f6fbf6 0%, #e5f2e6 100%); border-color: #c8dfca; }
+  &.p-kraft { background: linear-gradient(180deg, #f6ecdc 0%, #ead7bc 100%); border-color: #d6bc96; }
+
+  .note-tape {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-1.5deg);
+    width: 68px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 0.5px dashed rgba(141, 110, 99, 0.35);
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(62, 39, 35, 0.08);
+  }
+}
+
+.polaroid-slot {
+  width: 100%;
+  height: 170px;
+  border-radius: 10px;
+  background: rgba(255, 253, 248, 0.65);
+  border: 1.5px dashed rgba(161, 136, 112, 0.48);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
-
-  .brush-hand-icon {
-    font-size: 44px;
-    animation: brush-stroke 0.6s ease-in-out infinite alternate;
-  }
-
-  .glue-streak {
-    width: 140px;
-    height: 10px;
-    background: linear-gradient(90deg, rgba(255, 235, 59, 0.8), rgba(255, 152, 0, 0.8));
-    border-radius: 5px;
-    margin-top: 12px;
-    box-shadow: 0 0 14px rgba(255, 193, 7, 0.6);
-  }
-
-  .brush-hint-text {
-    font-size: 14px;
-    color: #fff;
-    font-weight: 600;
-    margin-top: 14px;
-  }
-}
-
-@keyframes brush-stroke {
-  0% { transform: translate(-18px, 0) rotate(-15deg); }
-  100% { transform: translate(18px, 0) rotate(15deg); }
-}
-.counter-max {
-  color: #c25b38;
-  font-weight: 700;
-}
-
-.polaroid-single-wrap {
-  margin-top: 8px;
-}
-
-.polaroid-card {
+  gap: 6px;
+  cursor: pointer;
+  margin-bottom: 14px;
   position: relative;
-  width: 140px;
-  padding: 6px 6px 18px;
-  background: #fffdf8;
-  border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(62, 39, 35, 0.1);
-  border: 1px solid #ece4d6;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  &.has-photo {
+    background: #fffdf8;
+    border: 1px solid #eae0ce;
+    padding: 7px 7px 20px;
+    height: 196px;
+    box-shadow: 0 6px 16px rgba(62, 39, 35, 0.12);
+    transform: rotate(-0.8deg);
+  }
+
+  .slot-cam-svg { width: 26px; height: 26px; }
+  .slot-main-txt { font-size: 12.5px; font-weight: 600; color: #8d7864; }
+  .slot-sample-link {
+    margin-top: 2px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    background: rgba(214, 198, 174, 0.28);
+    font-size: 10.5px;
+    color: #8d6e63;
+  }
 
   .polaroid-img {
-    width: 128px;
-    height: 128px;
+    width: 100%;
+    height: 100%;
     border-radius: 4px;
-    display: block;
   }
 
-  .media-delete-btn {
+  .photo-remove {
     position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 22px;
-    height: 22px;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #3e2723;
-    color: #fff;
+    background: rgba(44, 34, 26, 0.72);
+    color: #fffdf8;
     font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
   }
 }
 
-.polaroid-add-box {
-  width: 108px;
-  height: 108px;
-  border-radius: 12px;
-  border: 1.5px dashed #cbbba6;
-  background: #faf6ef;
+.note-textarea {
+  width: 100%;
+  min-height: 88px;
+  font-size: 15px;
+  line-height: 28px;
+  color: #3e2723;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    rgba(141, 110, 99, 0.16) 28px
+  );
+}
+
+.hw-preview-inner {
+  .hw-preview-img {
+    width: 100%;
+    border-radius: 8px;
+    background: #fffdf8;
+  }
+  .hw-preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+    .hw-op-btn {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #5d4037;
+      background: rgba(255, 253, 248, 0.85);
+      padding: 4px 10px;
+      border-radius: 10px;
+      &.del { color: #c25b38; }
+    }
+  }
+}
+
+.note-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 0.5px dashed rgba(141, 110, 99, 0.28);
+
+  .morandi-dots {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    .palette-label { font-size: 11px; color: #8d7864; margin-right: 2px; }
+
+    .m-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(62, 39, 35, 0.15);
+      cursor: pointer;
+
+      &.dot-yellow { background: #f7e8a8; }
+      &.dot-pink { background: #f3cdd6; }
+      &.dot-blue { background: #c9ddf0; }
+      &.dot-green { background: #cde2ce; }
+      &.dot-kraft { background: #dfc39d; }
+
+      &.active {
+        border: 2px solid #3e2723;
+        transform: scale(1.15);
+      }
+    }
+  }
+
+  .char-cnt {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9a8776;
+    &.max { color: #c25b38; }
+  }
+}
+
+.meta-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .meta-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9a8776;
+    padding-left: 2px;
+  }
+
+  .tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .tag-pill {
+      padding: 6px 14px;
+      border-radius: 16px;
+      background: #fffdf8;
+      border: 1px solid #e5dac8;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6d5849;
+      cursor: pointer;
+
+      &.active {
+        background: #3e2723;
+        border-color: #3e2723;
+        color: #fffdf8;
+      }
+    }
+  }
+}
+
+.emergency-phone-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fffdf8;
+  border: 1px solid #f5c6c6;
+
+  .ep-label { font-size: 12px; font-weight: 700; color: #c25b38; }
+  .ep-inp { flex: 1; font-size: 13px; color: #3e2723; }
+}
+
+.compact-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 14px;
+  background: #fffdf8;
+  border: 1px solid #eae1d2;
+
+  .loc-part {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    .loc-svg { width: 14px; height: 14px; }
+    .loc-txt { font-size: 12px; color: #6d5849; }
+  }
+
+  .meta-right-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .scene-pill {
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #f5efe2;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #3e2723;
+      cursor: pointer;
+    }
+
+    .mini-ava {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid #e2d6c3;
+    }
+  }
+}
+
+.brush-glue-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(44, 34, 26, 0.55);
+  backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  cursor: pointer;
-
-  .plus-icon {
-    font-size: 26px;
-    color: #8d6e63;
-    line-height: 1;
-  }
-
-  .add-hint {
-    font-size: 11px;
-    color: #8d6e63;
-  }
-}
-
-.interest-tags-row {
-  flex-direction: column;
-  align-items: flex-start !important;
   gap: 10px;
-}
 
-.interest-chips-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  width: 100%;
-}
-
-.interest-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  background: #f5f1e8;
-  border: 1px solid #e2d8c8;
-  cursor: pointer;
-
-  .chip-ico {
-    font-size: 13px;
-  }
-
-  .chip-txt {
-    font-size: 12px;
-    font-weight: 600;
-    color: #5d4037;
-  }
-
-  &.chip-selected {
-    background: #3e2723;
-    border-color: #3e2723;
-
-    .chip-txt {
-      color: #fffdf8;
-    }
-  }
+  .brush-hand-icon { font-size: 46px; }
+  .brush-hint-text { font-size: 14px; font-weight: 600; color: #fffdf8; }
 }
 </style>
