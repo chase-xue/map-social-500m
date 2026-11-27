@@ -252,8 +252,14 @@
             </view>
 
             <!-- 第二排 C 位：完整保留原版 3D 带锁金属「心情盒子」（点击开锁翻盖 + 纸卷舒展！） -->
-            <view class="wood-comp org-row-mid" @tap="toggleBigBox">
-              <text class="comp-badge">{{ isBoxOpen ? '已解锁' : '点击开锁' }}</text>
+            <view class="wood-comp org-row-mid" :class="{ 'mid-box-open': isBoxOpen }" @tap="toggleBigBox">
+              <view
+                class="comp-badge"
+                :class="{ 'close-box-pill': isBoxOpen }"
+                @tap.stop="toggleBigBox"
+              >
+                <text>{{ isBoxOpen ? '🔒 合上盖子' : '点击开锁' }}</text>
+              </view>
               <view class="bigbox org-bigbox" :class="{ 'open': isBoxOpen, 'unlocked': isBoxUnlocked }">
                 <view class="bb-hinge" />
                 <view class="bb-lid">
@@ -261,7 +267,7 @@
                     <view class="tex tex-metal" />
                     <view class="bb-lock" />
                   </view>
-                  <view class="li" @tap.stop>
+                  <view class="li">
                     <view class="tex tex-metal" />
                     <view class="hud-tl">
                       <text class="hm">11月</text>
@@ -270,7 +276,7 @@
                         :key="dateStr"
                         class="hud-node"
                         :class="{ 'on': selectedHoleDateIdx === dIdx }"
-                        @tap="selectHoleDate(dIdx)"
+                        @tap.stop="selectHoleDate(dIdx)"
                       >
                         <view class="hf">✦</view>
                         <view class="hd">{{ dateStr === '全部' ? '全部' : (dateStr.split('月')[1] || dateStr) }}</view>
@@ -279,7 +285,7 @@
                   </view>
                 </view>
 
-                <view class="bb-inside" @tap.stop>
+                <view class="bb-inside">
                   <view class="rolls">
                     <view
                       v-for="roll in renderedHoleRolls"
@@ -287,7 +293,7 @@
                       class="roll"
                       :class="{ 'dim': roll.isDim }"
                       :style="roll.style"
-                      @tap="openHoleRoll(roll)"
+                      @tap.stop="openHoleRoll(roll)"
                     >
                       <view class="rc" :style="{ '--mc': getPaperMoodColor(roll.color) }" />
                       <view class="rtag">{{ roll.cleanDate }}</view>
@@ -4225,6 +4231,23 @@ function formatRelativeTime(ts: number): string {
   height: 196px;
   padding-top: 12px;
   overflow: visible;
+  z-index: 8;
+
+  &.mid-box-open {
+    z-index: 25;
+  }
+}
+
+.comp-badge.close-box-pill {
+  background: rgba(194, 91, 56, 0.92);
+  color: #fffdf8;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  z-index: 30;
+  cursor: pointer;
 }
 
 .bigbox.org-bigbox {
