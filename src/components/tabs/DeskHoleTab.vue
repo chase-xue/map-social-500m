@@ -3566,31 +3566,52 @@ function formatRelativeTime(ts: number): string {
 
   .v3-inp {
     flex: 1;
+    height: 36px;
+    line-height: 36px;
     background: #F5F1E8;
     border: 1px solid #E2D8C8;
-    border-radius: 12px;
-    padding: 8px 10px;
-    font-size: 12px;
+    border-radius: 14px;
+    padding: 0 12px;
+    font-size: 13px;
     color: #3E2723;
-    &.short { flex: none; width: 64px; }
+    box-sizing: border-box;
+    &.short { flex: none; width: 72px; }
+
+    :deep(.uni-input-wrapper),
+    :deep(.uni-input-input),
+    :deep(.uni-input-placeholder),
+    :deep(input) {
+      font-size: 13px !important;
+      height: 34px !important;
+      line-height: 34px !important;
+    }
+
+    :deep(.uni-input-placeholder) {
+      color: #A69582 !important;
+    }
   }
 
   .v3-type-btn {
-    padding: 8px 10px;
-    border-radius: 12px;
+    height: 36px;
+    line-height: 36px;
+    padding: 0 12px;
+    border-radius: 14px;
     background: #F3E8D2;
     color: #3E2723;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
+    flex-shrink: 0;
   }
 
   .v3-btn {
-    padding: 8px 12px;
-    border-radius: 12px;
+    height: 36px;
+    line-height: 36px;
+    padding: 0 14px;
+    border-radius: 14px;
     background: #3E2723;
     color: #FFFDF8;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
     flex-shrink: 0;

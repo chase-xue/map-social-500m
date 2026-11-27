@@ -12,6 +12,26 @@ uni-scroll-view,
   box-sizing: border-box !important;
 }
 
+/* 全局修复 Uni-App H5 输入框默认占位符字号过大、色偏冷灰与垂直挤压问题 */
+uni-input,
+.uni-input-wrapper,
+.uni-input-input,
+.uni-input-placeholder {
+  font-size: inherit;
+  box-sizing: border-box;
+}
+
+.uni-input-placeholder,
+.uni-textarea-placeholder {
+  color: #a69582 !important;
+  font-size: 13px !important;
+}
+
+.uni-input-input {
+  color: #3e2723;
+  font-size: 13px !important;
+}
+
 /* --- 顶部导航 --- */
 .top-nav {
   position: absolute;
